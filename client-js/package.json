@@ -1,0 +1,27 @@
+{
+  "name": "@mcintyre94/mpl-token-metadata",
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "types": "tsc --emitDeclarationOnly",
+    "check-types": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^24.1.0",
+    "typescript": "^5.8.2"
+  },
+  "peerDependencies": {
+    "@solana/kit": "^2.1.1"
+  }
+}
