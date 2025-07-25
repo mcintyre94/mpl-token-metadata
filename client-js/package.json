@@ -1,27 +1,47 @@
 {
   "name": "@mcintyre94/mpl-token-metadata",
-  "version": "0.0.0",
-  "type": "module",
+  "version": "0.0.1",
+  "description": "JavaScript client for the MPL Token Metadata program",
   "sideEffects": false,
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
+  "module": "./dist/src/index.mjs",
+  "main": "./dist/src/index.js",
+  "types": "./dist/types/index.d.ts",
+  "type": "commonjs",
   "exports": {
     ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/types/index.d.ts",
+      "import": "./dist/src/index.mjs",
+      "require": "./dist/src/index.js"
     }
   },
+  "files": [
+    "./dist/src",
+    "./dist/types"
+  ],
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "types": "tsc --emitDeclarationOnly",
-    "check-types": "tsc --noEmit"
+    "build": "rimraf dist && tsup && tsc -p ./tsconfig.declarations.json",
+    "prepublishOnly": "pnpm build"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "license": "Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mcintyre94/mpl-token-metadata.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mcintyre94/mpl-token-metadata/issues"
+  },
+  "homepage": "https://github.com/mcintyre94/mpl-token-metadata#readme",
+  "peerDependencies": {
+    "@solana/kit": "^2.1.1"
   },
   "devDependencies": {
     "@types/node": "^24.1.0",
+    "rimraf": "^6.0.1",
+    "tsup": "^8.5.0",
     "typescript": "^5.8.2"
-  },
-  "peerDependencies": {
-    "@solana/kit": "^2.1.1"
   }
 }
