@@ -7,15 +7,32 @@
  */
 
 import {
+  addDecoderSizePrefix,
+  addEncoderSizePrefix,
   combineCodec,
+  getAddressDecoder,
+  getAddressEncoder,
+  getArrayDecoder,
+  getArrayEncoder,
+  getBooleanDecoder,
+  getBooleanEncoder,
   getDiscriminatedUnionDecoder,
   getDiscriminatedUnionEncoder,
   getOptionDecoder,
   getOptionEncoder,
   getStructDecoder,
   getStructEncoder,
+  getU16Decoder,
+  getU16Encoder,
+  getU32Decoder,
+  getU32Encoder,
   getU8Decoder,
   getU8Encoder,
+  getUtf8Decoder,
+  getUtf8Encoder,
+  none,
+  transformEncoder,
+  type Address,
   type Codec,
   type Decoder,
   type Encoder,
@@ -25,26 +42,68 @@ import {
   type OptionOrNullable,
 } from '@solana/kit';
 import {
-  getAssetDataDecoder,
-  getAssetDataEncoder,
+  getCollectionDecoder,
+  getCollectionDetailsDecoder,
+  getCollectionDetailsEncoder,
+  getCollectionEncoder,
+  getCreatorDecoder,
+  getCreatorEncoder,
   getPrintSupplyDecoder,
   getPrintSupplyEncoder,
-  type AssetData,
-  type AssetDataArgs,
+  getTokenStandardDecoder,
+  getTokenStandardEncoder,
+  getUsesDecoder,
+  getUsesEncoder,
+  type Collection,
+  type CollectionArgs,
+  type CollectionDetails,
+  type CollectionDetailsArgs,
+  type Creator,
+  type CreatorArgs,
   type PrintSupply,
   type PrintSupplyArgs,
+  type TokenStandard,
+  type TokenStandardArgs,
+  type Uses,
+  type UsesArgs,
 } from '.';
 
 export type CreateArgs = {
   __kind: 'V1';
-  assetData: AssetData;
+  assetData: {
+    name: string;
+    symbol: string;
+    uri: string;
+    sellerFeeBasisPoints: number;
+    creators: Option<Array<Creator>>;
+    primarySaleHappened: boolean;
+    isMutable: boolean;
+    tokenStandard: TokenStandard;
+    collection: Option<Collection>;
+    uses: Option<Uses>;
+    collectionDetails: Option<CollectionDetails>;
+    ruleSet: Option<Address>;
+  };
   decimals: Option<number>;
   printSupply: Option<PrintSupply>;
 };
 
 export type CreateArgsArgs = {
   __kind: 'V1';
-  assetData: AssetDataArgs;
+  assetData: {
+    name: string;
+    symbol?: string;
+    uri: string;
+    sellerFeeBasisPoints: number;
+    creators: OptionOrNullable<Array<CreatorArgs>>;
+    primarySaleHappened?: boolean;
+    isMutable?: boolean;
+    tokenStandard: TokenStandardArgs;
+    collection?: OptionOrNullable<CollectionArgs>;
+    uses?: OptionOrNullable<UsesArgs>;
+    collectionDetails?: OptionOrNullable<CollectionDetailsArgs>;
+    ruleSet?: OptionOrNullable<Address>;
+  };
   decimals: OptionOrNullable<number>;
   printSupply: OptionOrNullable<PrintSupplyArgs>;
 };
@@ -54,7 +113,44 @@ export function getCreateArgsEncoder(): Encoder<CreateArgsArgs> {
     [
       'V1',
       getStructEncoder([
-        ['assetData', getAssetDataEncoder()],
+        [
+          'assetData',
+          transformEncoder(
+            getStructEncoder([
+              ['name', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+              [
+                'symbol',
+                addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder()),
+              ],
+              ['uri', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+              ['sellerFeeBasisPoints', getU16Encoder()],
+              [
+                'creators',
+                getOptionEncoder(getArrayEncoder(getCreatorEncoder())),
+              ],
+              ['primarySaleHappened', getBooleanEncoder()],
+              ['isMutable', getBooleanEncoder()],
+              ['tokenStandard', getTokenStandardEncoder()],
+              ['collection', getOptionEncoder(getCollectionEncoder())],
+              ['uses', getOptionEncoder(getUsesEncoder())],
+              [
+                'collectionDetails',
+                getOptionEncoder(getCollectionDetailsEncoder()),
+              ],
+              ['ruleSet', getOptionEncoder(getAddressEncoder())],
+            ]),
+            (value) => ({
+              ...value,
+              symbol: value.symbol ?? '',
+              primarySaleHappened: value.primarySaleHappened ?? false,
+              isMutable: value.isMutable ?? true,
+              collection: value.collection ?? none(),
+              uses: value.uses ?? none(),
+              collectionDetails: value.collectionDetails ?? none(),
+              ruleSet: value.ruleSet ?? none(),
+            })
+          ),
+        ],
         ['decimals', getOptionEncoder(getU8Encoder())],
         ['printSupply', getOptionEncoder(getPrintSupplyEncoder())],
       ]),
@@ -67,7 +163,29 @@ export function getCreateArgsDecoder(): Decoder<CreateArgs> {
     [
       'V1',
       getStructDecoder([
-        ['assetData', getAssetDataDecoder()],
+        [
+          'assetData',
+          getStructDecoder([
+            ['name', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+            ['symbol', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+            ['uri', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+            ['sellerFeeBasisPoints', getU16Decoder()],
+            [
+              'creators',
+              getOptionDecoder(getArrayDecoder(getCreatorDecoder())),
+            ],
+            ['primarySaleHappened', getBooleanDecoder()],
+            ['isMutable', getBooleanDecoder()],
+            ['tokenStandard', getTokenStandardDecoder()],
+            ['collection', getOptionDecoder(getCollectionDecoder())],
+            ['uses', getOptionDecoder(getUsesDecoder())],
+            [
+              'collectionDetails',
+              getOptionDecoder(getCollectionDetailsDecoder()),
+            ],
+            ['ruleSet', getOptionDecoder(getAddressDecoder())],
+          ]),
+        ],
         ['decimals', getOptionDecoder(getU8Decoder())],
         ['printSupply', getOptionDecoder(getPrintSupplyDecoder())],
       ]),

@@ -35,6 +35,8 @@ import {
   assertIsNode,
   isNode,
   structFieldTypeNode,
+  unwrapDefinedTypesVisitor,
+  unwrapTypeDefinedLinksVisitor,
 } from "codama";
 
 import anchorIdl from "./idl.json" with { type: "json" };
@@ -727,6 +729,9 @@ codama.update(
     },
   ])
 );
+
+// Unwrap types and structs.
+codama.update(unwrapDefinedTypesVisitor(["AssetData"]));
 
 /* Temporary */
 // need to pull this forward for the splTokenProgram dependency on argumentValueNode("tokenStandard")
