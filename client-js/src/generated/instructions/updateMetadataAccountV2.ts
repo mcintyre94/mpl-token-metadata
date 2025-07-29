@@ -73,14 +73,14 @@ export type UpdateMetadataAccountV2Instruction<
 export type UpdateMetadataAccountV2InstructionData = {
   discriminator: number;
   data: Option<DataV2>;
-  updateAuthority: Option<Address>;
+  newUpdateAuthority: Option<Address>;
   primarySaleHappened: Option<boolean>;
   isMutable: Option<boolean>;
 };
 
 export type UpdateMetadataAccountV2InstructionDataArgs = {
   data: OptionOrNullable<DataV2Args>;
-  updateAuthority: OptionOrNullable<Address>;
+  newUpdateAuthority: OptionOrNullable<Address>;
   primarySaleHappened: OptionOrNullable<boolean>;
   isMutable: OptionOrNullable<boolean>;
 };
@@ -90,7 +90,7 @@ export function getUpdateMetadataAccountV2InstructionDataEncoder(): Encoder<Upda
     getStructEncoder([
       ['discriminator', getU8Encoder()],
       ['data', getOptionEncoder(getDataV2Encoder())],
-      ['updateAuthority', getOptionEncoder(getAddressEncoder())],
+      ['newUpdateAuthority', getOptionEncoder(getAddressEncoder())],
       ['primarySaleHappened', getOptionEncoder(getBooleanEncoder())],
       ['isMutable', getOptionEncoder(getBooleanEncoder())],
     ]),
@@ -105,7 +105,7 @@ export function getUpdateMetadataAccountV2InstructionDataDecoder(): Decoder<Upda
   return getStructDecoder([
     ['discriminator', getU8Decoder()],
     ['data', getOptionDecoder(getDataV2Decoder())],
-    ['updateAuthority', getOptionDecoder(getAddressDecoder())],
+    ['newUpdateAuthority', getOptionDecoder(getAddressDecoder())],
     ['primarySaleHappened', getOptionDecoder(getBooleanDecoder())],
     ['isMutable', getOptionDecoder(getBooleanDecoder())],
   ]);
@@ -130,7 +130,7 @@ export type UpdateMetadataAccountV2Input<
   /** Update authority key */
   updateAuthority: TransactionSigner<TAccountUpdateAuthority>;
   data: UpdateMetadataAccountV2InstructionDataArgs['data'];
-  updateAuthorityArg: UpdateMetadataAccountV2InstructionDataArgs['updateAuthority'];
+  newUpdateAuthority: UpdateMetadataAccountV2InstructionDataArgs['newUpdateAuthority'];
   primarySaleHappened: UpdateMetadataAccountV2InstructionDataArgs['primarySaleHappened'];
   isMutable: UpdateMetadataAccountV2InstructionDataArgs['isMutable'];
 };
@@ -168,7 +168,7 @@ export function getUpdateMetadataAccountV2Instruction<
   >;
 
   // Original args.
-  const args = { ...input, updateAuthority: input.updateAuthorityArg };
+  const args = { ...input };
 
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {

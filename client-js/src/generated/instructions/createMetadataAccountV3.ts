@@ -35,8 +35,13 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/kit';
+import { findMetadataPda } from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
-import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
+import {
+  expectAddress,
+  getAccountMetaFactory,
+  type ResolvedAccount,
+} from '../shared';
 import {
   getCollectionDetailsDecoder,
   getCollectionDetailsEncoder,
@@ -64,7 +69,7 @@ export type CreateMetadataAccountV3Instruction<
   TAccountSystemProgram extends
     | string
     | AccountMeta<string> = '11111111111111111111111111111111',
-  TAccountRent extends string | AccountMeta<string> = string,
+  TAccountRent extends string | AccountMeta<string> | undefined = undefined,
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -90,9 +95,13 @@ export type CreateMetadataAccountV3Instruction<
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
         : TAccountSystemProgram,
-      TAccountRent extends string
-        ? ReadonlyAccount<TAccountRent>
-        : TAccountRent,
+      ...(TAccountRent extends undefined
+        ? []
+        : [
+            TAccountRent extends string
+              ? ReadonlyAccount<TAccountRent>
+              : TAccountRent,
+          ]),
       ...TRemainingAccounts,
     ]
   >;
@@ -144,6 +153,139 @@ export function getCreateMetadataAccountV3InstructionDataCodec(): Codec<
   );
 }
 
+export type CreateMetadataAccountV3AsyncInput<
+  TAccountMetadata extends string = string,
+  TAccountMint extends string = string,
+  TAccountMintAuthority extends string = string,
+  TAccountPayer extends string = string,
+  TAccountUpdateAuthority extends string = string,
+  TAccountSystemProgram extends string = string,
+  TAccountRent extends string = string,
+> = {
+  /** Metadata key (pda of ['metadata', program id, mint id]) */
+  metadata?: Address<TAccountMetadata>;
+  /** Mint of token asset */
+  mint: Address<TAccountMint>;
+  /** Mint authority */
+  mintAuthority: TransactionSigner<TAccountMintAuthority>;
+  /** payer */
+  payer: TransactionSigner<TAccountPayer>;
+  /** update authority info */
+  updateAuthority:
+    | Address<TAccountUpdateAuthority>
+    | TransactionSigner<TAccountUpdateAuthority>;
+  /** System program */
+  systemProgram?: Address<TAccountSystemProgram>;
+  /** Rent info */
+  rent?: Address<TAccountRent>;
+  data: CreateMetadataAccountV3InstructionDataArgs['data'];
+  isMutable: CreateMetadataAccountV3InstructionDataArgs['isMutable'];
+  collectionDetails: CreateMetadataAccountV3InstructionDataArgs['collectionDetails'];
+};
+
+export async function getCreateMetadataAccountV3InstructionAsync<
+  TAccountMetadata extends string,
+  TAccountMint extends string,
+  TAccountMintAuthority extends string,
+  TAccountPayer extends string,
+  TAccountUpdateAuthority extends string,
+  TAccountSystemProgram extends string,
+  TAccountRent extends string,
+  TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
+>(
+  input: CreateMetadataAccountV3AsyncInput<
+    TAccountMetadata,
+    TAccountMint,
+    TAccountMintAuthority,
+    TAccountPayer,
+    TAccountUpdateAuthority,
+    TAccountSystemProgram,
+    TAccountRent
+  >,
+  config?: { programAddress?: TProgramAddress }
+): Promise<
+  CreateMetadataAccountV3Instruction<
+    TProgramAddress,
+    TAccountMetadata,
+    TAccountMint,
+    TAccountMintAuthority,
+    TAccountPayer,
+    (typeof input)['updateAuthority'] extends TransactionSigner<TAccountUpdateAuthority>
+      ? ReadonlySignerAccount<TAccountUpdateAuthority> &
+          AccountSignerMeta<TAccountUpdateAuthority>
+      : TAccountUpdateAuthority,
+    TAccountSystemProgram,
+    TAccountRent
+  >
+> {
+  // Program address.
+  const programAddress =
+    config?.programAddress ?? MPL_TOKEN_METADATA_PROGRAM_ADDRESS;
+
+  // Original accounts.
+  const originalAccounts = {
+    metadata: { value: input.metadata ?? null, isWritable: true },
+    mint: { value: input.mint ?? null, isWritable: false },
+    mintAuthority: { value: input.mintAuthority ?? null, isWritable: false },
+    payer: { value: input.payer ?? null, isWritable: true },
+    updateAuthority: {
+      value: input.updateAuthority ?? null,
+      isWritable: false,
+    },
+    systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+    rent: { value: input.rent ?? null, isWritable: false },
+  };
+  const accounts = originalAccounts as Record<
+    keyof typeof originalAccounts,
+    ResolvedAccount
+  >;
+
+  // Original args.
+  const args = { ...input };
+
+  // Resolve default values.
+  if (!accounts.metadata.value) {
+    accounts.metadata.value = await findMetadataPda({
+      mint: expectAddress(accounts.mint.value),
+    });
+  }
+  if (!accounts.systemProgram.value) {
+    accounts.systemProgram.value =
+      '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
+  }
+
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'omitted');
+  const instruction = {
+    accounts: [
+      getAccountMeta(accounts.metadata),
+      getAccountMeta(accounts.mint),
+      getAccountMeta(accounts.mintAuthority),
+      getAccountMeta(accounts.payer),
+      getAccountMeta(accounts.updateAuthority),
+      getAccountMeta(accounts.systemProgram),
+      getAccountMeta(accounts.rent),
+    ].filter(<T,>(x: T | undefined): x is T => x !== undefined),
+    programAddress,
+    data: getCreateMetadataAccountV3InstructionDataEncoder().encode(
+      args as CreateMetadataAccountV3InstructionDataArgs
+    ),
+  } as CreateMetadataAccountV3Instruction<
+    TProgramAddress,
+    TAccountMetadata,
+    TAccountMint,
+    TAccountMintAuthority,
+    TAccountPayer,
+    (typeof input)['updateAuthority'] extends TransactionSigner<TAccountUpdateAuthority>
+      ? ReadonlySignerAccount<TAccountUpdateAuthority> &
+          AccountSignerMeta<TAccountUpdateAuthority>
+      : TAccountUpdateAuthority,
+    TAccountSystemProgram,
+    TAccountRent
+  >;
+
+  return instruction;
+}
+
 export type CreateMetadataAccountV3Input<
   TAccountMetadata extends string = string,
   TAccountMint extends string = string,
@@ -162,7 +304,9 @@ export type CreateMetadataAccountV3Input<
   /** payer */
   payer: TransactionSigner<TAccountPayer>;
   /** update authority info */
-  updateAuthority: Address<TAccountUpdateAuthority>;
+  updateAuthority:
+    | Address<TAccountUpdateAuthority>
+    | TransactionSigner<TAccountUpdateAuthority>;
   /** System program */
   systemProgram?: Address<TAccountSystemProgram>;
   /** Rent info */
@@ -198,7 +342,10 @@ export function getCreateMetadataAccountV3Instruction<
   TAccountMint,
   TAccountMintAuthority,
   TAccountPayer,
-  TAccountUpdateAuthority,
+  (typeof input)['updateAuthority'] extends TransactionSigner<TAccountUpdateAuthority>
+    ? ReadonlySignerAccount<TAccountUpdateAuthority> &
+        AccountSignerMeta<TAccountUpdateAuthority>
+    : TAccountUpdateAuthority,
   TAccountSystemProgram,
   TAccountRent
 > {
@@ -233,7 +380,7 @@ export function getCreateMetadataAccountV3Instruction<
       '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
   }
 
-  const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'omitted');
   const instruction = {
     accounts: [
       getAccountMeta(accounts.metadata),
@@ -243,7 +390,7 @@ export function getCreateMetadataAccountV3Instruction<
       getAccountMeta(accounts.updateAuthority),
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.rent),
-    ],
+    ].filter(<T,>(x: T | undefined): x is T => x !== undefined),
     programAddress,
     data: getCreateMetadataAccountV3InstructionDataEncoder().encode(
       args as CreateMetadataAccountV3InstructionDataArgs
@@ -254,7 +401,10 @@ export function getCreateMetadataAccountV3Instruction<
     TAccountMint,
     TAccountMintAuthority,
     TAccountPayer,
-    TAccountUpdateAuthority,
+    (typeof input)['updateAuthority'] extends TransactionSigner<TAccountUpdateAuthority>
+      ? ReadonlySignerAccount<TAccountUpdateAuthority> &
+          AccountSignerMeta<TAccountUpdateAuthority>
+      : TAccountUpdateAuthority,
     TAccountSystemProgram,
     TAccountRent
   >;
@@ -294,7 +444,7 @@ export function parseCreateMetadataAccountV3Instruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>
 ): ParsedCreateMetadataAccountV3Instruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 7) {
+  if (instruction.accounts.length < 6) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -304,11 +454,11 @@ export function parseCreateMetadataAccountV3Instruction<
     accountIndex += 1;
     return accountMeta;
   };
+  let optionalAccountsRemaining = instruction.accounts.length - 6;
   const getNextOptionalAccount = () => {
-    const accountMeta = getNextAccount();
-    return accountMeta.address === MPL_TOKEN_METADATA_PROGRAM_ADDRESS
-      ? undefined
-      : accountMeta;
+    if (optionalAccountsRemaining === 0) return undefined;
+    optionalAccountsRemaining -= 1;
+    return getNextAccount();
   };
   return {
     programAddress: instruction.programAddress,

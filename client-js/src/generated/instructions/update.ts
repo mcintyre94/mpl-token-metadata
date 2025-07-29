@@ -29,8 +29,13 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/kit';
+import { findMetadataPda } from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
-import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
+import {
+  expectAddress,
+  getAccountMetaFactory,
+  type ResolvedAccount,
+} from '../shared';
 import {
   getUpdateArgsDecoder,
   getUpdateArgsEncoder,
@@ -139,6 +144,181 @@ export function getUpdateInstructionDataCodec(): Codec<
     getUpdateInstructionDataEncoder(),
     getUpdateInstructionDataDecoder()
   );
+}
+
+export type UpdateAsyncInput<
+  TAccountAuthority extends string = string,
+  TAccountDelegateRecord extends string = string,
+  TAccountToken extends string = string,
+  TAccountMint extends string = string,
+  TAccountMetadata extends string = string,
+  TAccountEdition extends string = string,
+  TAccountPayer extends string = string,
+  TAccountSystemProgram extends string = string,
+  TAccountSysvarInstructions extends string = string,
+  TAccountAuthorizationRulesProgram extends string = string,
+  TAccountAuthorizationRules extends string = string,
+> = {
+  /** Update authority or delegate */
+  authority: TransactionSigner<TAccountAuthority>;
+  /** Delegate record PDA */
+  delegateRecord?: Address<TAccountDelegateRecord>;
+  /** Token account */
+  token?: Address<TAccountToken>;
+  /** Mint account */
+  mint: Address<TAccountMint>;
+  /** Metadata account */
+  metadata?: Address<TAccountMetadata>;
+  /** Edition account */
+  edition?: Address<TAccountEdition>;
+  /** Payer */
+  payer: TransactionSigner<TAccountPayer>;
+  /** System program */
+  systemProgram?: Address<TAccountSystemProgram>;
+  /** Instructions sysvar account */
+  sysvarInstructions?: Address<TAccountSysvarInstructions>;
+  /** Token Authorization Rules Program */
+  authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
+  /** Token Authorization Rules account */
+  authorizationRules?: Address<TAccountAuthorizationRules>;
+  updateArgs: UpdateInstructionDataArgs['updateArgs'];
+};
+
+export async function getUpdateInstructionAsync<
+  TAccountAuthority extends string,
+  TAccountDelegateRecord extends string,
+  TAccountToken extends string,
+  TAccountMint extends string,
+  TAccountMetadata extends string,
+  TAccountEdition extends string,
+  TAccountPayer extends string,
+  TAccountSystemProgram extends string,
+  TAccountSysvarInstructions extends string,
+  TAccountAuthorizationRulesProgram extends string,
+  TAccountAuthorizationRules extends string,
+  TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
+>(
+  input: UpdateAsyncInput<
+    TAccountAuthority,
+    TAccountDelegateRecord,
+    TAccountToken,
+    TAccountMint,
+    TAccountMetadata,
+    TAccountEdition,
+    TAccountPayer,
+    TAccountSystemProgram,
+    TAccountSysvarInstructions,
+    TAccountAuthorizationRulesProgram,
+    TAccountAuthorizationRules
+  >,
+  config?: { programAddress?: TProgramAddress }
+): Promise<
+  UpdateInstruction<
+    TProgramAddress,
+    TAccountAuthority,
+    TAccountDelegateRecord,
+    TAccountToken,
+    TAccountMint,
+    TAccountMetadata,
+    TAccountEdition,
+    TAccountPayer,
+    TAccountSystemProgram,
+    TAccountSysvarInstructions,
+    TAccountAuthorizationRulesProgram,
+    TAccountAuthorizationRules
+  >
+> {
+  // Program address.
+  const programAddress =
+    config?.programAddress ?? MPL_TOKEN_METADATA_PROGRAM_ADDRESS;
+
+  // Original accounts.
+  const originalAccounts = {
+    authority: { value: input.authority ?? null, isWritable: false },
+    delegateRecord: { value: input.delegateRecord ?? null, isWritable: false },
+    token: { value: input.token ?? null, isWritable: false },
+    mint: { value: input.mint ?? null, isWritable: false },
+    metadata: { value: input.metadata ?? null, isWritable: true },
+    edition: { value: input.edition ?? null, isWritable: false },
+    payer: { value: input.payer ?? null, isWritable: true },
+    systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+    sysvarInstructions: {
+      value: input.sysvarInstructions ?? null,
+      isWritable: false,
+    },
+    authorizationRulesProgram: {
+      value: input.authorizationRulesProgram ?? null,
+      isWritable: false,
+    },
+    authorizationRules: {
+      value: input.authorizationRules ?? null,
+      isWritable: false,
+    },
+  };
+  const accounts = originalAccounts as Record<
+    keyof typeof originalAccounts,
+    ResolvedAccount
+  >;
+
+  // Original args.
+  const args = { ...input };
+
+  // Resolve default values.
+  if (!accounts.metadata.value) {
+    accounts.metadata.value = await findMetadataPda({
+      mint: expectAddress(accounts.mint.value),
+    });
+  }
+  if (!accounts.systemProgram.value) {
+    accounts.systemProgram.value =
+      '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
+  }
+  if (!accounts.sysvarInstructions.value) {
+    accounts.sysvarInstructions.value =
+      'Sysvar1nstructions1111111111111111111111111' as Address<'Sysvar1nstructions1111111111111111111111111'>;
+  }
+  if (!accounts.authorizationRulesProgram.value) {
+    if (accounts.authorizationRules.value) {
+      accounts.authorizationRulesProgram.value =
+        'auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg' as Address<'auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg'>;
+    }
+  }
+
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
+  const instruction = {
+    accounts: [
+      getAccountMeta(accounts.authority),
+      getAccountMeta(accounts.delegateRecord),
+      getAccountMeta(accounts.token),
+      getAccountMeta(accounts.mint),
+      getAccountMeta(accounts.metadata),
+      getAccountMeta(accounts.edition),
+      getAccountMeta(accounts.payer),
+      getAccountMeta(accounts.systemProgram),
+      getAccountMeta(accounts.sysvarInstructions),
+      getAccountMeta(accounts.authorizationRulesProgram),
+      getAccountMeta(accounts.authorizationRules),
+    ],
+    programAddress,
+    data: getUpdateInstructionDataEncoder().encode(
+      args as UpdateInstructionDataArgs
+    ),
+  } as UpdateInstruction<
+    TProgramAddress,
+    TAccountAuthority,
+    TAccountDelegateRecord,
+    TAccountToken,
+    TAccountMint,
+    TAccountMetadata,
+    TAccountEdition,
+    TAccountPayer,
+    TAccountSystemProgram,
+    TAccountSysvarInstructions,
+    TAccountAuthorizationRulesProgram,
+    TAccountAuthorizationRules
+  >;
+
+  return instruction;
 }
 
 export type UpdateInput<
@@ -264,6 +444,12 @@ export function getUpdateInstruction<
   if (!accounts.sysvarInstructions.value) {
     accounts.sysvarInstructions.value =
       'Sysvar1nstructions1111111111111111111111111' as Address<'Sysvar1nstructions1111111111111111111111111'>;
+  }
+  if (!accounts.authorizationRulesProgram.value) {
+    if (accounts.authorizationRules.value) {
+      accounts.authorizationRulesProgram.value =
+        'auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg' as Address<'auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg'>;
+    }
   }
 
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');

@@ -28,8 +28,13 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/kit';
+import { findMasterEditionPda, findMetadataPda } from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
-import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
+import {
+  expectAddress,
+  getAccountMetaFactory,
+  type ResolvedAccount,
+} from '../shared';
 
 export const CLOSE_ESCROW_ACCOUNT_DISCRIMINATOR = 39;
 
@@ -108,6 +113,141 @@ export function getCloseEscrowAccountInstructionDataCodec(): FixedSizeCodec<
     getCloseEscrowAccountInstructionDataEncoder(),
     getCloseEscrowAccountInstructionDataDecoder()
   );
+}
+
+export type CloseEscrowAccountAsyncInput<
+  TAccountEscrow extends string = string,
+  TAccountMetadata extends string = string,
+  TAccountMint extends string = string,
+  TAccountTokenAccount extends string = string,
+  TAccountEdition extends string = string,
+  TAccountPayer extends string = string,
+  TAccountSystemProgram extends string = string,
+  TAccountSysvarInstructions extends string = string,
+> = {
+  /** Escrow account */
+  escrow: Address<TAccountEscrow>;
+  /** Metadata account */
+  metadata?: Address<TAccountMetadata>;
+  /** Mint account */
+  mint: Address<TAccountMint>;
+  /** Token account */
+  tokenAccount: Address<TAccountTokenAccount>;
+  /** Edition account */
+  edition?: Address<TAccountEdition>;
+  /** Wallet paying for the transaction and new account */
+  payer: TransactionSigner<TAccountPayer>;
+  /** System program */
+  systemProgram?: Address<TAccountSystemProgram>;
+  /** Instructions sysvar account */
+  sysvarInstructions?: Address<TAccountSysvarInstructions>;
+};
+
+export async function getCloseEscrowAccountInstructionAsync<
+  TAccountEscrow extends string,
+  TAccountMetadata extends string,
+  TAccountMint extends string,
+  TAccountTokenAccount extends string,
+  TAccountEdition extends string,
+  TAccountPayer extends string,
+  TAccountSystemProgram extends string,
+  TAccountSysvarInstructions extends string,
+  TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
+>(
+  input: CloseEscrowAccountAsyncInput<
+    TAccountEscrow,
+    TAccountMetadata,
+    TAccountMint,
+    TAccountTokenAccount,
+    TAccountEdition,
+    TAccountPayer,
+    TAccountSystemProgram,
+    TAccountSysvarInstructions
+  >,
+  config?: { programAddress?: TProgramAddress }
+): Promise<
+  CloseEscrowAccountInstruction<
+    TProgramAddress,
+    TAccountEscrow,
+    TAccountMetadata,
+    TAccountMint,
+    TAccountTokenAccount,
+    TAccountEdition,
+    TAccountPayer,
+    TAccountSystemProgram,
+    TAccountSysvarInstructions
+  >
+> {
+  // Program address.
+  const programAddress =
+    config?.programAddress ?? MPL_TOKEN_METADATA_PROGRAM_ADDRESS;
+
+  // Original accounts.
+  const originalAccounts = {
+    escrow: { value: input.escrow ?? null, isWritable: true },
+    metadata: { value: input.metadata ?? null, isWritable: true },
+    mint: { value: input.mint ?? null, isWritable: false },
+    tokenAccount: { value: input.tokenAccount ?? null, isWritable: false },
+    edition: { value: input.edition ?? null, isWritable: false },
+    payer: { value: input.payer ?? null, isWritable: true },
+    systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+    sysvarInstructions: {
+      value: input.sysvarInstructions ?? null,
+      isWritable: false,
+    },
+  };
+  const accounts = originalAccounts as Record<
+    keyof typeof originalAccounts,
+    ResolvedAccount
+  >;
+
+  // Resolve default values.
+  if (!accounts.metadata.value) {
+    accounts.metadata.value = await findMetadataPda({
+      mint: expectAddress(accounts.mint.value),
+    });
+  }
+  if (!accounts.edition.value) {
+    accounts.edition.value = await findMasterEditionPda({
+      mint: expectAddress(accounts.mint.value),
+    });
+  }
+  if (!accounts.systemProgram.value) {
+    accounts.systemProgram.value =
+      '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
+  }
+  if (!accounts.sysvarInstructions.value) {
+    accounts.sysvarInstructions.value =
+      'Sysvar1nstructions1111111111111111111111111' as Address<'Sysvar1nstructions1111111111111111111111111'>;
+  }
+
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
+  const instruction = {
+    accounts: [
+      getAccountMeta(accounts.escrow),
+      getAccountMeta(accounts.metadata),
+      getAccountMeta(accounts.mint),
+      getAccountMeta(accounts.tokenAccount),
+      getAccountMeta(accounts.edition),
+      getAccountMeta(accounts.payer),
+      getAccountMeta(accounts.systemProgram),
+      getAccountMeta(accounts.sysvarInstructions),
+    ],
+    programAddress,
+    data: getCloseEscrowAccountInstructionDataEncoder().encode({}),
+  } as CloseEscrowAccountInstruction<
+    TProgramAddress,
+    TAccountEscrow,
+    TAccountMetadata,
+    TAccountMint,
+    TAccountTokenAccount,
+    TAccountEdition,
+    TAccountPayer,
+    TAccountSystemProgram,
+    TAccountSysvarInstructions
+  >;
+
+  return instruction;
 }
 
 export type CloseEscrowAccountInput<

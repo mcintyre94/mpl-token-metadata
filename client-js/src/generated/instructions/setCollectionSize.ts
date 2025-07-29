@@ -50,7 +50,8 @@ export type SetCollectionSizeInstruction<
   TAccountCollectionMint extends string | AccountMeta<string> = string,
   TAccountCollectionAuthorityRecord extends
     | string
-    | AccountMeta<string> = string,
+    | AccountMeta<string>
+    | undefined = undefined,
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -66,9 +67,13 @@ export type SetCollectionSizeInstruction<
       TAccountCollectionMint extends string
         ? ReadonlyAccount<TAccountCollectionMint>
         : TAccountCollectionMint,
-      TAccountCollectionAuthorityRecord extends string
-        ? ReadonlyAccount<TAccountCollectionAuthorityRecord>
-        : TAccountCollectionAuthorityRecord,
+      ...(TAccountCollectionAuthorityRecord extends undefined
+        ? []
+        : [
+            TAccountCollectionAuthorityRecord extends string
+              ? ReadonlyAccount<TAccountCollectionAuthorityRecord>
+              : TAccountCollectionAuthorityRecord,
+          ]),
       ...TRemainingAccounts,
     ]
   >;
@@ -175,14 +180,14 @@ export function getSetCollectionSizeInstruction<
   // Original args.
   const args = { ...input };
 
-  const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'omitted');
   const instruction = {
     accounts: [
       getAccountMeta(accounts.collectionMetadata),
       getAccountMeta(accounts.collectionAuthority),
       getAccountMeta(accounts.collectionMint),
       getAccountMeta(accounts.collectionAuthorityRecord),
-    ],
+    ].filter(<T,>(x: T | undefined): x is T => x !== undefined),
     programAddress,
     data: getSetCollectionSizeInstructionDataEncoder().encode(
       args as SetCollectionSizeInstructionDataArgs
@@ -224,7 +229,7 @@ export function parseSetCollectionSizeInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>
 ): ParsedSetCollectionSizeInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 4) {
+  if (instruction.accounts.length < 3) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -234,11 +239,11 @@ export function parseSetCollectionSizeInstruction<
     accountIndex += 1;
     return accountMeta;
   };
+  let optionalAccountsRemaining = instruction.accounts.length - 3;
   const getNextOptionalAccount = () => {
-    const accountMeta = getNextAccount();
-    return accountMeta.address === MPL_TOKEN_METADATA_PROGRAM_ADDRESS
-      ? undefined
-      : accountMeta;
+    if (optionalAccountsRemaining === 0) return undefined;
+    optionalAccountsRemaining -= 1;
+    return getNextAccount();
   };
   return {
     programAddress: instruction.programAddress,

@@ -67,7 +67,7 @@ export type MintNewEditionFromMasterEditionViaTokenInstruction<
   TAccountSystemProgram extends
     | string
     | AccountMeta<string> = '11111111111111111111111111111111',
-  TAccountRent extends string | AccountMeta<string> = string,
+  TAccountRent extends string | AccountMeta<string> | undefined = undefined,
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -115,9 +115,13 @@ export type MintNewEditionFromMasterEditionViaTokenInstruction<
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
         : TAccountSystemProgram,
-      TAccountRent extends string
-        ? ReadonlyAccount<TAccountRent>
-        : TAccountRent,
+      ...(TAccountRent extends undefined
+        ? []
+        : [
+            TAccountRent extends string
+              ? ReadonlyAccount<TAccountRent>
+              : TAccountRent,
+          ]),
       ...TRemainingAccounts,
     ]
   >;
@@ -314,7 +318,7 @@ export function getMintNewEditionFromMasterEditionViaTokenInstruction<
       '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
   }
 
-  const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'omitted');
   const instruction = {
     accounts: [
       getAccountMeta(accounts.newMetadata),
@@ -331,7 +335,7 @@ export function getMintNewEditionFromMasterEditionViaTokenInstruction<
       getAccountMeta(accounts.tokenProgram),
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.rent),
-    ],
+    ].filter(<T,>(x: T | undefined): x is T => x !== undefined),
     programAddress,
     data: getMintNewEditionFromMasterEditionViaTokenInstructionDataEncoder().encode(
       args as MintNewEditionFromMasterEditionViaTokenInstructionDataArgs
@@ -406,7 +410,7 @@ export function parseMintNewEditionFromMasterEditionViaTokenInstruction<
   TProgram,
   TAccountMetas
 > {
-  if (instruction.accounts.length < 14) {
+  if (instruction.accounts.length < 13) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -416,11 +420,11 @@ export function parseMintNewEditionFromMasterEditionViaTokenInstruction<
     accountIndex += 1;
     return accountMeta;
   };
+  let optionalAccountsRemaining = instruction.accounts.length - 13;
   const getNextOptionalAccount = () => {
-    const accountMeta = getNextAccount();
-    return accountMeta.address === MPL_TOKEN_METADATA_PROGRAM_ADDRESS
-      ? undefined
-      : accountMeta;
+    if (optionalAccountsRemaining === 0) return undefined;
+    optionalAccountsRemaining -= 1;
+    return getNextAccount();
   };
   return {
     programAddress: instruction.programAddress,

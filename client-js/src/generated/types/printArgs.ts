@@ -21,19 +21,25 @@ import {
   type GetDiscriminatedUnionVariantContent,
 } from '@solana/kit';
 
-export type PrintArgs = { __kind: 'V1'; edition: bigint };
+export type PrintArgs =
+  | { __kind: 'V1'; edition: bigint }
+  | { __kind: 'V2'; edition: bigint };
 
-export type PrintArgsArgs = { __kind: 'V1'; edition: number | bigint };
+export type PrintArgsArgs =
+  | { __kind: 'V1'; edition: number | bigint }
+  | { __kind: 'V2'; edition: number | bigint };
 
 export function getPrintArgsEncoder(): FixedSizeEncoder<PrintArgsArgs> {
   return getDiscriminatedUnionEncoder([
     ['V1', getStructEncoder([['edition', getU64Encoder()]])],
+    ['V2', getStructEncoder([['edition', getU64Encoder()]])],
   ]) as FixedSizeEncoder<PrintArgsArgs>;
 }
 
 export function getPrintArgsDecoder(): FixedSizeDecoder<PrintArgs> {
   return getDiscriminatedUnionDecoder([
     ['V1', getStructDecoder([['edition', getU64Decoder()]])],
+    ['V2', getStructDecoder([['edition', getU64Decoder()]])],
   ]) as FixedSizeDecoder<PrintArgs>;
 }
 
@@ -46,6 +52,10 @@ export function printArgs(
   kind: 'V1',
   data: GetDiscriminatedUnionVariantContent<PrintArgsArgs, '__kind', 'V1'>
 ): GetDiscriminatedUnionVariant<PrintArgsArgs, '__kind', 'V1'>;
+export function printArgs(
+  kind: 'V2',
+  data: GetDiscriminatedUnionVariantContent<PrintArgsArgs, '__kind', 'V2'>
+): GetDiscriminatedUnionVariant<PrintArgsArgs, '__kind', 'V2'>;
 export function printArgs<K extends PrintArgsArgs['__kind'], Data>(
   kind: K,
   data?: Data

@@ -28,8 +28,13 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/kit';
+import { findMetadataPda } from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
-import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
+import {
+  expectAddress,
+  getAccountMetaFactory,
+  type ResolvedAccount,
+} from '../shared';
 
 export const REVOKE_COLLECTION_AUTHORITY_DISCRIMINATOR = 24;
 
@@ -99,6 +104,104 @@ export function getRevokeCollectionAuthorityInstructionDataCodec(): FixedSizeCod
     getRevokeCollectionAuthorityInstructionDataEncoder(),
     getRevokeCollectionAuthorityInstructionDataDecoder()
   );
+}
+
+export type RevokeCollectionAuthorityAsyncInput<
+  TAccountCollectionAuthorityRecord extends string = string,
+  TAccountDelegateAuthority extends string = string,
+  TAccountRevokeAuthority extends string = string,
+  TAccountMetadata extends string = string,
+  TAccountMint extends string = string,
+> = {
+  /** Collection Authority Record PDA */
+  collectionAuthorityRecord: Address<TAccountCollectionAuthorityRecord>;
+  /** Delegated Collection Authority */
+  delegateAuthority: Address<TAccountDelegateAuthority>;
+  /** Update Authority, or Delegated Authority, of Collection NFT */
+  revokeAuthority: TransactionSigner<TAccountRevokeAuthority>;
+  /** Metadata account */
+  metadata?: Address<TAccountMetadata>;
+  /** Mint of Metadata */
+  mint: Address<TAccountMint>;
+};
+
+export async function getRevokeCollectionAuthorityInstructionAsync<
+  TAccountCollectionAuthorityRecord extends string,
+  TAccountDelegateAuthority extends string,
+  TAccountRevokeAuthority extends string,
+  TAccountMetadata extends string,
+  TAccountMint extends string,
+  TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
+>(
+  input: RevokeCollectionAuthorityAsyncInput<
+    TAccountCollectionAuthorityRecord,
+    TAccountDelegateAuthority,
+    TAccountRevokeAuthority,
+    TAccountMetadata,
+    TAccountMint
+  >,
+  config?: { programAddress?: TProgramAddress }
+): Promise<
+  RevokeCollectionAuthorityInstruction<
+    TProgramAddress,
+    TAccountCollectionAuthorityRecord,
+    TAccountDelegateAuthority,
+    TAccountRevokeAuthority,
+    TAccountMetadata,
+    TAccountMint
+  >
+> {
+  // Program address.
+  const programAddress =
+    config?.programAddress ?? MPL_TOKEN_METADATA_PROGRAM_ADDRESS;
+
+  // Original accounts.
+  const originalAccounts = {
+    collectionAuthorityRecord: {
+      value: input.collectionAuthorityRecord ?? null,
+      isWritable: true,
+    },
+    delegateAuthority: {
+      value: input.delegateAuthority ?? null,
+      isWritable: true,
+    },
+    revokeAuthority: { value: input.revokeAuthority ?? null, isWritable: true },
+    metadata: { value: input.metadata ?? null, isWritable: false },
+    mint: { value: input.mint ?? null, isWritable: false },
+  };
+  const accounts = originalAccounts as Record<
+    keyof typeof originalAccounts,
+    ResolvedAccount
+  >;
+
+  // Resolve default values.
+  if (!accounts.metadata.value) {
+    accounts.metadata.value = await findMetadataPda({
+      mint: expectAddress(accounts.mint.value),
+    });
+  }
+
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
+  const instruction = {
+    accounts: [
+      getAccountMeta(accounts.collectionAuthorityRecord),
+      getAccountMeta(accounts.delegateAuthority),
+      getAccountMeta(accounts.revokeAuthority),
+      getAccountMeta(accounts.metadata),
+      getAccountMeta(accounts.mint),
+    ],
+    programAddress,
+    data: getRevokeCollectionAuthorityInstructionDataEncoder().encode({}),
+  } as RevokeCollectionAuthorityInstruction<
+    TProgramAddress,
+    TAccountCollectionAuthorityRecord,
+    TAccountDelegateAuthority,
+    TAccountRevokeAuthority,
+    TAccountMetadata,
+    TAccountMint
+  >;
+
+  return instruction;
 }
 
 export type RevokeCollectionAuthorityInput<

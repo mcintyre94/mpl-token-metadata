@@ -28,8 +28,13 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/kit';
+import { findMetadataPda } from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
-import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
+import {
+  expectAddress,
+  getAccountMetaFactory,
+  type ResolvedAccount,
+} from '../shared';
 
 export const BURN_NFT_DISCRIMINATOR = 29;
 
@@ -47,7 +52,10 @@ export type BurnNftInstruction<
   TAccountSplTokenProgram extends
     | string
     | AccountMeta<string> = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
-  TAccountCollectionMetadata extends string | AccountMeta<string> = string,
+  TAccountCollectionMetadata extends
+    | string
+    | AccountMeta<string>
+    | undefined = undefined,
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -72,9 +80,13 @@ export type BurnNftInstruction<
       TAccountSplTokenProgram extends string
         ? ReadonlyAccount<TAccountSplTokenProgram>
         : TAccountSplTokenProgram,
-      TAccountCollectionMetadata extends string
-        ? WritableAccount<TAccountCollectionMetadata>
-        : TAccountCollectionMetadata,
+      ...(TAccountCollectionMetadata extends undefined
+        ? []
+        : [
+            TAccountCollectionMetadata extends string
+              ? WritableAccount<TAccountCollectionMetadata>
+              : TAccountCollectionMetadata,
+          ]),
       ...TRemainingAccounts,
     ]
   >;
@@ -102,6 +114,129 @@ export function getBurnNftInstructionDataCodec(): FixedSizeCodec<
     getBurnNftInstructionDataEncoder(),
     getBurnNftInstructionDataDecoder()
   );
+}
+
+export type BurnNftAsyncInput<
+  TAccountMetadata extends string = string,
+  TAccountOwner extends string = string,
+  TAccountMint extends string = string,
+  TAccountTokenAccount extends string = string,
+  TAccountMasterEditionAccount extends string = string,
+  TAccountSplTokenProgram extends string = string,
+  TAccountCollectionMetadata extends string = string,
+> = {
+  /** Metadata (pda of ['metadata', program id, mint id]) */
+  metadata?: Address<TAccountMetadata>;
+  /** NFT owner */
+  owner: TransactionSigner<TAccountOwner>;
+  /** Mint of the NFT */
+  mint: Address<TAccountMint>;
+  /** Token account to close */
+  tokenAccount: Address<TAccountTokenAccount>;
+  /** MasterEdition2 of the NFT */
+  masterEditionAccount: Address<TAccountMasterEditionAccount>;
+  /** SPL Token Program */
+  splTokenProgram?: Address<TAccountSplTokenProgram>;
+  /** Metadata of the Collection */
+  collectionMetadata?: Address<TAccountCollectionMetadata>;
+};
+
+export async function getBurnNftInstructionAsync<
+  TAccountMetadata extends string,
+  TAccountOwner extends string,
+  TAccountMint extends string,
+  TAccountTokenAccount extends string,
+  TAccountMasterEditionAccount extends string,
+  TAccountSplTokenProgram extends string,
+  TAccountCollectionMetadata extends string,
+  TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
+>(
+  input: BurnNftAsyncInput<
+    TAccountMetadata,
+    TAccountOwner,
+    TAccountMint,
+    TAccountTokenAccount,
+    TAccountMasterEditionAccount,
+    TAccountSplTokenProgram,
+    TAccountCollectionMetadata
+  >,
+  config?: { programAddress?: TProgramAddress }
+): Promise<
+  BurnNftInstruction<
+    TProgramAddress,
+    TAccountMetadata,
+    TAccountOwner,
+    TAccountMint,
+    TAccountTokenAccount,
+    TAccountMasterEditionAccount,
+    TAccountSplTokenProgram,
+    TAccountCollectionMetadata
+  >
+> {
+  // Program address.
+  const programAddress =
+    config?.programAddress ?? MPL_TOKEN_METADATA_PROGRAM_ADDRESS;
+
+  // Original accounts.
+  const originalAccounts = {
+    metadata: { value: input.metadata ?? null, isWritable: true },
+    owner: { value: input.owner ?? null, isWritable: true },
+    mint: { value: input.mint ?? null, isWritable: true },
+    tokenAccount: { value: input.tokenAccount ?? null, isWritable: true },
+    masterEditionAccount: {
+      value: input.masterEditionAccount ?? null,
+      isWritable: true,
+    },
+    splTokenProgram: {
+      value: input.splTokenProgram ?? null,
+      isWritable: false,
+    },
+    collectionMetadata: {
+      value: input.collectionMetadata ?? null,
+      isWritable: true,
+    },
+  };
+  const accounts = originalAccounts as Record<
+    keyof typeof originalAccounts,
+    ResolvedAccount
+  >;
+
+  // Resolve default values.
+  if (!accounts.metadata.value) {
+    accounts.metadata.value = await findMetadataPda({
+      mint: expectAddress(accounts.mint.value),
+    });
+  }
+  if (!accounts.splTokenProgram.value) {
+    accounts.splTokenProgram.value =
+      'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
+  }
+
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'omitted');
+  const instruction = {
+    accounts: [
+      getAccountMeta(accounts.metadata),
+      getAccountMeta(accounts.owner),
+      getAccountMeta(accounts.mint),
+      getAccountMeta(accounts.tokenAccount),
+      getAccountMeta(accounts.masterEditionAccount),
+      getAccountMeta(accounts.splTokenProgram),
+      getAccountMeta(accounts.collectionMetadata),
+    ].filter(<T,>(x: T | undefined): x is T => x !== undefined),
+    programAddress,
+    data: getBurnNftInstructionDataEncoder().encode({}),
+  } as BurnNftInstruction<
+    TProgramAddress,
+    TAccountMetadata,
+    TAccountOwner,
+    TAccountMint,
+    TAccountTokenAccount,
+    TAccountMasterEditionAccount,
+    TAccountSplTokenProgram,
+    TAccountCollectionMetadata
+  >;
+
+  return instruction;
 }
 
 export type BurnNftInput<
@@ -193,7 +328,7 @@ export function getBurnNftInstruction<
       'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
   }
 
-  const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'omitted');
   const instruction = {
     accounts: [
       getAccountMeta(accounts.metadata),
@@ -203,7 +338,7 @@ export function getBurnNftInstruction<
       getAccountMeta(accounts.masterEditionAccount),
       getAccountMeta(accounts.splTokenProgram),
       getAccountMeta(accounts.collectionMetadata),
-    ],
+    ].filter(<T,>(x: T | undefined): x is T => x !== undefined),
     programAddress,
     data: getBurnNftInstructionDataEncoder().encode({}),
   } as BurnNftInstruction<
@@ -252,7 +387,7 @@ export function parseBurnNftInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>
 ): ParsedBurnNftInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 7) {
+  if (instruction.accounts.length < 6) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -262,11 +397,11 @@ export function parseBurnNftInstruction<
     accountIndex += 1;
     return accountMeta;
   };
+  let optionalAccountsRemaining = instruction.accounts.length - 6;
   const getNextOptionalAccount = () => {
-    const accountMeta = getNextAccount();
-    return accountMeta.address === MPL_TOKEN_METADATA_PROGRAM_ADDRESS
-      ? undefined
-      : accountMeta;
+    if (optionalAccountsRemaining === 0) return undefined;
+    optionalAccountsRemaining -= 1;
+    return getNextAccount();
   };
   return {
     programAddress: instruction.programAddress,

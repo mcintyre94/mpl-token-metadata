@@ -34,6 +34,10 @@ import {
   type Option,
   type OptionOrNullable,
 } from '@solana/kit';
+import {
+  CollectionAuthorityRecordSeeds,
+  findCollectionAuthorityRecordPda,
+} from '../pdas';
 import { getKeyDecoder, getKeyEncoder, type Key, type KeyArgs } from '../types';
 
 export type CollectionAuthorityRecord = {
@@ -147,4 +151,30 @@ export async function fetchAllMaybeCollectionAuthorityRecord(
   return maybeAccounts.map((maybeAccount) =>
     decodeCollectionAuthorityRecord(maybeAccount)
   );
+}
+
+export async function fetchCollectionAuthorityRecordFromSeeds(
+  rpc: Parameters<typeof fetchEncodedAccount>[0],
+  seeds: CollectionAuthorityRecordSeeds,
+  config: FetchAccountConfig & { programAddress?: Address } = {}
+): Promise<Account<CollectionAuthorityRecord>> {
+  const maybeAccount = await fetchMaybeCollectionAuthorityRecordFromSeeds(
+    rpc,
+    seeds,
+    config
+  );
+  assertAccountExists(maybeAccount);
+  return maybeAccount;
+}
+
+export async function fetchMaybeCollectionAuthorityRecordFromSeeds(
+  rpc: Parameters<typeof fetchEncodedAccount>[0],
+  seeds: CollectionAuthorityRecordSeeds,
+  config: FetchAccountConfig & { programAddress?: Address } = {}
+): Promise<MaybeAccount<CollectionAuthorityRecord>> {
+  const { programAddress, ...fetchConfig } = config;
+  const [address] = await findCollectionAuthorityRecordPda(seeds, {
+    programAddress,
+  });
+  return await fetchMaybeCollectionAuthorityRecord(rpc, address, fetchConfig);
 }

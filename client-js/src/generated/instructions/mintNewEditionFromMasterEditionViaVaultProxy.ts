@@ -70,7 +70,7 @@ export type MintNewEditionFromMasterEditionViaVaultProxyInstruction<
   TAccountSystemProgram extends
     | string
     | AccountMeta<string> = '11111111111111111111111111111111',
-  TAccountRent extends string | AccountMeta<string> = string,
+  TAccountRent extends string | AccountMeta<string> | undefined = undefined,
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -127,9 +127,13 @@ export type MintNewEditionFromMasterEditionViaVaultProxyInstruction<
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
         : TAccountSystemProgram,
-      TAccountRent extends string
-        ? ReadonlyAccount<TAccountRent>
-        : TAccountRent,
+      ...(TAccountRent extends undefined
+        ? []
+        : [
+            TAccountRent extends string
+              ? ReadonlyAccount<TAccountRent>
+              : TAccountRent,
+          ]),
       ...TRemainingAccounts,
     ]
   >;
@@ -353,7 +357,7 @@ export function getMintNewEditionFromMasterEditionViaVaultProxyInstruction<
       '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
   }
 
-  const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'omitted');
   const instruction = {
     accounts: [
       getAccountMeta(accounts.newMetadata),
@@ -373,7 +377,7 @@ export function getMintNewEditionFromMasterEditionViaVaultProxyInstruction<
       getAccountMeta(accounts.tokenVaultProgram),
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.rent),
-    ],
+    ].filter(<T,>(x: T | undefined): x is T => x !== undefined),
     programAddress,
     data: getMintNewEditionFromMasterEditionViaVaultProxyInstructionDataEncoder().encode(
       args as MintNewEditionFromMasterEditionViaVaultProxyInstructionDataArgs
@@ -457,7 +461,7 @@ export function parseMintNewEditionFromMasterEditionViaVaultProxyInstruction<
   TProgram,
   TAccountMetas
 > {
-  if (instruction.accounts.length < 17) {
+  if (instruction.accounts.length < 16) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -467,11 +471,11 @@ export function parseMintNewEditionFromMasterEditionViaVaultProxyInstruction<
     accountIndex += 1;
     return accountMeta;
   };
+  let optionalAccountsRemaining = instruction.accounts.length - 16;
   const getNextOptionalAccount = () => {
-    const accountMeta = getNextAccount();
-    return accountMeta.address === MPL_TOKEN_METADATA_PROGRAM_ADDRESS
-      ? undefined
-      : accountMeta;
+    if (optionalAccountsRemaining === 0) return undefined;
+    optionalAccountsRemaining -= 1;
+    return getNextAccount();
   };
   return {
     programAddress: instruction.programAddress,

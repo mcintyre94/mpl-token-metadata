@@ -29,8 +29,13 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/kit';
+import { findMasterEditionPda, findMetadataPda } from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
-import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
+import {
+  expectAddress,
+  getAccountMetaFactory,
+  type ResolvedAccount,
+} from '../shared';
 
 export const CREATE_ESCROW_ACCOUNT_DISCRIMINATOR = 38;
 
@@ -52,7 +57,10 @@ export type CreateEscrowAccountInstruction<
   TAccountSysvarInstructions extends
     | string
     | AccountMeta<string> = 'Sysvar1nstructions1111111111111111111111111',
-  TAccountAuthority extends string | AccountMeta<string> = string,
+  TAccountAuthority extends
+    | string
+    | AccountMeta<string>
+    | undefined = undefined,
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -83,10 +91,14 @@ export type CreateEscrowAccountInstruction<
       TAccountSysvarInstructions extends string
         ? ReadonlyAccount<TAccountSysvarInstructions>
         : TAccountSysvarInstructions,
-      TAccountAuthority extends string
-        ? ReadonlySignerAccount<TAccountAuthority> &
-            AccountSignerMeta<TAccountAuthority>
-        : TAccountAuthority,
+      ...(TAccountAuthority extends undefined
+        ? []
+        : [
+            TAccountAuthority extends string
+              ? ReadonlySignerAccount<TAccountAuthority> &
+                  AccountSignerMeta<TAccountAuthority>
+              : TAccountAuthority,
+          ]),
       ...TRemainingAccounts,
     ]
   >;
@@ -117,6 +129,150 @@ export function getCreateEscrowAccountInstructionDataCodec(): FixedSizeCodec<
     getCreateEscrowAccountInstructionDataEncoder(),
     getCreateEscrowAccountInstructionDataDecoder()
   );
+}
+
+export type CreateEscrowAccountAsyncInput<
+  TAccountEscrow extends string = string,
+  TAccountMetadata extends string = string,
+  TAccountMint extends string = string,
+  TAccountTokenAccount extends string = string,
+  TAccountEdition extends string = string,
+  TAccountPayer extends string = string,
+  TAccountSystemProgram extends string = string,
+  TAccountSysvarInstructions extends string = string,
+  TAccountAuthority extends string = string,
+> = {
+  /** Escrow account */
+  escrow: Address<TAccountEscrow>;
+  /** Metadata account */
+  metadata?: Address<TAccountMetadata>;
+  /** Mint account */
+  mint: Address<TAccountMint>;
+  /** Token account of the token */
+  tokenAccount: Address<TAccountTokenAccount>;
+  /** Edition account */
+  edition?: Address<TAccountEdition>;
+  /** Wallet paying for the transaction and new account */
+  payer: TransactionSigner<TAccountPayer>;
+  /** System program */
+  systemProgram?: Address<TAccountSystemProgram>;
+  /** Instructions sysvar account */
+  sysvarInstructions?: Address<TAccountSysvarInstructions>;
+  /** Authority/creator of the escrow account */
+  authority?: TransactionSigner<TAccountAuthority>;
+};
+
+export async function getCreateEscrowAccountInstructionAsync<
+  TAccountEscrow extends string,
+  TAccountMetadata extends string,
+  TAccountMint extends string,
+  TAccountTokenAccount extends string,
+  TAccountEdition extends string,
+  TAccountPayer extends string,
+  TAccountSystemProgram extends string,
+  TAccountSysvarInstructions extends string,
+  TAccountAuthority extends string,
+  TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
+>(
+  input: CreateEscrowAccountAsyncInput<
+    TAccountEscrow,
+    TAccountMetadata,
+    TAccountMint,
+    TAccountTokenAccount,
+    TAccountEdition,
+    TAccountPayer,
+    TAccountSystemProgram,
+    TAccountSysvarInstructions,
+    TAccountAuthority
+  >,
+  config?: { programAddress?: TProgramAddress }
+): Promise<
+  CreateEscrowAccountInstruction<
+    TProgramAddress,
+    TAccountEscrow,
+    TAccountMetadata,
+    TAccountMint,
+    TAccountTokenAccount,
+    TAccountEdition,
+    TAccountPayer,
+    TAccountSystemProgram,
+    TAccountSysvarInstructions,
+    TAccountAuthority
+  >
+> {
+  // Program address.
+  const programAddress =
+    config?.programAddress ?? MPL_TOKEN_METADATA_PROGRAM_ADDRESS;
+
+  // Original accounts.
+  const originalAccounts = {
+    escrow: { value: input.escrow ?? null, isWritable: true },
+    metadata: { value: input.metadata ?? null, isWritable: true },
+    mint: { value: input.mint ?? null, isWritable: false },
+    tokenAccount: { value: input.tokenAccount ?? null, isWritable: false },
+    edition: { value: input.edition ?? null, isWritable: false },
+    payer: { value: input.payer ?? null, isWritable: true },
+    systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+    sysvarInstructions: {
+      value: input.sysvarInstructions ?? null,
+      isWritable: false,
+    },
+    authority: { value: input.authority ?? null, isWritable: false },
+  };
+  const accounts = originalAccounts as Record<
+    keyof typeof originalAccounts,
+    ResolvedAccount
+  >;
+
+  // Resolve default values.
+  if (!accounts.metadata.value) {
+    accounts.metadata.value = await findMetadataPda({
+      mint: expectAddress(accounts.mint.value),
+    });
+  }
+  if (!accounts.edition.value) {
+    accounts.edition.value = await findMasterEditionPda({
+      mint: expectAddress(accounts.mint.value),
+    });
+  }
+  if (!accounts.systemProgram.value) {
+    accounts.systemProgram.value =
+      '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
+  }
+  if (!accounts.sysvarInstructions.value) {
+    accounts.sysvarInstructions.value =
+      'Sysvar1nstructions1111111111111111111111111' as Address<'Sysvar1nstructions1111111111111111111111111'>;
+  }
+
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'omitted');
+  const instruction = {
+    accounts: [
+      getAccountMeta(accounts.escrow),
+      getAccountMeta(accounts.metadata),
+      getAccountMeta(accounts.mint),
+      getAccountMeta(accounts.tokenAccount),
+      getAccountMeta(accounts.edition),
+      getAccountMeta(accounts.payer),
+      getAccountMeta(accounts.systemProgram),
+      getAccountMeta(accounts.sysvarInstructions),
+      getAccountMeta(accounts.authority),
+    ].filter(<T,>(x: T | undefined): x is T => x !== undefined),
+    programAddress,
+    data: getCreateEscrowAccountInstructionDataEncoder().encode({}),
+  } as CreateEscrowAccountInstruction<
+    TProgramAddress,
+    TAccountEscrow,
+    TAccountMetadata,
+    TAccountMint,
+    TAccountTokenAccount,
+    TAccountEdition,
+    TAccountPayer,
+    TAccountSystemProgram,
+    TAccountSysvarInstructions,
+    TAccountAuthority
+  >;
+
+  return instruction;
 }
 
 export type CreateEscrowAccountInput<
@@ -220,7 +376,7 @@ export function getCreateEscrowAccountInstruction<
       'Sysvar1nstructions1111111111111111111111111' as Address<'Sysvar1nstructions1111111111111111111111111'>;
   }
 
-  const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'omitted');
   const instruction = {
     accounts: [
       getAccountMeta(accounts.escrow),
@@ -232,7 +388,7 @@ export function getCreateEscrowAccountInstruction<
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.sysvarInstructions),
       getAccountMeta(accounts.authority),
-    ],
+    ].filter(<T,>(x: T | undefined): x is T => x !== undefined),
     programAddress,
     data: getCreateEscrowAccountInstructionDataEncoder().encode({}),
   } as CreateEscrowAccountInstruction<
@@ -287,7 +443,7 @@ export function parseCreateEscrowAccountInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>
 ): ParsedCreateEscrowAccountInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 9) {
+  if (instruction.accounts.length < 8) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -297,11 +453,11 @@ export function parseCreateEscrowAccountInstruction<
     accountIndex += 1;
     return accountMeta;
   };
+  let optionalAccountsRemaining = instruction.accounts.length - 8;
   const getNextOptionalAccount = () => {
-    const accountMeta = getNextAccount();
-    return accountMeta.address === MPL_TOKEN_METADATA_PROGRAM_ADDRESS
-      ? undefined
-      : accountMeta;
+    if (optionalAccountsRemaining === 0) return undefined;
+    optionalAccountsRemaining -= 1;
+    return getNextAccount();
   };
   return {
     programAddress: instruction.programAddress,

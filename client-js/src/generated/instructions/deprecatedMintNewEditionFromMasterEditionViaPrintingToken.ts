@@ -28,8 +28,13 @@ import {
   type TransactionSigner,
   type WritableAccount,
 } from '@solana/kit';
+import { findMasterEditionPda, findMetadataPda } from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
-import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
+import {
+  expectAddress,
+  getAccountMetaFactory,
+  type ResolvedAccount,
+} from '../shared';
 
 export const DEPRECATED_MINT_NEW_EDITION_FROM_MASTER_EDITION_VIA_PRINTING_TOKEN_DISCRIMINATOR = 3;
 
@@ -62,7 +67,10 @@ export type DeprecatedMintNewEditionFromMasterEditionViaPrintingTokenInstruction
   TAccountRent extends
     | string
     | AccountMeta<string> = 'SysvarRent111111111111111111111111111111111',
-  TAccountReservationList extends string | AccountMeta<string> = string,
+  TAccountReservationList extends
+    | string
+    | AccountMeta<string>
+    | undefined = undefined,
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -116,9 +124,13 @@ export type DeprecatedMintNewEditionFromMasterEditionViaPrintingTokenInstruction
       TAccountRent extends string
         ? ReadonlyAccount<TAccountRent>
         : TAccountRent,
-      TAccountReservationList extends string
-        ? WritableAccount<TAccountReservationList>
-        : TAccountReservationList,
+      ...(TAccountReservationList extends undefined
+        ? []
+        : [
+            TAccountReservationList extends string
+              ? WritableAccount<TAccountReservationList>
+              : TAccountReservationList,
+          ]),
       ...TRemainingAccounts,
     ]
   >;
@@ -152,6 +164,232 @@ export function getDeprecatedMintNewEditionFromMasterEditionViaPrintingTokenInst
     getDeprecatedMintNewEditionFromMasterEditionViaPrintingTokenInstructionDataEncoder(),
     getDeprecatedMintNewEditionFromMasterEditionViaPrintingTokenInstructionDataDecoder()
   );
+}
+
+export type DeprecatedMintNewEditionFromMasterEditionViaPrintingTokenAsyncInput<
+  TAccountMetadata extends string = string,
+  TAccountEdition extends string = string,
+  TAccountMasterEdition extends string = string,
+  TAccountMint extends string = string,
+  TAccountMintAuthority extends string = string,
+  TAccountPrintingMint extends string = string,
+  TAccountMasterTokenAccount extends string = string,
+  TAccountEditionMarker extends string = string,
+  TAccountBurnAuthority extends string = string,
+  TAccountPayer extends string = string,
+  TAccountMasterUpdateAuthority extends string = string,
+  TAccountMasterMetadata extends string = string,
+  TAccountTokenProgram extends string = string,
+  TAccountSystemProgram extends string = string,
+  TAccountRent extends string = string,
+  TAccountReservationList extends string = string,
+> = {
+  /** New Metadata key (pda of ['metadata', program id, mint id]) */
+  metadata?: Address<TAccountMetadata>;
+  /** New Edition V1 (pda of ['metadata', program id, mint id, 'edition']) */
+  edition?: Address<TAccountEdition>;
+  /** Master Record Edition V1 (pda of ['metadata', program id, master metadata mint id, 'edition']) */
+  masterEdition?: Address<TAccountMasterEdition>;
+  /** Mint of new token - THIS WILL TRANSFER AUTHORITY AWAY FROM THIS KEY */
+  mint: Address<TAccountMint>;
+  /** Mint authority of new mint */
+  mintAuthority: TransactionSigner<TAccountMintAuthority>;
+  /** Printing Mint of master record edition */
+  printingMint: Address<TAccountPrintingMint>;
+  /** Token account containing Printing mint token to be transferred */
+  masterTokenAccount: Address<TAccountMasterTokenAccount>;
+  /** Edition pda to mark creation - will be checked for pre-existence. (pda of ['metadata', program id, master mint id, edition_number]) */
+  editionMarker?: Address<TAccountEditionMarker>;
+  /** Burn authority for this token */
+  burnAuthority: TransactionSigner<TAccountBurnAuthority>;
+  /** payer */
+  payer: TransactionSigner<TAccountPayer>;
+  /** update authority info for new metadata account */
+  masterUpdateAuthority: Address<TAccountMasterUpdateAuthority>;
+  /** Master record metadata account */
+  masterMetadata: Address<TAccountMasterMetadata>;
+  /** Token program */
+  tokenProgram?: Address<TAccountTokenProgram>;
+  /** System program */
+  systemProgram?: Address<TAccountSystemProgram>;
+  /** Rent info */
+  rent?: Address<TAccountRent>;
+  /** Reservation List - If present, and you are on this list, you can get an edition number given by your position on the list. */
+  reservationList?: Address<TAccountReservationList>;
+};
+
+export async function getDeprecatedMintNewEditionFromMasterEditionViaPrintingTokenInstructionAsync<
+  TAccountMetadata extends string,
+  TAccountEdition extends string,
+  TAccountMasterEdition extends string,
+  TAccountMint extends string,
+  TAccountMintAuthority extends string,
+  TAccountPrintingMint extends string,
+  TAccountMasterTokenAccount extends string,
+  TAccountEditionMarker extends string,
+  TAccountBurnAuthority extends string,
+  TAccountPayer extends string,
+  TAccountMasterUpdateAuthority extends string,
+  TAccountMasterMetadata extends string,
+  TAccountTokenProgram extends string,
+  TAccountSystemProgram extends string,
+  TAccountRent extends string,
+  TAccountReservationList extends string,
+  TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
+>(
+  input: DeprecatedMintNewEditionFromMasterEditionViaPrintingTokenAsyncInput<
+    TAccountMetadata,
+    TAccountEdition,
+    TAccountMasterEdition,
+    TAccountMint,
+    TAccountMintAuthority,
+    TAccountPrintingMint,
+    TAccountMasterTokenAccount,
+    TAccountEditionMarker,
+    TAccountBurnAuthority,
+    TAccountPayer,
+    TAccountMasterUpdateAuthority,
+    TAccountMasterMetadata,
+    TAccountTokenProgram,
+    TAccountSystemProgram,
+    TAccountRent,
+    TAccountReservationList
+  >,
+  config?: { programAddress?: TProgramAddress }
+): Promise<
+  DeprecatedMintNewEditionFromMasterEditionViaPrintingTokenInstruction<
+    TProgramAddress,
+    TAccountMetadata,
+    TAccountEdition,
+    TAccountMasterEdition,
+    TAccountMint,
+    TAccountMintAuthority,
+    TAccountPrintingMint,
+    TAccountMasterTokenAccount,
+    TAccountEditionMarker,
+    TAccountBurnAuthority,
+    TAccountPayer,
+    TAccountMasterUpdateAuthority,
+    TAccountMasterMetadata,
+    TAccountTokenProgram,
+    TAccountSystemProgram,
+    TAccountRent,
+    TAccountReservationList
+  >
+> {
+  // Program address.
+  const programAddress =
+    config?.programAddress ?? MPL_TOKEN_METADATA_PROGRAM_ADDRESS;
+
+  // Original accounts.
+  const originalAccounts = {
+    metadata: { value: input.metadata ?? null, isWritable: true },
+    edition: { value: input.edition ?? null, isWritable: true },
+    masterEdition: { value: input.masterEdition ?? null, isWritable: true },
+    mint: { value: input.mint ?? null, isWritable: true },
+    mintAuthority: { value: input.mintAuthority ?? null, isWritable: false },
+    printingMint: { value: input.printingMint ?? null, isWritable: true },
+    masterTokenAccount: {
+      value: input.masterTokenAccount ?? null,
+      isWritable: true,
+    },
+    editionMarker: { value: input.editionMarker ?? null, isWritable: true },
+    burnAuthority: { value: input.burnAuthority ?? null, isWritable: false },
+    payer: { value: input.payer ?? null, isWritable: false },
+    masterUpdateAuthority: {
+      value: input.masterUpdateAuthority ?? null,
+      isWritable: false,
+    },
+    masterMetadata: { value: input.masterMetadata ?? null, isWritable: false },
+    tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
+    systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+    rent: { value: input.rent ?? null, isWritable: false },
+    reservationList: { value: input.reservationList ?? null, isWritable: true },
+  };
+  const accounts = originalAccounts as Record<
+    keyof typeof originalAccounts,
+    ResolvedAccount
+  >;
+
+  // Resolve default values.
+  if (!accounts.metadata.value) {
+    accounts.metadata.value = await findMetadataPda({
+      mint: expectAddress(accounts.mint.value),
+    });
+  }
+  if (!accounts.edition.value) {
+    accounts.edition.value = await findMasterEditionPda({
+      mint: expectAddress(accounts.mint.value),
+    });
+  }
+  if (!accounts.masterEdition.value) {
+    accounts.masterEdition.value = await findMasterEditionPda({
+      mint: expectAddress(accounts.mint.value),
+    });
+  }
+  if (!accounts.editionMarker.value) {
+    accounts.editionMarker.value = await findMasterEditionPda({
+      mint: expectAddress(accounts.mint.value),
+    });
+  }
+  if (!accounts.tokenProgram.value) {
+    accounts.tokenProgram.value =
+      'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
+  }
+  if (!accounts.systemProgram.value) {
+    accounts.systemProgram.value =
+      '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
+  }
+  if (!accounts.rent.value) {
+    accounts.rent.value =
+      'SysvarRent111111111111111111111111111111111' as Address<'SysvarRent111111111111111111111111111111111'>;
+  }
+
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'omitted');
+  const instruction = {
+    accounts: [
+      getAccountMeta(accounts.metadata),
+      getAccountMeta(accounts.edition),
+      getAccountMeta(accounts.masterEdition),
+      getAccountMeta(accounts.mint),
+      getAccountMeta(accounts.mintAuthority),
+      getAccountMeta(accounts.printingMint),
+      getAccountMeta(accounts.masterTokenAccount),
+      getAccountMeta(accounts.editionMarker),
+      getAccountMeta(accounts.burnAuthority),
+      getAccountMeta(accounts.payer),
+      getAccountMeta(accounts.masterUpdateAuthority),
+      getAccountMeta(accounts.masterMetadata),
+      getAccountMeta(accounts.tokenProgram),
+      getAccountMeta(accounts.systemProgram),
+      getAccountMeta(accounts.rent),
+      getAccountMeta(accounts.reservationList),
+    ].filter(<T,>(x: T | undefined): x is T => x !== undefined),
+    programAddress,
+    data: getDeprecatedMintNewEditionFromMasterEditionViaPrintingTokenInstructionDataEncoder().encode(
+      {}
+    ),
+  } as DeprecatedMintNewEditionFromMasterEditionViaPrintingTokenInstruction<
+    TProgramAddress,
+    TAccountMetadata,
+    TAccountEdition,
+    TAccountMasterEdition,
+    TAccountMint,
+    TAccountMintAuthority,
+    TAccountPrintingMint,
+    TAccountMasterTokenAccount,
+    TAccountEditionMarker,
+    TAccountBurnAuthority,
+    TAccountPayer,
+    TAccountMasterUpdateAuthority,
+    TAccountMasterMetadata,
+    TAccountTokenProgram,
+    TAccountSystemProgram,
+    TAccountRent,
+    TAccountReservationList
+  >;
+
+  return instruction;
 }
 
 export type DeprecatedMintNewEditionFromMasterEditionViaPrintingTokenInput<
@@ -311,7 +549,7 @@ export function getDeprecatedMintNewEditionFromMasterEditionViaPrintingTokenInst
       'SysvarRent111111111111111111111111111111111' as Address<'SysvarRent111111111111111111111111111111111'>;
   }
 
-  const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'omitted');
   const instruction = {
     accounts: [
       getAccountMeta(accounts.metadata),
@@ -330,7 +568,7 @@ export function getDeprecatedMintNewEditionFromMasterEditionViaPrintingTokenInst
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.rent),
       getAccountMeta(accounts.reservationList),
-    ],
+    ].filter(<T,>(x: T | undefined): x is T => x !== undefined),
     programAddress,
     data: getDeprecatedMintNewEditionFromMasterEditionViaPrintingTokenInstructionDataEncoder().encode(
       {}
@@ -411,7 +649,7 @@ export function parseDeprecatedMintNewEditionFromMasterEditionViaPrintingTokenIn
   TProgram,
   TAccountMetas
 > {
-  if (instruction.accounts.length < 16) {
+  if (instruction.accounts.length < 15) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -421,11 +659,11 @@ export function parseDeprecatedMintNewEditionFromMasterEditionViaPrintingTokenIn
     accountIndex += 1;
     return accountMeta;
   };
+  let optionalAccountsRemaining = instruction.accounts.length - 15;
   const getNextOptionalAccount = () => {
-    const accountMeta = getNextAccount();
-    return accountMeta.address === MPL_TOKEN_METADATA_PROGRAM_ADDRESS
-      ? undefined
-      : accountMeta;
+    if (optionalAccountsRemaining === 0) return undefined;
+    optionalAccountsRemaining -= 1;
+    return getNextAccount();
   };
   return {
     programAddress: instruction.programAddress,

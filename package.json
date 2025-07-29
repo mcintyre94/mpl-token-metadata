@@ -5,7 +5,8 @@
   "type": "module",
   "sideEffects": false,
   "scripts": {
-    "generate-client": "node generate-client.mjs"
+    "generate-client": "node generate-client.mjs",
+    "build-client": "cd client-js && pnpm build && cd -"
   },
   "dependencies": {
     "@codama/nodes-from-anchor": "^1.2.3",

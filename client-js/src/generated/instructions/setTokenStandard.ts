@@ -28,8 +28,13 @@ import {
   type TransactionSigner,
   type WritableAccount,
 } from '@solana/kit';
+import { findMetadataPda } from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
-import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
+import {
+  expectAddress,
+  getAccountMetaFactory,
+  type ResolvedAccount,
+} from '../shared';
 
 export const SET_TOKEN_STANDARD_DISCRIMINATOR = 35;
 
@@ -42,7 +47,7 @@ export type SetTokenStandardInstruction<
   TAccountMetadata extends string | AccountMeta<string> = string,
   TAccountUpdateAuthority extends string | AccountMeta<string> = string,
   TAccountMint extends string | AccountMeta<string> = string,
-  TAccountEdition extends string | AccountMeta<string> = string,
+  TAccountEdition extends string | AccountMeta<string> | undefined = undefined,
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -58,9 +63,13 @@ export type SetTokenStandardInstruction<
       TAccountMint extends string
         ? ReadonlyAccount<TAccountMint>
         : TAccountMint,
-      TAccountEdition extends string
-        ? ReadonlyAccount<TAccountEdition>
-        : TAccountEdition,
+      ...(TAccountEdition extends undefined
+        ? []
+        : [
+            TAccountEdition extends string
+              ? ReadonlyAccount<TAccountEdition>
+              : TAccountEdition,
+          ]),
       ...TRemainingAccounts,
     ]
   >;
@@ -88,6 +97,92 @@ export function getSetTokenStandardInstructionDataCodec(): FixedSizeCodec<
     getSetTokenStandardInstructionDataEncoder(),
     getSetTokenStandardInstructionDataDecoder()
   );
+}
+
+export type SetTokenStandardAsyncInput<
+  TAccountMetadata extends string = string,
+  TAccountUpdateAuthority extends string = string,
+  TAccountMint extends string = string,
+  TAccountEdition extends string = string,
+> = {
+  /** Metadata account */
+  metadata?: Address<TAccountMetadata>;
+  /** Metadata update authority */
+  updateAuthority: TransactionSigner<TAccountUpdateAuthority>;
+  /** Mint account */
+  mint: Address<TAccountMint>;
+  /** Edition account */
+  edition?: Address<TAccountEdition>;
+};
+
+export async function getSetTokenStandardInstructionAsync<
+  TAccountMetadata extends string,
+  TAccountUpdateAuthority extends string,
+  TAccountMint extends string,
+  TAccountEdition extends string,
+  TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
+>(
+  input: SetTokenStandardAsyncInput<
+    TAccountMetadata,
+    TAccountUpdateAuthority,
+    TAccountMint,
+    TAccountEdition
+  >,
+  config?: { programAddress?: TProgramAddress }
+): Promise<
+  SetTokenStandardInstruction<
+    TProgramAddress,
+    TAccountMetadata,
+    TAccountUpdateAuthority,
+    TAccountMint,
+    TAccountEdition
+  >
+> {
+  // Program address.
+  const programAddress =
+    config?.programAddress ?? MPL_TOKEN_METADATA_PROGRAM_ADDRESS;
+
+  // Original accounts.
+  const originalAccounts = {
+    metadata: { value: input.metadata ?? null, isWritable: true },
+    updateAuthority: {
+      value: input.updateAuthority ?? null,
+      isWritable: false,
+    },
+    mint: { value: input.mint ?? null, isWritable: false },
+    edition: { value: input.edition ?? null, isWritable: false },
+  };
+  const accounts = originalAccounts as Record<
+    keyof typeof originalAccounts,
+    ResolvedAccount
+  >;
+
+  // Resolve default values.
+  if (!accounts.metadata.value) {
+    accounts.metadata.value = await findMetadataPda({
+      mint: expectAddress(accounts.mint.value),
+    });
+  }
+
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'omitted');
+  const instruction = {
+    accounts: [
+      getAccountMeta(accounts.metadata),
+      getAccountMeta(accounts.updateAuthority),
+      getAccountMeta(accounts.mint),
+      getAccountMeta(accounts.edition),
+    ].filter(<T,>(x: T | undefined): x is T => x !== undefined),
+    programAddress,
+    data: getSetTokenStandardInstructionDataEncoder().encode({}),
+  } as SetTokenStandardInstruction<
+    TProgramAddress,
+    TAccountMetadata,
+    TAccountUpdateAuthority,
+    TAccountMint,
+    TAccountEdition
+  >;
+
+  return instruction;
 }
 
 export type SetTokenStandardInput<
@@ -146,14 +241,14 @@ export function getSetTokenStandardInstruction<
     ResolvedAccount
   >;
 
-  const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'omitted');
   const instruction = {
     accounts: [
       getAccountMeta(accounts.metadata),
       getAccountMeta(accounts.updateAuthority),
       getAccountMeta(accounts.mint),
       getAccountMeta(accounts.edition),
-    ],
+    ].filter(<T,>(x: T | undefined): x is T => x !== undefined),
     programAddress,
     data: getSetTokenStandardInstructionDataEncoder().encode({}),
   } as SetTokenStandardInstruction<
@@ -193,7 +288,7 @@ export function parseSetTokenStandardInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>
 ): ParsedSetTokenStandardInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 4) {
+  if (instruction.accounts.length < 3) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -203,11 +298,11 @@ export function parseSetTokenStandardInstruction<
     accountIndex += 1;
     return accountMeta;
   };
+  let optionalAccountsRemaining = instruction.accounts.length - 3;
   const getNextOptionalAccount = () => {
-    const accountMeta = getNextAccount();
-    return accountMeta.address === MPL_TOKEN_METADATA_PROGRAM_ADDRESS
-      ? undefined
-      : accountMeta;
+    if (optionalAccountsRemaining === 0) return undefined;
+    optionalAccountsRemaining -= 1;
+    return getNextAccount();
   };
   return {
     programAddress: instruction.programAddress,

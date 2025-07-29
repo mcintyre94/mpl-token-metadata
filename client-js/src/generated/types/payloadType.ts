@@ -26,12 +26,12 @@ import {
   type GetDiscriminatedUnionVariantContent,
 } from '@solana/kit';
 import {
-  getLeafInfoDecoder,
-  getLeafInfoEncoder,
+  getProofInfoDecoder,
+  getProofInfoEncoder,
   getSeedsVecDecoder,
   getSeedsVecEncoder,
-  type LeafInfo,
-  type LeafInfoArgs,
+  type ProofInfo,
+  type ProofInfoArgs,
   type SeedsVec,
   type SeedsVecArgs,
 } from '.';
@@ -39,13 +39,13 @@ import {
 export type PayloadType =
   | { __kind: 'Pubkey'; fields: readonly [Address] }
   | { __kind: 'Seeds'; fields: readonly [SeedsVec] }
-  | { __kind: 'MerkleProof'; fields: readonly [LeafInfo] }
+  | { __kind: 'MerkleProof'; fields: readonly [ProofInfo] }
   | { __kind: 'Number'; fields: readonly [bigint] };
 
 export type PayloadTypeArgs =
   | { __kind: 'Pubkey'; fields: readonly [Address] }
   | { __kind: 'Seeds'; fields: readonly [SeedsVecArgs] }
-  | { __kind: 'MerkleProof'; fields: readonly [LeafInfoArgs] }
+  | { __kind: 'MerkleProof'; fields: readonly [ProofInfoArgs] }
   | { __kind: 'Number'; fields: readonly [number | bigint] };
 
 export function getPayloadTypeEncoder(): Encoder<PayloadTypeArgs> {
@@ -60,7 +60,7 @@ export function getPayloadTypeEncoder(): Encoder<PayloadTypeArgs> {
     ],
     [
       'MerkleProof',
-      getStructEncoder([['fields', getTupleEncoder([getLeafInfoEncoder()])]]),
+      getStructEncoder([['fields', getTupleEncoder([getProofInfoEncoder()])]]),
     ],
     [
       'Number',
@@ -81,7 +81,7 @@ export function getPayloadTypeDecoder(): Decoder<PayloadType> {
     ],
     [
       'MerkleProof',
-      getStructDecoder([['fields', getTupleDecoder([getLeafInfoDecoder()])]]),
+      getStructDecoder([['fields', getTupleDecoder([getProofInfoDecoder()])]]),
     ],
     [
       'Number',

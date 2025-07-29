@@ -39,7 +39,7 @@ export function getCollectDiscriminatorBytes() {
 export type CollectInstruction<
   TProgram extends string = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
   TAccountAuthority extends string | AccountMeta<string> = string,
-  TAccountPdaAccount extends string | AccountMeta<string> = string,
+  TAccountRecipient extends string | AccountMeta<string> = string,
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -49,9 +49,9 @@ export type CollectInstruction<
         ? ReadonlySignerAccount<TAccountAuthority> &
             AccountSignerMeta<TAccountAuthority>
         : TAccountAuthority,
-      TAccountPdaAccount extends string
-        ? ReadonlyAccount<TAccountPdaAccount>
-        : TAccountPdaAccount,
+      TAccountRecipient extends string
+        ? ReadonlyAccount<TAccountRecipient>
+        : TAccountRecipient,
       ...TRemainingAccounts,
     ]
   >;
@@ -83,22 +83,22 @@ export function getCollectInstructionDataCodec(): FixedSizeCodec<
 
 export type CollectInput<
   TAccountAuthority extends string = string,
-  TAccountPdaAccount extends string = string,
+  TAccountRecipient extends string = string,
 > = {
   /** Authority to collect fees */
   authority: TransactionSigner<TAccountAuthority>;
-  /** PDA to retrieve fees from */
-  pdaAccount: Address<TAccountPdaAccount>;
+  /** The account to transfer collected fees to */
+  recipient: Address<TAccountRecipient>;
 };
 
 export function getCollectInstruction<
   TAccountAuthority extends string,
-  TAccountPdaAccount extends string,
+  TAccountRecipient extends string,
   TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
 >(
-  input: CollectInput<TAccountAuthority, TAccountPdaAccount>,
+  input: CollectInput<TAccountAuthority, TAccountRecipient>,
   config?: { programAddress?: TProgramAddress }
-): CollectInstruction<TProgramAddress, TAccountAuthority, TAccountPdaAccount> {
+): CollectInstruction<TProgramAddress, TAccountAuthority, TAccountRecipient> {
   // Program address.
   const programAddress =
     config?.programAddress ?? MPL_TOKEN_METADATA_PROGRAM_ADDRESS;
@@ -106,7 +106,7 @@ export function getCollectInstruction<
   // Original accounts.
   const originalAccounts = {
     authority: { value: input.authority ?? null, isWritable: false },
-    pdaAccount: { value: input.pdaAccount ?? null, isWritable: false },
+    recipient: { value: input.recipient ?? null, isWritable: false },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
@@ -117,14 +117,14 @@ export function getCollectInstruction<
   const instruction = {
     accounts: [
       getAccountMeta(accounts.authority),
-      getAccountMeta(accounts.pdaAccount),
+      getAccountMeta(accounts.recipient),
     ],
     programAddress,
     data: getCollectInstructionDataEncoder().encode({}),
   } as CollectInstruction<
     TProgramAddress,
     TAccountAuthority,
-    TAccountPdaAccount
+    TAccountRecipient
   >;
 
   return instruction;
@@ -138,8 +138,8 @@ export type ParsedCollectInstruction<
   accounts: {
     /** Authority to collect fees */
     authority: TAccountMetas[0];
-    /** PDA to retrieve fees from */
-    pdaAccount: TAccountMetas[1];
+    /** The account to transfer collected fees to */
+    recipient: TAccountMetas[1];
   };
   data: CollectInstructionData;
 };
@@ -166,7 +166,7 @@ export function parseCollectInstruction<
     programAddress: instruction.programAddress,
     accounts: {
       authority: getNextAccount(),
-      pdaAccount: getNextAccount(),
+      recipient: getNextAccount(),
     },
     data: getCollectInstructionDataDecoder().decode(instruction.data),
   };

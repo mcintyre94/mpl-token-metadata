@@ -30,6 +30,7 @@ import {
   type MaybeAccount,
   type MaybeEncodedAccount,
 } from '@solana/kit';
+import { UseAuthorityRecordSeeds, findUseAuthorityRecordPda } from '../pdas';
 import { getKeyDecoder, getKeyEncoder, type Key, type KeyArgs } from '../types';
 
 export type UseAuthorityRecord = {
@@ -135,4 +136,28 @@ export async function fetchAllMaybeUseAuthorityRecord(
 
 export function getUseAuthorityRecordSize(): number {
   return 10;
+}
+
+export async function fetchUseAuthorityRecordFromSeeds(
+  rpc: Parameters<typeof fetchEncodedAccount>[0],
+  seeds: UseAuthorityRecordSeeds,
+  config: FetchAccountConfig & { programAddress?: Address } = {}
+): Promise<Account<UseAuthorityRecord>> {
+  const maybeAccount = await fetchMaybeUseAuthorityRecordFromSeeds(
+    rpc,
+    seeds,
+    config
+  );
+  assertAccountExists(maybeAccount);
+  return maybeAccount;
+}
+
+export async function fetchMaybeUseAuthorityRecordFromSeeds(
+  rpc: Parameters<typeof fetchEncodedAccount>[0],
+  seeds: UseAuthorityRecordSeeds,
+  config: FetchAccountConfig & { programAddress?: Address } = {}
+): Promise<MaybeAccount<UseAuthorityRecord>> {
+  const { programAddress, ...fetchConfig } = config;
+  const [address] = await findUseAuthorityRecordPda(seeds, { programAddress });
+  return await fetchMaybeUseAuthorityRecord(rpc, address, fetchConfig);
 }

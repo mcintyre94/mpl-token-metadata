@@ -30,6 +30,10 @@ import {
   type MaybeAccount,
   type MaybeEncodedAccount,
 } from '@solana/kit';
+import {
+  MetadataDelegateRecordSeeds,
+  findMetadataDelegateRecordPda,
+} from '../pdas';
 import { getKeyDecoder, getKeyEncoder, type Key, type KeyArgs } from '../types';
 
 export type MetadataDelegateRecord = {
@@ -149,4 +153,30 @@ export async function fetchAllMaybeMetadataDelegateRecord(
 
 export function getMetadataDelegateRecordSize(): number {
   return 98;
+}
+
+export async function fetchMetadataDelegateRecordFromSeeds(
+  rpc: Parameters<typeof fetchEncodedAccount>[0],
+  seeds: MetadataDelegateRecordSeeds,
+  config: FetchAccountConfig & { programAddress?: Address } = {}
+): Promise<Account<MetadataDelegateRecord>> {
+  const maybeAccount = await fetchMaybeMetadataDelegateRecordFromSeeds(
+    rpc,
+    seeds,
+    config
+  );
+  assertAccountExists(maybeAccount);
+  return maybeAccount;
+}
+
+export async function fetchMaybeMetadataDelegateRecordFromSeeds(
+  rpc: Parameters<typeof fetchEncodedAccount>[0],
+  seeds: MetadataDelegateRecordSeeds,
+  config: FetchAccountConfig & { programAddress?: Address } = {}
+): Promise<MaybeAccount<MetadataDelegateRecord>> {
+  const { programAddress, ...fetchConfig } = config;
+  const [address] = await findMetadataDelegateRecordPda(seeds, {
+    programAddress,
+  });
+  return await fetchMaybeMetadataDelegateRecord(rpc, address, fetchConfig);
 }

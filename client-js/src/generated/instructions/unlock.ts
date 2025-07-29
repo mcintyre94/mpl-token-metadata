@@ -6,6 +6,7 @@
  * @see https://github.com/codama-idl/codama
  */
 
+import { findAssociatedTokenPda } from '@solana-program/token';
 import {
   combineCodec,
   getStructDecoder,
@@ -29,11 +30,23 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/kit';
-import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
-import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
+import { resolveIsNonFungible, resolveOptionalTokenOwner } from '../../hooked';
 import {
+  findMasterEditionPda,
+  findMetadataPda,
+  findTokenRecordPda,
+} from '../pdas';
+import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
+import {
+  expectAddress,
+  getAccountMetaFactory,
+  type ResolvedAccount,
+} from '../shared';
+import {
+  TokenStandard,
   getUnlockArgsDecoder,
   getUnlockArgsEncoder,
+  type TokenStandardArgs,
   type UnlockArgs,
   type UnlockArgsArgs,
 } from '../types';
@@ -149,6 +162,242 @@ export function getUnlockInstructionDataCodec(): Codec<
   );
 }
 
+export type UnlockInstructionExtraArgs = { tokenStandard: TokenStandardArgs };
+
+export type UnlockAsyncInput<
+  TAccountAuthority extends string = string,
+  TAccountTokenOwner extends string = string,
+  TAccountToken extends string = string,
+  TAccountMint extends string = string,
+  TAccountMetadata extends string = string,
+  TAccountEdition extends string = string,
+  TAccountTokenRecord extends string = string,
+  TAccountPayer extends string = string,
+  TAccountSystemProgram extends string = string,
+  TAccountSysvarInstructions extends string = string,
+  TAccountSplTokenProgram extends string = string,
+  TAccountAuthorizationRulesProgram extends string = string,
+  TAccountAuthorizationRules extends string = string,
+> = {
+  /** Delegate or freeze authority */
+  authority: TransactionSigner<TAccountAuthority>;
+  /** Token owner account */
+  tokenOwner?: Address<TAccountTokenOwner>;
+  /** Token account */
+  token?: Address<TAccountToken>;
+  /** Mint account */
+  mint: Address<TAccountMint>;
+  /** Metadata account */
+  metadata?: Address<TAccountMetadata>;
+  /** Edition account */
+  edition?: Address<TAccountEdition>;
+  /** Token record account */
+  tokenRecord?: Address<TAccountTokenRecord>;
+  /** Payer */
+  payer: TransactionSigner<TAccountPayer>;
+  /** System program */
+  systemProgram?: Address<TAccountSystemProgram>;
+  /** System program */
+  sysvarInstructions?: Address<TAccountSysvarInstructions>;
+  /** SPL Token Program */
+  splTokenProgram?: Address<TAccountSplTokenProgram>;
+  /** Token Authorization Rules Program */
+  authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
+  /** Token Authorization Rules account */
+  authorizationRules?: Address<TAccountAuthorizationRules>;
+  unlockArgs: UnlockInstructionDataArgs['unlockArgs'];
+  tokenStandard: UnlockInstructionExtraArgs['tokenStandard'];
+};
+
+export async function getUnlockInstructionAsync<
+  TAccountAuthority extends string,
+  TAccountTokenOwner extends string,
+  TAccountToken extends string,
+  TAccountMint extends string,
+  TAccountMetadata extends string,
+  TAccountEdition extends string,
+  TAccountTokenRecord extends string,
+  TAccountPayer extends string,
+  TAccountSystemProgram extends string,
+  TAccountSysvarInstructions extends string,
+  TAccountSplTokenProgram extends string,
+  TAccountAuthorizationRulesProgram extends string,
+  TAccountAuthorizationRules extends string,
+  TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
+>(
+  input: UnlockAsyncInput<
+    TAccountAuthority,
+    TAccountTokenOwner,
+    TAccountToken,
+    TAccountMint,
+    TAccountMetadata,
+    TAccountEdition,
+    TAccountTokenRecord,
+    TAccountPayer,
+    TAccountSystemProgram,
+    TAccountSysvarInstructions,
+    TAccountSplTokenProgram,
+    TAccountAuthorizationRulesProgram,
+    TAccountAuthorizationRules
+  >,
+  config?: { programAddress?: TProgramAddress }
+): Promise<
+  UnlockInstruction<
+    TProgramAddress,
+    TAccountAuthority,
+    TAccountTokenOwner,
+    TAccountToken,
+    TAccountMint,
+    TAccountMetadata,
+    TAccountEdition,
+    TAccountTokenRecord,
+    TAccountPayer,
+    TAccountSystemProgram,
+    TAccountSysvarInstructions,
+    TAccountSplTokenProgram,
+    TAccountAuthorizationRulesProgram,
+    TAccountAuthorizationRules
+  >
+> {
+  // Program address.
+  const programAddress =
+    config?.programAddress ?? MPL_TOKEN_METADATA_PROGRAM_ADDRESS;
+
+  // Original accounts.
+  const originalAccounts = {
+    authority: { value: input.authority ?? null, isWritable: false },
+    tokenOwner: { value: input.tokenOwner ?? null, isWritable: false },
+    token: { value: input.token ?? null, isWritable: true },
+    mint: { value: input.mint ?? null, isWritable: false },
+    metadata: { value: input.metadata ?? null, isWritable: true },
+    edition: { value: input.edition ?? null, isWritable: false },
+    tokenRecord: { value: input.tokenRecord ?? null, isWritable: true },
+    payer: { value: input.payer ?? null, isWritable: true },
+    systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+    sysvarInstructions: {
+      value: input.sysvarInstructions ?? null,
+      isWritable: false,
+    },
+    splTokenProgram: {
+      value: input.splTokenProgram ?? null,
+      isWritable: false,
+    },
+    authorizationRulesProgram: {
+      value: input.authorizationRulesProgram ?? null,
+      isWritable: false,
+    },
+    authorizationRules: {
+      value: input.authorizationRules ?? null,
+      isWritable: false,
+    },
+  };
+  const accounts = originalAccounts as Record<
+    keyof typeof originalAccounts,
+    ResolvedAccount
+  >;
+
+  // Original args.
+  const args = { ...input };
+
+  // Resolver scope.
+  const resolverScope = { programAddress, accounts, args };
+
+  // Resolve default values.
+  if (!accounts.tokenOwner.value) {
+    accounts.tokenOwner = {
+      ...accounts.tokenOwner,
+      ...resolveOptionalTokenOwner(resolverScope),
+    };
+  }
+  if (!accounts.splTokenProgram.value) {
+    if (args.tokenStandard !== TokenStandard.ProgrammableNonFungible) {
+      accounts.splTokenProgram.value =
+        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
+    }
+  }
+  if (!accounts.token.value) {
+    accounts.token.value = await findAssociatedTokenPda({
+      mint: expectAddress(accounts.mint.value),
+      tokenProgram: expectAddress(accounts.splTokenProgram.value),
+      owner: expectAddress(accounts.tokenOwner.value),
+    });
+  }
+  if (!accounts.metadata.value) {
+    accounts.metadata.value = await findMetadataPda({
+      mint: expectAddress(accounts.mint.value),
+    });
+  }
+  if (!accounts.edition.value) {
+    if (resolveIsNonFungible(resolverScope)) {
+      accounts.edition.value = await findMasterEditionPda({
+        mint: expectAddress(accounts.mint.value),
+      });
+    }
+  }
+  if (!accounts.tokenRecord.value) {
+    if (args.tokenStandard === TokenStandard.ProgrammableNonFungible) {
+      accounts.tokenRecord.value = await findTokenRecordPda({
+        mint: expectAddress(accounts.mint.value),
+        token: expectAddress(accounts.token.value),
+      });
+    }
+  }
+  if (!accounts.systemProgram.value) {
+    accounts.systemProgram.value =
+      '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
+  }
+  if (!accounts.sysvarInstructions.value) {
+    accounts.sysvarInstructions.value =
+      'Sysvar1nstructions1111111111111111111111111' as Address<'Sysvar1nstructions1111111111111111111111111'>;
+  }
+  if (!accounts.authorizationRulesProgram.value) {
+    if (accounts.authorizationRules.value) {
+      accounts.authorizationRulesProgram.value =
+        'auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg' as Address<'auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg'>;
+    }
+  }
+
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
+  const instruction = {
+    accounts: [
+      getAccountMeta(accounts.authority),
+      getAccountMeta(accounts.tokenOwner),
+      getAccountMeta(accounts.token),
+      getAccountMeta(accounts.mint),
+      getAccountMeta(accounts.metadata),
+      getAccountMeta(accounts.edition),
+      getAccountMeta(accounts.tokenRecord),
+      getAccountMeta(accounts.payer),
+      getAccountMeta(accounts.systemProgram),
+      getAccountMeta(accounts.sysvarInstructions),
+      getAccountMeta(accounts.splTokenProgram),
+      getAccountMeta(accounts.authorizationRulesProgram),
+      getAccountMeta(accounts.authorizationRules),
+    ],
+    programAddress,
+    data: getUnlockInstructionDataEncoder().encode(
+      args as UnlockInstructionDataArgs
+    ),
+  } as UnlockInstruction<
+    TProgramAddress,
+    TAccountAuthority,
+    TAccountTokenOwner,
+    TAccountToken,
+    TAccountMint,
+    TAccountMetadata,
+    TAccountEdition,
+    TAccountTokenRecord,
+    TAccountPayer,
+    TAccountSystemProgram,
+    TAccountSysvarInstructions,
+    TAccountSplTokenProgram,
+    TAccountAuthorizationRulesProgram,
+    TAccountAuthorizationRules
+  >;
+
+  return instruction;
+}
+
 export type UnlockInput<
   TAccountAuthority extends string = string,
   TAccountTokenOwner extends string = string,
@@ -191,6 +440,7 @@ export type UnlockInput<
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
   unlockArgs: UnlockInstructionDataArgs['unlockArgs'];
+  tokenStandard: UnlockInstructionExtraArgs['tokenStandard'];
 };
 
 export function getUnlockInstruction<
@@ -281,7 +531,22 @@ export function getUnlockInstruction<
   // Original args.
   const args = { ...input };
 
+  // Resolver scope.
+  const resolverScope = { programAddress, accounts, args };
+
   // Resolve default values.
+  if (!accounts.tokenOwner.value) {
+    accounts.tokenOwner = {
+      ...accounts.tokenOwner,
+      ...resolveOptionalTokenOwner(resolverScope),
+    };
+  }
+  if (!accounts.splTokenProgram.value) {
+    if (args.tokenStandard !== TokenStandard.ProgrammableNonFungible) {
+      accounts.splTokenProgram.value =
+        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
+    }
+  }
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
       '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
@@ -289,6 +554,12 @@ export function getUnlockInstruction<
   if (!accounts.sysvarInstructions.value) {
     accounts.sysvarInstructions.value =
       'Sysvar1nstructions1111111111111111111111111' as Address<'Sysvar1nstructions1111111111111111111111111'>;
+  }
+  if (!accounts.authorizationRulesProgram.value) {
+    if (accounts.authorizationRules.value) {
+      accounts.authorizationRulesProgram.value =
+        'auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg' as Address<'auth9SigNpDKz4sJJ1DfCTuZrZNSAgh9sFD3rboVmgg'>;
+    }
   }
 
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
@@ -359,7 +630,7 @@ export type ParsedUnlockInstruction<
     /** System program */
     sysvarInstructions: TAccountMetas[9];
     /** SPL Token Program */
-    splTokenProgram?: TAccountMetas[10] | undefined;
+    splTokenProgram: TAccountMetas[10];
     /** Token Authorization Rules Program */
     authorizationRulesProgram?: TAccountMetas[11] | undefined;
     /** Token Authorization Rules account */
@@ -405,7 +676,7 @@ export function parseUnlockInstruction<
       payer: getNextAccount(),
       systemProgram: getNextAccount(),
       sysvarInstructions: getNextAccount(),
-      splTokenProgram: getNextOptionalAccount(),
+      splTokenProgram: getNextAccount(),
       authorizationRulesProgram: getNextOptionalAccount(),
       authorizationRules: getNextOptionalAccount(),
     },

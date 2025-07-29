@@ -30,6 +30,7 @@ export enum Key {
   TokenRecord,
   MetadataDelegate,
   EditionMarkerV2,
+  HolderDelegate,
 }
 
 export type KeyArgs = Key;

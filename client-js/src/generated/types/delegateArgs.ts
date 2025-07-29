@@ -74,7 +74,8 @@ export type DelegateArgs =
   | {
       __kind: 'ProgrammableConfigItemV1';
       authorizationData: Option<AuthorizationData>;
-    };
+    }
+  | { __kind: 'PrintDelegateV1'; authorizationData: Option<AuthorizationData> };
 
 export type DelegateArgsArgs =
   | {
@@ -130,6 +131,10 @@ export type DelegateArgsArgs =
     }
   | {
       __kind: 'ProgrammableConfigItemV1';
+      authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+    }
+  | {
+      __kind: 'PrintDelegateV1';
       authorizationData: OptionOrNullable<AuthorizationDataArgs>;
     };
 
@@ -214,6 +219,12 @@ export function getDelegateArgsEncoder(): Encoder<DelegateArgsArgs> {
         ['authorizationData', getOptionEncoder(getAuthorizationDataEncoder())],
       ]),
     ],
+    [
+      'PrintDelegateV1',
+      getStructEncoder([
+        ['authorizationData', getOptionEncoder(getAuthorizationDataEncoder())],
+      ]),
+    ],
   ]);
 }
 
@@ -294,6 +305,12 @@ export function getDelegateArgsDecoder(): Decoder<DelegateArgs> {
     ],
     [
       'ProgrammableConfigItemV1',
+      getStructDecoder([
+        ['authorizationData', getOptionDecoder(getAuthorizationDataDecoder())],
+      ]),
+    ],
+    [
+      'PrintDelegateV1',
       getStructDecoder([
         ['authorizationData', getOptionDecoder(getAuthorizationDataDecoder())],
       ]),
@@ -418,6 +435,14 @@ export function delegateArgs(
   '__kind',
   'ProgrammableConfigItemV1'
 >;
+export function delegateArgs(
+  kind: 'PrintDelegateV1',
+  data: GetDiscriminatedUnionVariantContent<
+    DelegateArgsArgs,
+    '__kind',
+    'PrintDelegateV1'
+  >
+): GetDiscriminatedUnionVariant<DelegateArgsArgs, '__kind', 'PrintDelegateV1'>;
 export function delegateArgs<K extends DelegateArgsArgs['__kind'], Data>(
   kind: K,
   data?: Data

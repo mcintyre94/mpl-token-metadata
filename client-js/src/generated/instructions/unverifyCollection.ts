@@ -48,7 +48,8 @@ export type UnverifyCollectionInstruction<
     | AccountMeta<string> = string,
   TAccountCollectionAuthorityRecord extends
     | string
-    | AccountMeta<string> = string,
+    | AccountMeta<string>
+    | undefined = undefined,
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -70,9 +71,13 @@ export type UnverifyCollectionInstruction<
       TAccountCollectionMasterEditionAccount extends string
         ? ReadonlyAccount<TAccountCollectionMasterEditionAccount>
         : TAccountCollectionMasterEditionAccount,
-      TAccountCollectionAuthorityRecord extends string
-        ? ReadonlyAccount<TAccountCollectionAuthorityRecord>
-        : TAccountCollectionAuthorityRecord,
+      ...(TAccountCollectionAuthorityRecord extends undefined
+        ? []
+        : [
+            TAccountCollectionAuthorityRecord extends string
+              ? ReadonlyAccount<TAccountCollectionAuthorityRecord>
+              : TAccountCollectionAuthorityRecord,
+          ]),
       ...TRemainingAccounts,
     ]
   >;
@@ -178,7 +183,7 @@ export function getUnverifyCollectionInstruction<
     ResolvedAccount
   >;
 
-  const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'omitted');
   const instruction = {
     accounts: [
       getAccountMeta(accounts.metadata),
@@ -187,7 +192,7 @@ export function getUnverifyCollectionInstruction<
       getAccountMeta(accounts.collection),
       getAccountMeta(accounts.collectionMasterEditionAccount),
       getAccountMeta(accounts.collectionAuthorityRecord),
-    ],
+    ].filter(<T,>(x: T | undefined): x is T => x !== undefined),
     programAddress,
     data: getUnverifyCollectionInstructionDataEncoder().encode({}),
   } as UnverifyCollectionInstruction<
@@ -233,7 +238,7 @@ export function parseUnverifyCollectionInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>
 ): ParsedUnverifyCollectionInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 6) {
+  if (instruction.accounts.length < 5) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -243,11 +248,11 @@ export function parseUnverifyCollectionInstruction<
     accountIndex += 1;
     return accountMeta;
   };
+  let optionalAccountsRemaining = instruction.accounts.length - 5;
   const getNextOptionalAccount = () => {
-    const accountMeta = getNextAccount();
-    return accountMeta.address === MPL_TOKEN_METADATA_PROGRAM_ADDRESS
-      ? undefined
-      : accountMeta;
+    if (optionalAccountsRemaining === 0) return undefined;
+    optionalAccountsRemaining -= 1;
+    return getNextAccount();
   };
   return {
     programAddress: instruction.programAddress,

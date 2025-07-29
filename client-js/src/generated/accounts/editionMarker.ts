@@ -31,6 +31,7 @@ import {
   type MaybeEncodedAccount,
   type ReadonlyUint8Array,
 } from '@solana/kit';
+import { EditionMarkerSeeds, findEditionMarkerPda } from '../pdas';
 import { getKeyDecoder, getKeyEncoder, type Key, type KeyArgs } from '../types';
 
 export type EditionMarker = { key: Key; ledger: ReadonlyUint8Array };
@@ -117,4 +118,28 @@ export async function fetchAllMaybeEditionMarker(
 
 export function getEditionMarkerSize(): number {
   return 32;
+}
+
+export async function fetchEditionMarkerFromSeeds(
+  rpc: Parameters<typeof fetchEncodedAccount>[0],
+  seeds: EditionMarkerSeeds,
+  config: FetchAccountConfig & { programAddress?: Address } = {}
+): Promise<Account<EditionMarker>> {
+  const maybeAccount = await fetchMaybeEditionMarkerFromSeeds(
+    rpc,
+    seeds,
+    config
+  );
+  assertAccountExists(maybeAccount);
+  return maybeAccount;
+}
+
+export async function fetchMaybeEditionMarkerFromSeeds(
+  rpc: Parameters<typeof fetchEncodedAccount>[0],
+  seeds: EditionMarkerSeeds,
+  config: FetchAccountConfig & { programAddress?: Address } = {}
+): Promise<MaybeAccount<EditionMarker>> {
+  const { programAddress, ...fetchConfig } = config;
+  const [address] = await findEditionMarkerPda(seeds, { programAddress });
+  return await fetchMaybeEditionMarker(rpc, address, fetchConfig);
 }

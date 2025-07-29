@@ -8,8 +8,12 @@
 
 import {
   combineCodec,
+  getOptionDecoder,
+  getOptionEncoder,
   getStructDecoder,
   getStructEncoder,
+  getU64Decoder,
+  getU64Encoder,
   getU8Decoder,
   getU8Encoder,
   transformEncoder,
@@ -22,6 +26,8 @@ import {
   type Instruction,
   type InstructionWithAccounts,
   type InstructionWithData,
+  type Option,
+  type OptionOrNullable,
   type ReadonlyAccount,
   type ReadonlySignerAccount,
   type ReadonlyUint8Array,
@@ -29,14 +35,13 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/kit';
+import { findMasterEditionPda, findMetadataPda } from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
-import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 import {
-  getCreateMasterEditionArgsDecoder,
-  getCreateMasterEditionArgsEncoder,
-  type CreateMasterEditionArgs,
-  type CreateMasterEditionArgsArgs,
-} from '../types';
+  expectAddress,
+  getAccountMetaFactory,
+  type ResolvedAccount,
+} from '../shared';
 
 export const CREATE_MASTER_EDITION_V3_DISCRIMINATOR = 17;
 
@@ -58,7 +63,7 @@ export type CreateMasterEditionV3Instruction<
   TAccountSystemProgram extends
     | string
     | AccountMeta<string> = '11111111111111111111111111111111',
-  TAccountRent extends string | AccountMeta<string> = string,
+  TAccountRent extends string | AccountMeta<string> | undefined = undefined,
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -91,27 +96,31 @@ export type CreateMasterEditionV3Instruction<
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
         : TAccountSystemProgram,
-      TAccountRent extends string
-        ? ReadonlyAccount<TAccountRent>
-        : TAccountRent,
+      ...(TAccountRent extends undefined
+        ? []
+        : [
+            TAccountRent extends string
+              ? ReadonlyAccount<TAccountRent>
+              : TAccountRent,
+          ]),
       ...TRemainingAccounts,
     ]
   >;
 
 export type CreateMasterEditionV3InstructionData = {
   discriminator: number;
-  createMasterEditionArgs: CreateMasterEditionArgs;
+  maxSupply: Option<bigint>;
 };
 
 export type CreateMasterEditionV3InstructionDataArgs = {
-  createMasterEditionArgs: CreateMasterEditionArgsArgs;
+  maxSupply: OptionOrNullable<number | bigint>;
 };
 
 export function getCreateMasterEditionV3InstructionDataEncoder(): Encoder<CreateMasterEditionV3InstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', getU8Encoder()],
-      ['createMasterEditionArgs', getCreateMasterEditionArgsEncoder()],
+      ['maxSupply', getOptionEncoder(getU64Encoder())],
     ]),
     (value) => ({
       ...value,
@@ -123,7 +132,7 @@ export function getCreateMasterEditionV3InstructionDataEncoder(): Encoder<Create
 export function getCreateMasterEditionV3InstructionDataDecoder(): Decoder<CreateMasterEditionV3InstructionData> {
   return getStructDecoder([
     ['discriminator', getU8Decoder()],
-    ['createMasterEditionArgs', getCreateMasterEditionArgsDecoder()],
+    ['maxSupply', getOptionDecoder(getU64Decoder())],
   ]);
 }
 
@@ -135,6 +144,156 @@ export function getCreateMasterEditionV3InstructionDataCodec(): Codec<
     getCreateMasterEditionV3InstructionDataEncoder(),
     getCreateMasterEditionV3InstructionDataDecoder()
   );
+}
+
+export type CreateMasterEditionV3AsyncInput<
+  TAccountEdition extends string = string,
+  TAccountMint extends string = string,
+  TAccountUpdateAuthority extends string = string,
+  TAccountMintAuthority extends string = string,
+  TAccountPayer extends string = string,
+  TAccountMetadata extends string = string,
+  TAccountTokenProgram extends string = string,
+  TAccountSystemProgram extends string = string,
+  TAccountRent extends string = string,
+> = {
+  /** Unallocated edition V2 account with address as pda of ['metadata', program id, mint, 'edition'] */
+  edition?: Address<TAccountEdition>;
+  /** Metadata mint */
+  mint: Address<TAccountMint>;
+  /** Update authority */
+  updateAuthority: TransactionSigner<TAccountUpdateAuthority>;
+  /** Mint authority on the metadata's mint - THIS WILL TRANSFER AUTHORITY AWAY FROM THIS KEY */
+  mintAuthority: TransactionSigner<TAccountMintAuthority>;
+  /** payer */
+  payer: TransactionSigner<TAccountPayer>;
+  /** Metadata account */
+  metadata?: Address<TAccountMetadata>;
+  /** Token program */
+  tokenProgram?: Address<TAccountTokenProgram>;
+  /** System program */
+  systemProgram?: Address<TAccountSystemProgram>;
+  /** Rent info */
+  rent?: Address<TAccountRent>;
+  maxSupply: CreateMasterEditionV3InstructionDataArgs['maxSupply'];
+};
+
+export async function getCreateMasterEditionV3InstructionAsync<
+  TAccountEdition extends string,
+  TAccountMint extends string,
+  TAccountUpdateAuthority extends string,
+  TAccountMintAuthority extends string,
+  TAccountPayer extends string,
+  TAccountMetadata extends string,
+  TAccountTokenProgram extends string,
+  TAccountSystemProgram extends string,
+  TAccountRent extends string,
+  TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
+>(
+  input: CreateMasterEditionV3AsyncInput<
+    TAccountEdition,
+    TAccountMint,
+    TAccountUpdateAuthority,
+    TAccountMintAuthority,
+    TAccountPayer,
+    TAccountMetadata,
+    TAccountTokenProgram,
+    TAccountSystemProgram,
+    TAccountRent
+  >,
+  config?: { programAddress?: TProgramAddress }
+): Promise<
+  CreateMasterEditionV3Instruction<
+    TProgramAddress,
+    TAccountEdition,
+    TAccountMint,
+    TAccountUpdateAuthority,
+    TAccountMintAuthority,
+    TAccountPayer,
+    TAccountMetadata,
+    TAccountTokenProgram,
+    TAccountSystemProgram,
+    TAccountRent
+  >
+> {
+  // Program address.
+  const programAddress =
+    config?.programAddress ?? MPL_TOKEN_METADATA_PROGRAM_ADDRESS;
+
+  // Original accounts.
+  const originalAccounts = {
+    edition: { value: input.edition ?? null, isWritable: true },
+    mint: { value: input.mint ?? null, isWritable: true },
+    updateAuthority: {
+      value: input.updateAuthority ?? null,
+      isWritable: false,
+    },
+    mintAuthority: { value: input.mintAuthority ?? null, isWritable: false },
+    payer: { value: input.payer ?? null, isWritable: true },
+    metadata: { value: input.metadata ?? null, isWritable: true },
+    tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
+    systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+    rent: { value: input.rent ?? null, isWritable: false },
+  };
+  const accounts = originalAccounts as Record<
+    keyof typeof originalAccounts,
+    ResolvedAccount
+  >;
+
+  // Original args.
+  const args = { ...input };
+
+  // Resolve default values.
+  if (!accounts.edition.value) {
+    accounts.edition.value = await findMasterEditionPda({
+      mint: expectAddress(accounts.mint.value),
+    });
+  }
+  if (!accounts.metadata.value) {
+    accounts.metadata.value = await findMetadataPda({
+      mint: expectAddress(accounts.mint.value),
+    });
+  }
+  if (!accounts.tokenProgram.value) {
+    accounts.tokenProgram.value =
+      'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
+  }
+  if (!accounts.systemProgram.value) {
+    accounts.systemProgram.value =
+      '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
+  }
+
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'omitted');
+  const instruction = {
+    accounts: [
+      getAccountMeta(accounts.edition),
+      getAccountMeta(accounts.mint),
+      getAccountMeta(accounts.updateAuthority),
+      getAccountMeta(accounts.mintAuthority),
+      getAccountMeta(accounts.payer),
+      getAccountMeta(accounts.metadata),
+      getAccountMeta(accounts.tokenProgram),
+      getAccountMeta(accounts.systemProgram),
+      getAccountMeta(accounts.rent),
+    ].filter(<T,>(x: T | undefined): x is T => x !== undefined),
+    programAddress,
+    data: getCreateMasterEditionV3InstructionDataEncoder().encode(
+      args as CreateMasterEditionV3InstructionDataArgs
+    ),
+  } as CreateMasterEditionV3Instruction<
+    TProgramAddress,
+    TAccountEdition,
+    TAccountMint,
+    TAccountUpdateAuthority,
+    TAccountMintAuthority,
+    TAccountPayer,
+    TAccountMetadata,
+    TAccountTokenProgram,
+    TAccountSystemProgram,
+    TAccountRent
+  >;
+
+  return instruction;
 }
 
 export type CreateMasterEditionV3Input<
@@ -166,7 +325,7 @@ export type CreateMasterEditionV3Input<
   systemProgram?: Address<TAccountSystemProgram>;
   /** Rent info */
   rent?: Address<TAccountRent>;
-  createMasterEditionArgs: CreateMasterEditionV3InstructionDataArgs['createMasterEditionArgs'];
+  maxSupply: CreateMasterEditionV3InstructionDataArgs['maxSupply'];
 };
 
 export function getCreateMasterEditionV3Instruction<
@@ -242,7 +401,7 @@ export function getCreateMasterEditionV3Instruction<
       '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
   }
 
-  const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'omitted');
   const instruction = {
     accounts: [
       getAccountMeta(accounts.edition),
@@ -254,7 +413,7 @@ export function getCreateMasterEditionV3Instruction<
       getAccountMeta(accounts.tokenProgram),
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.rent),
-    ],
+    ].filter(<T,>(x: T | undefined): x is T => x !== undefined),
     programAddress,
     data: getCreateMasterEditionV3InstructionDataEncoder().encode(
       args as CreateMasterEditionV3InstructionDataArgs
@@ -311,7 +470,7 @@ export function parseCreateMasterEditionV3Instruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>
 ): ParsedCreateMasterEditionV3Instruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 9) {
+  if (instruction.accounts.length < 8) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -321,11 +480,11 @@ export function parseCreateMasterEditionV3Instruction<
     accountIndex += 1;
     return accountMeta;
   };
+  let optionalAccountsRemaining = instruction.accounts.length - 8;
   const getNextOptionalAccount = () => {
-    const accountMeta = getNextAccount();
-    return accountMeta.address === MPL_TOKEN_METADATA_PROGRAM_ADDRESS
-      ? undefined
-      : accountMeta;
+    if (optionalAccountsRemaining === 0) return undefined;
+    optionalAccountsRemaining -= 1;
+    return getNextAccount();
   };
   return {
     programAddress: instruction.programAddress,

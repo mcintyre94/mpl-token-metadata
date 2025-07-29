@@ -62,7 +62,10 @@ export type TransferOutOfEscrowInstruction<
   TAccountSysvarInstructions extends
     | string
     | AccountMeta<string> = 'Sysvar1nstructions1111111111111111111111111',
-  TAccountAuthority extends string | AccountMeta<string> = string,
+  TAccountAuthority extends
+    | string
+    | AccountMeta<string>
+    | undefined = undefined,
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -105,10 +108,14 @@ export type TransferOutOfEscrowInstruction<
       TAccountSysvarInstructions extends string
         ? ReadonlyAccount<TAccountSysvarInstructions>
         : TAccountSysvarInstructions,
-      TAccountAuthority extends string
-        ? ReadonlySignerAccount<TAccountAuthority> &
-            AccountSignerMeta<TAccountAuthority>
-        : TAccountAuthority,
+      ...(TAccountAuthority extends undefined
+        ? []
+        : [
+            TAccountAuthority extends string
+              ? ReadonlySignerAccount<TAccountAuthority> &
+                  AccountSignerMeta<TAccountAuthority>
+              : TAccountAuthority,
+          ]),
       ...TRemainingAccounts,
     ]
   >;
@@ -293,7 +300,7 @@ export function getTransferOutOfEscrowInstruction<
       'Sysvar1nstructions1111111111111111111111111' as Address<'Sysvar1nstructions1111111111111111111111111'>;
   }
 
-  const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'omitted');
   const instruction = {
     accounts: [
       getAccountMeta(accounts.escrow),
@@ -309,7 +316,7 @@ export function getTransferOutOfEscrowInstruction<
       getAccountMeta(accounts.tokenProgram),
       getAccountMeta(accounts.sysvarInstructions),
       getAccountMeta(accounts.authority),
-    ],
+    ].filter(<T,>(x: T | undefined): x is T => x !== undefined),
     programAddress,
     data: getTransferOutOfEscrowInstructionDataEncoder().encode(
       args as TransferOutOfEscrowInstructionDataArgs
@@ -378,7 +385,7 @@ export function parseTransferOutOfEscrowInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>
 ): ParsedTransferOutOfEscrowInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 13) {
+  if (instruction.accounts.length < 12) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -388,11 +395,11 @@ export function parseTransferOutOfEscrowInstruction<
     accountIndex += 1;
     return accountMeta;
   };
+  let optionalAccountsRemaining = instruction.accounts.length - 12;
   const getNextOptionalAccount = () => {
-    const accountMeta = getNextAccount();
-    return accountMeta.address === MPL_TOKEN_METADATA_PROGRAM_ADDRESS
-      ? undefined
-      : accountMeta;
+    if (optionalAccountsRemaining === 0) return undefined;
+    optionalAccountsRemaining -= 1;
+    return getNextAccount();
   };
   return {
     programAddress: instruction.programAddress,

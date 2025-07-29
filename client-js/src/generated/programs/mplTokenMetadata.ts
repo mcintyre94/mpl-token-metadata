@@ -19,23 +19,16 @@ import {
   type ParsedBurnEditionNftInstruction,
   type ParsedBurnInstruction,
   type ParsedBurnNftInstruction,
+  type ParsedCloseAccountsInstruction,
   type ParsedCloseEscrowAccountInstruction,
   type ParsedCollectInstruction,
   type ParsedConvertMasterEditionV1ToV2Instruction,
   type ParsedCreateEscrowAccountInstruction,
   type ParsedCreateInstruction,
-  type ParsedCreateMasterEditionInstruction,
   type ParsedCreateMasterEditionV3Instruction,
-  type ParsedCreateMetadataAccountInstruction,
-  type ParsedCreateMetadataAccountV2Instruction,
   type ParsedCreateMetadataAccountV3Instruction,
   type ParsedDelegateInstruction,
-  type ParsedDeprecatedCreateMasterEditionInstruction,
-  type ParsedDeprecatedCreateReservationListInstruction,
   type ParsedDeprecatedMintNewEditionFromMasterEditionViaPrintingTokenInstruction,
-  type ParsedDeprecatedMintPrintingTokensInstruction,
-  type ParsedDeprecatedMintPrintingTokensViaTokenInstruction,
-  type ParsedDeprecatedSetReservationListInstruction,
   type ParsedFreezeDelegatedAccountInstruction,
   type ParsedLockInstruction,
   type ParsedMigrateInstruction,
@@ -45,6 +38,7 @@ import {
   type ParsedPrintInstruction,
   type ParsedPuffMetadataInstruction,
   type ParsedRemoveCreatorVerificationInstruction,
+  type ParsedResizeInstruction,
   type ParsedRevokeCollectionAuthorityInstruction,
   type ParsedRevokeInstruction,
   type ParsedRevokeUseAuthorityInstruction,
@@ -61,7 +55,6 @@ import {
   type ParsedUnverifyInstruction,
   type ParsedUnverifySizedCollectionItemInstruction,
   type ParsedUpdateInstruction,
-  type ParsedUpdateMetadataAccountInstruction,
   type ParsedUpdateMetadataAccountV2Instruction,
   type ParsedUpdatePrimarySaleHappenedViaTokenInstruction,
   type ParsedUseInstruction,
@@ -75,40 +68,29 @@ export const MPL_TOKEN_METADATA_PROGRAM_ADDRESS =
   'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s' as Address<'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s'>;
 
 export enum MplTokenMetadataAccount {
-  Uninitialized,
-  Edition,
-  MasterEditionV1,
-  ReservationListV1,
-  Metadata,
-  ReservationListV2,
-  MasterEditionV2,
-  EditionMarker,
-  UseAuthorityRecord,
   CollectionAuthorityRecord,
-  TokenOwnedEscrow,
-  TokenRecord,
   MetadataDelegateRecord,
+  HolderDelegateRecord,
+  Edition,
+  EditionMarker,
   EditionMarkerV2,
+  TokenOwnedEscrow,
+  MasterEdition,
+  DeprecatedMasterEditionV1,
+  Metadata,
+  TokenRecord,
+  UseAuthorityRecord,
 }
 
 export enum MplTokenMetadataInstruction {
-  CreateMetadataAccount,
-  UpdateMetadataAccount,
-  DeprecatedCreateMasterEdition,
   DeprecatedMintNewEditionFromMasterEditionViaPrintingToken,
   UpdatePrimarySaleHappenedViaToken,
-  DeprecatedSetReservationList,
-  DeprecatedCreateReservationList,
   SignMetadata,
-  DeprecatedMintPrintingTokensViaToken,
-  DeprecatedMintPrintingTokens,
-  CreateMasterEdition,
   MintNewEditionFromMasterEditionViaToken,
   ConvertMasterEditionV1ToV2,
   MintNewEditionFromMasterEditionViaVaultProxy,
   PuffMetadata,
   UpdateMetadataAccountV2,
-  CreateMetadataAccountV2,
   CreateMasterEditionV3,
   VerifyCollection,
   Utilize,
@@ -148,44 +130,22 @@ export enum MplTokenMetadataInstruction {
   Unverify,
   Collect,
   Print,
+  Resize,
+  CloseAccounts,
 }
 
 export function identifyMplTokenMetadataInstruction(
   instruction: { data: ReadonlyUint8Array } | ReadonlyUint8Array
 ): MplTokenMetadataInstruction {
   const data = 'data' in instruction ? instruction.data : instruction;
-  if (containsBytes(data, getU8Encoder().encode(0), 0)) {
-    return MplTokenMetadataInstruction.CreateMetadataAccount;
-  }
-  if (containsBytes(data, getU8Encoder().encode(1), 0)) {
-    return MplTokenMetadataInstruction.UpdateMetadataAccount;
-  }
-  if (containsBytes(data, getU8Encoder().encode(2), 0)) {
-    return MplTokenMetadataInstruction.DeprecatedCreateMasterEdition;
-  }
   if (containsBytes(data, getU8Encoder().encode(3), 0)) {
     return MplTokenMetadataInstruction.DeprecatedMintNewEditionFromMasterEditionViaPrintingToken;
   }
   if (containsBytes(data, getU8Encoder().encode(4), 0)) {
     return MplTokenMetadataInstruction.UpdatePrimarySaleHappenedViaToken;
   }
-  if (containsBytes(data, getU8Encoder().encode(5), 0)) {
-    return MplTokenMetadataInstruction.DeprecatedSetReservationList;
-  }
-  if (containsBytes(data, getU8Encoder().encode(6), 0)) {
-    return MplTokenMetadataInstruction.DeprecatedCreateReservationList;
-  }
   if (containsBytes(data, getU8Encoder().encode(7), 0)) {
     return MplTokenMetadataInstruction.SignMetadata;
-  }
-  if (containsBytes(data, getU8Encoder().encode(8), 0)) {
-    return MplTokenMetadataInstruction.DeprecatedMintPrintingTokensViaToken;
-  }
-  if (containsBytes(data, getU8Encoder().encode(9), 0)) {
-    return MplTokenMetadataInstruction.DeprecatedMintPrintingTokens;
-  }
-  if (containsBytes(data, getU8Encoder().encode(10), 0)) {
-    return MplTokenMetadataInstruction.CreateMasterEdition;
   }
   if (containsBytes(data, getU8Encoder().encode(11), 0)) {
     return MplTokenMetadataInstruction.MintNewEditionFromMasterEditionViaToken;
@@ -201,9 +161,6 @@ export function identifyMplTokenMetadataInstruction(
   }
   if (containsBytes(data, getU8Encoder().encode(15), 0)) {
     return MplTokenMetadataInstruction.UpdateMetadataAccountV2;
-  }
-  if (containsBytes(data, getU8Encoder().encode(16), 0)) {
-    return MplTokenMetadataInstruction.CreateMetadataAccountV2;
   }
   if (containsBytes(data, getU8Encoder().encode(17), 0)) {
     return MplTokenMetadataInstruction.CreateMasterEditionV3;
@@ -322,6 +279,12 @@ export function identifyMplTokenMetadataInstruction(
   if (containsBytes(data, getU8Encoder().encode(55), 0)) {
     return MplTokenMetadataInstruction.Print;
   }
+  if (containsBytes(data, getU8Encoder().encode(56), 0)) {
+    return MplTokenMetadataInstruction.Resize;
+  }
+  if (containsBytes(data, getU8Encoder().encode(57), 0)) {
+    return MplTokenMetadataInstruction.CloseAccounts;
+  }
   throw new Error(
     'The provided instruction could not be identified as a mplTokenMetadata instruction.'
   );
@@ -331,38 +294,14 @@ export type ParsedMplTokenMetadataInstruction<
   TProgram extends string = 'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s',
 > =
   | ({
-      instructionType: MplTokenMetadataInstruction.CreateMetadataAccount;
-    } & ParsedCreateMetadataAccountInstruction<TProgram>)
-  | ({
-      instructionType: MplTokenMetadataInstruction.UpdateMetadataAccount;
-    } & ParsedUpdateMetadataAccountInstruction<TProgram>)
-  | ({
-      instructionType: MplTokenMetadataInstruction.DeprecatedCreateMasterEdition;
-    } & ParsedDeprecatedCreateMasterEditionInstruction<TProgram>)
-  | ({
       instructionType: MplTokenMetadataInstruction.DeprecatedMintNewEditionFromMasterEditionViaPrintingToken;
     } & ParsedDeprecatedMintNewEditionFromMasterEditionViaPrintingTokenInstruction<TProgram>)
   | ({
       instructionType: MplTokenMetadataInstruction.UpdatePrimarySaleHappenedViaToken;
     } & ParsedUpdatePrimarySaleHappenedViaTokenInstruction<TProgram>)
   | ({
-      instructionType: MplTokenMetadataInstruction.DeprecatedSetReservationList;
-    } & ParsedDeprecatedSetReservationListInstruction<TProgram>)
-  | ({
-      instructionType: MplTokenMetadataInstruction.DeprecatedCreateReservationList;
-    } & ParsedDeprecatedCreateReservationListInstruction<TProgram>)
-  | ({
       instructionType: MplTokenMetadataInstruction.SignMetadata;
     } & ParsedSignMetadataInstruction<TProgram>)
-  | ({
-      instructionType: MplTokenMetadataInstruction.DeprecatedMintPrintingTokensViaToken;
-    } & ParsedDeprecatedMintPrintingTokensViaTokenInstruction<TProgram>)
-  | ({
-      instructionType: MplTokenMetadataInstruction.DeprecatedMintPrintingTokens;
-    } & ParsedDeprecatedMintPrintingTokensInstruction<TProgram>)
-  | ({
-      instructionType: MplTokenMetadataInstruction.CreateMasterEdition;
-    } & ParsedCreateMasterEditionInstruction<TProgram>)
   | ({
       instructionType: MplTokenMetadataInstruction.MintNewEditionFromMasterEditionViaToken;
     } & ParsedMintNewEditionFromMasterEditionViaTokenInstruction<TProgram>)
@@ -378,9 +317,6 @@ export type ParsedMplTokenMetadataInstruction<
   | ({
       instructionType: MplTokenMetadataInstruction.UpdateMetadataAccountV2;
     } & ParsedUpdateMetadataAccountV2Instruction<TProgram>)
-  | ({
-      instructionType: MplTokenMetadataInstruction.CreateMetadataAccountV2;
-    } & ParsedCreateMetadataAccountV2Instruction<TProgram>)
   | ({
       instructionType: MplTokenMetadataInstruction.CreateMasterEditionV3;
     } & ParsedCreateMasterEditionV3Instruction<TProgram>)
@@ -497,4 +433,10 @@ export type ParsedMplTokenMetadataInstruction<
     } & ParsedCollectInstruction<TProgram>)
   | ({
       instructionType: MplTokenMetadataInstruction.Print;
-    } & ParsedPrintInstruction<TProgram>);
+    } & ParsedPrintInstruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.Resize;
+    } & ParsedResizeInstruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.CloseAccounts;
+    } & ParsedCloseAccountsInstruction<TProgram>);

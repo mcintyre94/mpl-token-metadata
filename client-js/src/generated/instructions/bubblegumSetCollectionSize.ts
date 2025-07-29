@@ -27,7 +27,6 @@ import {
   type ReadonlyUint8Array,
   type TransactionSigner,
   type WritableAccount,
-  type WritableSignerAccount,
 } from '@solana/kit';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
@@ -52,7 +51,8 @@ export type BubblegumSetCollectionSizeInstruction<
   TAccountBubblegumSigner extends string | AccountMeta<string> = string,
   TAccountCollectionAuthorityRecord extends
     | string
-    | AccountMeta<string> = string,
+    | AccountMeta<string>
+    | undefined = undefined,
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -62,7 +62,7 @@ export type BubblegumSetCollectionSizeInstruction<
         ? WritableAccount<TAccountCollectionMetadata>
         : TAccountCollectionMetadata,
       TAccountCollectionAuthority extends string
-        ? WritableSignerAccount<TAccountCollectionAuthority> &
+        ? ReadonlySignerAccount<TAccountCollectionAuthority> &
             AccountSignerMeta<TAccountCollectionAuthority>
         : TAccountCollectionAuthority,
       TAccountCollectionMint extends string
@@ -72,9 +72,13 @@ export type BubblegumSetCollectionSizeInstruction<
         ? ReadonlySignerAccount<TAccountBubblegumSigner> &
             AccountSignerMeta<TAccountBubblegumSigner>
         : TAccountBubblegumSigner,
-      TAccountCollectionAuthorityRecord extends string
-        ? ReadonlyAccount<TAccountCollectionAuthorityRecord>
-        : TAccountCollectionAuthorityRecord,
+      ...(TAccountCollectionAuthorityRecord extends undefined
+        ? []
+        : [
+            TAccountCollectionAuthorityRecord extends string
+              ? ReadonlyAccount<TAccountCollectionAuthorityRecord>
+              : TAccountCollectionAuthorityRecord,
+          ]),
       ...TRemainingAccounts,
     ]
   >;
@@ -174,7 +178,7 @@ export function getBubblegumSetCollectionSizeInstruction<
     },
     collectionAuthority: {
       value: input.collectionAuthority ?? null,
-      isWritable: true,
+      isWritable: false,
     },
     collectionMint: { value: input.collectionMint ?? null, isWritable: false },
     bubblegumSigner: {
@@ -194,7 +198,7 @@ export function getBubblegumSetCollectionSizeInstruction<
   // Original args.
   const args = { ...input };
 
-  const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'omitted');
   const instruction = {
     accounts: [
       getAccountMeta(accounts.collectionMetadata),
@@ -202,7 +206,7 @@ export function getBubblegumSetCollectionSizeInstruction<
       getAccountMeta(accounts.collectionMint),
       getAccountMeta(accounts.bubblegumSigner),
       getAccountMeta(accounts.collectionAuthorityRecord),
-    ],
+    ].filter(<T,>(x: T | undefined): x is T => x !== undefined),
     programAddress,
     data: getBubblegumSetCollectionSizeInstructionDataEncoder().encode(
       args as BubblegumSetCollectionSizeInstructionDataArgs
@@ -247,7 +251,7 @@ export function parseBubblegumSetCollectionSizeInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>
 ): ParsedBubblegumSetCollectionSizeInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 5) {
+  if (instruction.accounts.length < 4) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -257,11 +261,11 @@ export function parseBubblegumSetCollectionSizeInstruction<
     accountIndex += 1;
     return accountMeta;
   };
+  let optionalAccountsRemaining = instruction.accounts.length - 4;
   const getNextOptionalAccount = () => {
-    const accountMeta = getNextAccount();
-    return accountMeta.address === MPL_TOKEN_METADATA_PROGRAM_ADDRESS
-      ? undefined
-      : accountMeta;
+    if (optionalAccountsRemaining === 0) return undefined;
+    optionalAccountsRemaining -= 1;
+    return getNextAccount();
   };
   return {
     programAddress: instruction.programAddress,

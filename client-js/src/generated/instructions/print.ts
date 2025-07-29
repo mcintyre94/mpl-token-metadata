@@ -6,6 +6,7 @@
  * @see https://github.com/codama-idl/codama
  */
 
+import { findAssociatedTokenPda } from '@solana-program/token';
 import {
   combineCodec,
   getStructDecoder,
@@ -29,13 +30,25 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/kit';
-import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
-import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 import {
+  findMasterEditionPda,
+  findMetadataPda,
+  findTokenRecordPda,
+} from '../pdas';
+import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
+import {
+  expectAddress,
+  expectSome,
+  getAccountMetaFactory,
+  type ResolvedAccount,
+} from '../shared';
+import {
+  TokenStandard,
   getPrintArgsDecoder,
   getPrintArgsEncoder,
   type PrintArgs,
   type PrintArgsArgs,
+  type TokenStandardArgs,
 } from '../types';
 
 export const PRINT_DISCRIMINATOR = 55;
@@ -112,8 +125,7 @@ export type PrintInstruction<
             AccountSignerMeta<TAccountPayer>
         : TAccountPayer,
       TAccountMasterTokenAccountOwner extends string
-        ? ReadonlySignerAccount<TAccountMasterTokenAccountOwner> &
-            AccountSignerMeta<TAccountMasterTokenAccountOwner>
+        ? ReadonlyAccount<TAccountMasterTokenAccountOwner>
         : TAccountMasterTokenAccountOwner,
       TAccountMasterTokenAccount extends string
         ? ReadonlyAccount<TAccountMasterTokenAccount>
@@ -174,6 +186,327 @@ export function getPrintInstructionDataCodec(): FixedSizeCodec<
   );
 }
 
+export type PrintInstructionExtraArgs = {
+  masterEditionMint: Address;
+  tokenStandard: TokenStandardArgs;
+};
+
+export type PrintAsyncInput<
+  TAccountEditionMetadata extends string = string,
+  TAccountEdition extends string = string,
+  TAccountEditionMint extends string = string,
+  TAccountEditionTokenAccountOwner extends string = string,
+  TAccountEditionTokenAccount extends string = string,
+  TAccountEditionMintAuthority extends string = string,
+  TAccountEditionTokenRecord extends string = string,
+  TAccountMasterEdition extends string = string,
+  TAccountEditionMarkerPda extends string = string,
+  TAccountPayer extends string = string,
+  TAccountMasterTokenAccountOwner extends string = string,
+  TAccountMasterTokenAccount extends string = string,
+  TAccountMasterMetadata extends string = string,
+  TAccountUpdateAuthority extends string = string,
+  TAccountSplTokenProgram extends string = string,
+  TAccountSplAtaProgram extends string = string,
+  TAccountSysvarInstructions extends string = string,
+  TAccountSystemProgram extends string = string,
+> = {
+  /** New Metadata key (pda of ['metadata', program id, mint id]) */
+  editionMetadata?: Address<TAccountEditionMetadata>;
+  /** New Edition (pda of ['metadata', program id, mint id, 'edition']) */
+  edition?: Address<TAccountEdition>;
+  /** Mint of new token - THIS WILL TRANSFER AUTHORITY AWAY FROM THIS KEY */
+  editionMint:
+    | Address<TAccountEditionMint>
+    | TransactionSigner<TAccountEditionMint>;
+  /** Owner of the token account of new token */
+  editionTokenAccountOwner: Address<TAccountEditionTokenAccountOwner>;
+  /** Token account of new token */
+  editionTokenAccount?: Address<TAccountEditionTokenAccount>;
+  /** Mint authority of new mint */
+  editionMintAuthority: TransactionSigner<TAccountEditionMintAuthority>;
+  /** Token record account */
+  editionTokenRecord?: Address<TAccountEditionTokenRecord>;
+  /** Master Record Edition V2 (pda of ['metadata', program id, master metadata mint id, 'edition']) */
+  masterEdition?: Address<TAccountMasterEdition>;
+  /** Edition pda to mark creation - will be checked for pre-existence. (pda of ['metadata', program id, master metadata mint id, 'edition', edition_number]) where edition_number is NOT the edition number you pass in args but actually edition_number = floor(edition/EDITION_MARKER_BIT_SIZE). */
+  editionMarkerPda: Address<TAccountEditionMarkerPda>;
+  /** payer */
+  payer: TransactionSigner<TAccountPayer>;
+  /** owner of token account containing master token */
+  masterTokenAccountOwner:
+    | Address<TAccountMasterTokenAccountOwner>
+    | TransactionSigner<TAccountMasterTokenAccountOwner>;
+  /** token account containing token from master metadata mint */
+  masterTokenAccount?: Address<TAccountMasterTokenAccount>;
+  /** Master record metadata account */
+  masterMetadata?: Address<TAccountMasterMetadata>;
+  /** The update authority of the master edition. */
+  updateAuthority: Address<TAccountUpdateAuthority>;
+  /** Token program */
+  splTokenProgram?: Address<TAccountSplTokenProgram>;
+  /** SPL Associated Token Account program */
+  splAtaProgram?: Address<TAccountSplAtaProgram>;
+  /** Instructions sysvar account */
+  sysvarInstructions?: Address<TAccountSysvarInstructions>;
+  /** System program */
+  systemProgram?: Address<TAccountSystemProgram>;
+  printArgs: PrintInstructionDataArgs['printArgs'];
+  masterEditionMint: PrintInstructionExtraArgs['masterEditionMint'];
+  tokenStandard: PrintInstructionExtraArgs['tokenStandard'];
+};
+
+export async function getPrintInstructionAsync<
+  TAccountEditionMetadata extends string,
+  TAccountEdition extends string,
+  TAccountEditionMint extends string,
+  TAccountEditionTokenAccountOwner extends string,
+  TAccountEditionTokenAccount extends string,
+  TAccountEditionMintAuthority extends string,
+  TAccountEditionTokenRecord extends string,
+  TAccountMasterEdition extends string,
+  TAccountEditionMarkerPda extends string,
+  TAccountPayer extends string,
+  TAccountMasterTokenAccountOwner extends string,
+  TAccountMasterTokenAccount extends string,
+  TAccountMasterMetadata extends string,
+  TAccountUpdateAuthority extends string,
+  TAccountSplTokenProgram extends string,
+  TAccountSplAtaProgram extends string,
+  TAccountSysvarInstructions extends string,
+  TAccountSystemProgram extends string,
+  TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
+>(
+  input: PrintAsyncInput<
+    TAccountEditionMetadata,
+    TAccountEdition,
+    TAccountEditionMint,
+    TAccountEditionTokenAccountOwner,
+    TAccountEditionTokenAccount,
+    TAccountEditionMintAuthority,
+    TAccountEditionTokenRecord,
+    TAccountMasterEdition,
+    TAccountEditionMarkerPda,
+    TAccountPayer,
+    TAccountMasterTokenAccountOwner,
+    TAccountMasterTokenAccount,
+    TAccountMasterMetadata,
+    TAccountUpdateAuthority,
+    TAccountSplTokenProgram,
+    TAccountSplAtaProgram,
+    TAccountSysvarInstructions,
+    TAccountSystemProgram
+  >,
+  config?: { programAddress?: TProgramAddress }
+): Promise<
+  PrintInstruction<
+    TProgramAddress,
+    TAccountEditionMetadata,
+    TAccountEdition,
+    (typeof input)['editionMint'] extends TransactionSigner<TAccountEditionMint>
+      ? WritableSignerAccount<TAccountEditionMint> &
+          AccountSignerMeta<TAccountEditionMint>
+      : TAccountEditionMint,
+    TAccountEditionTokenAccountOwner,
+    TAccountEditionTokenAccount,
+    TAccountEditionMintAuthority,
+    TAccountEditionTokenRecord,
+    TAccountMasterEdition,
+    TAccountEditionMarkerPda,
+    TAccountPayer,
+    (typeof input)['masterTokenAccountOwner'] extends TransactionSigner<TAccountMasterTokenAccountOwner>
+      ? ReadonlySignerAccount<TAccountMasterTokenAccountOwner> &
+          AccountSignerMeta<TAccountMasterTokenAccountOwner>
+      : TAccountMasterTokenAccountOwner,
+    TAccountMasterTokenAccount,
+    TAccountMasterMetadata,
+    TAccountUpdateAuthority,
+    TAccountSplTokenProgram,
+    TAccountSplAtaProgram,
+    TAccountSysvarInstructions,
+    TAccountSystemProgram
+  >
+> {
+  // Program address.
+  const programAddress =
+    config?.programAddress ?? MPL_TOKEN_METADATA_PROGRAM_ADDRESS;
+
+  // Original accounts.
+  const originalAccounts = {
+    editionMetadata: { value: input.editionMetadata ?? null, isWritable: true },
+    edition: { value: input.edition ?? null, isWritable: true },
+    editionMint: { value: input.editionMint ?? null, isWritable: true },
+    editionTokenAccountOwner: {
+      value: input.editionTokenAccountOwner ?? null,
+      isWritable: false,
+    },
+    editionTokenAccount: {
+      value: input.editionTokenAccount ?? null,
+      isWritable: true,
+    },
+    editionMintAuthority: {
+      value: input.editionMintAuthority ?? null,
+      isWritable: false,
+    },
+    editionTokenRecord: {
+      value: input.editionTokenRecord ?? null,
+      isWritable: true,
+    },
+    masterEdition: { value: input.masterEdition ?? null, isWritable: true },
+    editionMarkerPda: {
+      value: input.editionMarkerPda ?? null,
+      isWritable: true,
+    },
+    payer: { value: input.payer ?? null, isWritable: true },
+    masterTokenAccountOwner: {
+      value: input.masterTokenAccountOwner ?? null,
+      isWritable: false,
+    },
+    masterTokenAccount: {
+      value: input.masterTokenAccount ?? null,
+      isWritable: false,
+    },
+    masterMetadata: { value: input.masterMetadata ?? null, isWritable: false },
+    updateAuthority: {
+      value: input.updateAuthority ?? null,
+      isWritable: false,
+    },
+    splTokenProgram: {
+      value: input.splTokenProgram ?? null,
+      isWritable: false,
+    },
+    splAtaProgram: { value: input.splAtaProgram ?? null, isWritable: false },
+    sysvarInstructions: {
+      value: input.sysvarInstructions ?? null,
+      isWritable: false,
+    },
+    systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+  };
+  const accounts = originalAccounts as Record<
+    keyof typeof originalAccounts,
+    ResolvedAccount
+  >;
+
+  // Original args.
+  const args = { ...input };
+
+  // Resolve default values.
+  if (!accounts.editionMetadata.value) {
+    accounts.editionMetadata.value = await findMetadataPda({
+      mint: expectAddress(accounts.editionMint.value),
+    });
+  }
+  if (!accounts.edition.value) {
+    accounts.edition.value = await findMasterEditionPda({
+      mint: expectAddress(accounts.editionMint.value),
+    });
+  }
+  if (!accounts.splTokenProgram.value) {
+    accounts.splTokenProgram.value =
+      'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
+  }
+  if (!accounts.editionTokenAccount.value) {
+    accounts.editionTokenAccount.value = await findAssociatedTokenPda({
+      mint: expectAddress(accounts.editionMint.value),
+      tokenProgram: expectAddress(accounts.splTokenProgram.value),
+      owner: expectAddress(accounts.editionTokenAccountOwner.value),
+    });
+  }
+  if (!accounts.editionTokenRecord.value) {
+    if (args.tokenStandard === TokenStandard.ProgrammableNonFungible) {
+      accounts.editionTokenRecord.value = await findTokenRecordPda({
+        mint: expectAddress(accounts.editionMint.value),
+        token: expectAddress(accounts.editionTokenAccount.value),
+      });
+    }
+  }
+  if (!accounts.masterEdition.value) {
+    accounts.masterEdition.value = await findMasterEditionPda({
+      mint: expectSome(args.masterEditionMint),
+    });
+  }
+  if (!accounts.masterTokenAccount.value) {
+    accounts.masterTokenAccount.value = await findAssociatedTokenPda({
+      mint: expectSome(args.masterEditionMint),
+      tokenProgram: expectAddress(accounts.splTokenProgram.value),
+      owner: expectAddress(accounts.masterTokenAccountOwner.value),
+    });
+  }
+  if (!accounts.masterMetadata.value) {
+    accounts.masterMetadata.value = await findMetadataPda({
+      mint: expectSome(args.masterEditionMint),
+    });
+  }
+  if (!accounts.splAtaProgram.value) {
+    accounts.splAtaProgram.value =
+      'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL' as Address<'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL'>;
+  }
+  if (!accounts.sysvarInstructions.value) {
+    accounts.sysvarInstructions.value =
+      'Sysvar1nstructions1111111111111111111111111' as Address<'Sysvar1nstructions1111111111111111111111111'>;
+  }
+  if (!accounts.systemProgram.value) {
+    accounts.systemProgram.value =
+      '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
+  }
+
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
+  const instruction = {
+    accounts: [
+      getAccountMeta(accounts.editionMetadata),
+      getAccountMeta(accounts.edition),
+      getAccountMeta(accounts.editionMint),
+      getAccountMeta(accounts.editionTokenAccountOwner),
+      getAccountMeta(accounts.editionTokenAccount),
+      getAccountMeta(accounts.editionMintAuthority),
+      getAccountMeta(accounts.editionTokenRecord),
+      getAccountMeta(accounts.masterEdition),
+      getAccountMeta(accounts.editionMarkerPda),
+      getAccountMeta(accounts.payer),
+      getAccountMeta(accounts.masterTokenAccountOwner),
+      getAccountMeta(accounts.masterTokenAccount),
+      getAccountMeta(accounts.masterMetadata),
+      getAccountMeta(accounts.updateAuthority),
+      getAccountMeta(accounts.splTokenProgram),
+      getAccountMeta(accounts.splAtaProgram),
+      getAccountMeta(accounts.sysvarInstructions),
+      getAccountMeta(accounts.systemProgram),
+    ],
+    programAddress,
+    data: getPrintInstructionDataEncoder().encode(
+      args as PrintInstructionDataArgs
+    ),
+  } as PrintInstruction<
+    TProgramAddress,
+    TAccountEditionMetadata,
+    TAccountEdition,
+    (typeof input)['editionMint'] extends TransactionSigner<TAccountEditionMint>
+      ? WritableSignerAccount<TAccountEditionMint> &
+          AccountSignerMeta<TAccountEditionMint>
+      : TAccountEditionMint,
+    TAccountEditionTokenAccountOwner,
+    TAccountEditionTokenAccount,
+    TAccountEditionMintAuthority,
+    TAccountEditionTokenRecord,
+    TAccountMasterEdition,
+    TAccountEditionMarkerPda,
+    TAccountPayer,
+    (typeof input)['masterTokenAccountOwner'] extends TransactionSigner<TAccountMasterTokenAccountOwner>
+      ? ReadonlySignerAccount<TAccountMasterTokenAccountOwner> &
+          AccountSignerMeta<TAccountMasterTokenAccountOwner>
+      : TAccountMasterTokenAccountOwner,
+    TAccountMasterTokenAccount,
+    TAccountMasterMetadata,
+    TAccountUpdateAuthority,
+    TAccountSplTokenProgram,
+    TAccountSplAtaProgram,
+    TAccountSysvarInstructions,
+    TAccountSystemProgram
+  >;
+
+  return instruction;
+}
+
 export type PrintInput<
   TAccountEditionMetadata extends string = string,
   TAccountEdition extends string = string,
@@ -199,7 +532,9 @@ export type PrintInput<
   /** New Edition (pda of ['metadata', program id, mint id, 'edition']) */
   edition: Address<TAccountEdition>;
   /** Mint of new token - THIS WILL TRANSFER AUTHORITY AWAY FROM THIS KEY */
-  editionMint: Address<TAccountEditionMint>;
+  editionMint:
+    | Address<TAccountEditionMint>
+    | TransactionSigner<TAccountEditionMint>;
   /** Owner of the token account of new token */
   editionTokenAccountOwner: Address<TAccountEditionTokenAccountOwner>;
   /** Token account of new token */
@@ -215,7 +550,9 @@ export type PrintInput<
   /** payer */
   payer: TransactionSigner<TAccountPayer>;
   /** owner of token account containing master token */
-  masterTokenAccountOwner: TransactionSigner<TAccountMasterTokenAccountOwner>;
+  masterTokenAccountOwner:
+    | Address<TAccountMasterTokenAccountOwner>
+    | TransactionSigner<TAccountMasterTokenAccountOwner>;
   /** token account containing token from master metadata mint */
   masterTokenAccount: Address<TAccountMasterTokenAccount>;
   /** Master record metadata account */
@@ -231,6 +568,8 @@ export type PrintInput<
   /** System program */
   systemProgram?: Address<TAccountSystemProgram>;
   printArgs: PrintInstructionDataArgs['printArgs'];
+  masterEditionMint: PrintInstructionExtraArgs['masterEditionMint'];
+  tokenStandard: PrintInstructionExtraArgs['tokenStandard'];
 };
 
 export function getPrintInstruction<
@@ -279,7 +618,10 @@ export function getPrintInstruction<
   TProgramAddress,
   TAccountEditionMetadata,
   TAccountEdition,
-  TAccountEditionMint,
+  (typeof input)['editionMint'] extends TransactionSigner<TAccountEditionMint>
+    ? WritableSignerAccount<TAccountEditionMint> &
+        AccountSignerMeta<TAccountEditionMint>
+    : TAccountEditionMint,
   TAccountEditionTokenAccountOwner,
   TAccountEditionTokenAccount,
   TAccountEditionMintAuthority,
@@ -287,7 +629,10 @@ export function getPrintInstruction<
   TAccountMasterEdition,
   TAccountEditionMarkerPda,
   TAccountPayer,
-  TAccountMasterTokenAccountOwner,
+  (typeof input)['masterTokenAccountOwner'] extends TransactionSigner<TAccountMasterTokenAccountOwner>
+    ? ReadonlySignerAccount<TAccountMasterTokenAccountOwner> &
+        AccountSignerMeta<TAccountMasterTokenAccountOwner>
+    : TAccountMasterTokenAccountOwner,
   TAccountMasterTokenAccount,
   TAccountMasterMetadata,
   TAccountUpdateAuthority,
@@ -407,7 +752,10 @@ export function getPrintInstruction<
     TProgramAddress,
     TAccountEditionMetadata,
     TAccountEdition,
-    TAccountEditionMint,
+    (typeof input)['editionMint'] extends TransactionSigner<TAccountEditionMint>
+      ? WritableSignerAccount<TAccountEditionMint> &
+          AccountSignerMeta<TAccountEditionMint>
+      : TAccountEditionMint,
     TAccountEditionTokenAccountOwner,
     TAccountEditionTokenAccount,
     TAccountEditionMintAuthority,
@@ -415,7 +763,10 @@ export function getPrintInstruction<
     TAccountMasterEdition,
     TAccountEditionMarkerPda,
     TAccountPayer,
-    TAccountMasterTokenAccountOwner,
+    (typeof input)['masterTokenAccountOwner'] extends TransactionSigner<TAccountMasterTokenAccountOwner>
+      ? ReadonlySignerAccount<TAccountMasterTokenAccountOwner> &
+          AccountSignerMeta<TAccountMasterTokenAccountOwner>
+      : TAccountMasterTokenAccountOwner,
     TAccountMasterTokenAccount,
     TAccountMasterMetadata,
     TAccountUpdateAuthority,

@@ -29,13 +29,23 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/kit';
+import { resolveIsNonFungibleOrIsMintSigner } from '../../hooked';
+import { findMetadataPda } from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
-import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
 import {
+  expectAddress,
+  expectSome,
+  getAccountMetaFactory,
+  type InstructionWithByteDelta,
+  type ResolvedAccount,
+} from '../shared';
+import {
+  TokenStandard,
   getCreateArgsDecoder,
   getCreateArgsEncoder,
   type CreateArgs,
   type CreateArgsArgs,
+  type TokenStandardArgs,
 } from '../types';
 
 export const CREATE_DISCRIMINATOR = 42;
@@ -58,9 +68,7 @@ export type CreateInstruction<
   TAccountSysvarInstructions extends
     | string
     | AccountMeta<string> = 'Sysvar1nstructions1111111111111111111111111',
-  TAccountSplTokenProgram extends
-    | string
-    | AccountMeta<string> = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
+  TAccountSplTokenProgram extends string | AccountMeta<string> = string,
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -133,7 +141,9 @@ export function getCreateInstructionDataCodec(): Codec<
   );
 }
 
-export type CreateInput<
+export type CreateInstructionExtraArgs = { tokenStandard?: TokenStandardArgs };
+
+export type CreateAsyncInput<
   TAccountMetadata extends string = string,
   TAccountMasterEdition extends string = string,
   TAccountMint extends string = string,
@@ -145,17 +155,19 @@ export type CreateInput<
   TAccountSplTokenProgram extends string = string,
 > = {
   /** Unallocated metadata account with address as pda of ['metadata', program id, mint id] */
-  metadata: Address<TAccountMetadata>;
+  metadata?: Address<TAccountMetadata>;
   /** Unallocated edition account with address as pda of ['metadata', program id, mint, 'edition'] */
   masterEdition?: Address<TAccountMasterEdition>;
   /** Mint of token asset */
-  mint: Address<TAccountMint>;
+  mint: Address<TAccountMint> | TransactionSigner<TAccountMint>;
   /** Mint authority */
   authority: TransactionSigner<TAccountAuthority>;
   /** Payer */
   payer: TransactionSigner<TAccountPayer>;
   /** Update authority for the metadata account */
-  updateAuthority: Address<TAccountUpdateAuthority>;
+  updateAuthority?:
+    | Address<TAccountUpdateAuthority>
+    | TransactionSigner<TAccountUpdateAuthority>;
   /** System program */
   systemProgram?: Address<TAccountSystemProgram>;
   /** Instructions sysvar account */
@@ -163,9 +175,10 @@ export type CreateInput<
   /** SPL Token program */
   splTokenProgram?: Address<TAccountSplTokenProgram>;
   createArgs: CreateInstructionDataArgs['createArgs'];
+  tokenStandard?: CreateInstructionExtraArgs['tokenStandard'];
 };
 
-export function getCreateInstruction<
+export async function getCreateInstructionAsync<
   TAccountMetadata extends string,
   TAccountMasterEdition extends string,
   TAccountMint extends string,
@@ -177,7 +190,7 @@ export function getCreateInstruction<
   TAccountSplTokenProgram extends string,
   TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
 >(
-  input: CreateInput<
+  input: CreateAsyncInput<
     TAccountMetadata,
     TAccountMasterEdition,
     TAccountMint,
@@ -189,17 +202,25 @@ export function getCreateInstruction<
     TAccountSplTokenProgram
   >,
   config?: { programAddress?: TProgramAddress }
-): CreateInstruction<
-  TProgramAddress,
-  TAccountMetadata,
-  TAccountMasterEdition,
-  TAccountMint,
-  TAccountAuthority,
-  TAccountPayer,
-  TAccountUpdateAuthority,
-  TAccountSystemProgram,
-  TAccountSysvarInstructions,
-  TAccountSplTokenProgram
+): Promise<
+  CreateInstruction<
+    TProgramAddress,
+    TAccountMetadata,
+    TAccountMasterEdition,
+    (typeof input)['mint'] extends TransactionSigner<TAccountMint>
+      ? WritableSignerAccount<TAccountMint> & AccountSignerMeta<TAccountMint>
+      : TAccountMint,
+    TAccountAuthority,
+    TAccountPayer,
+    (typeof input)['updateAuthority'] extends TransactionSigner<TAccountUpdateAuthority>
+      ? ReadonlySignerAccount<TAccountUpdateAuthority> &
+          AccountSignerMeta<TAccountUpdateAuthority>
+      : TAccountUpdateAuthority,
+    TAccountSystemProgram,
+    TAccountSysvarInstructions,
+    TAccountSplTokenProgram
+  > &
+    InstructionWithByteDelta
 > {
   // Program address.
   const programAddress =
@@ -234,7 +255,18 @@ export function getCreateInstruction<
   // Original args.
   const args = { ...input };
 
+  // Resolver scope.
+  const resolverScope = { programAddress, accounts, args };
+
   // Resolve default values.
+  if (!accounts.metadata.value) {
+    accounts.metadata.value = await findMetadataPda({
+      mint: expectAddress(accounts.mint.value),
+    });
+  }
+  if (!accounts.updateAuthority.value) {
+    accounts.updateAuthority.value = expectSome(accounts.authority.value);
+  }
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
       '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
@@ -243,10 +275,18 @@ export function getCreateInstruction<
     accounts.sysvarInstructions.value =
       'Sysvar1nstructions1111111111111111111111111' as Address<'Sysvar1nstructions1111111111111111111111111'>;
   }
-  if (!accounts.splTokenProgram.value) {
-    accounts.splTokenProgram.value =
-      'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
+  if (!args.tokenStandard) {
+    args.tokenStandard = TokenStandard.NonFungible;
   }
+  if (!accounts.splTokenProgram.value) {
+    if (resolveIsNonFungibleOrIsMintSigner(resolverScope)) {
+      accounts.splTokenProgram.value =
+        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
+    }
+  }
+
+  // Bytes created or reallocated by the instruction.
+  const byteDelta: number = [1427].reduce((a, b) => a + b, 0);
 
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
@@ -269,6 +309,73 @@ export function getCreateInstruction<
     TProgramAddress,
     TAccountMetadata,
     TAccountMasterEdition,
+    (typeof input)['mint'] extends TransactionSigner<TAccountMint>
+      ? WritableSignerAccount<TAccountMint> & AccountSignerMeta<TAccountMint>
+      : TAccountMint,
+    TAccountAuthority,
+    TAccountPayer,
+    (typeof input)['updateAuthority'] extends TransactionSigner<TAccountUpdateAuthority>
+      ? ReadonlySignerAccount<TAccountUpdateAuthority> &
+          AccountSignerMeta<TAccountUpdateAuthority>
+      : TAccountUpdateAuthority,
+    TAccountSystemProgram,
+    TAccountSysvarInstructions,
+    TAccountSplTokenProgram
+  >;
+
+  return Object.freeze({ ...instruction, byteDelta });
+}
+
+export type CreateInput<
+  TAccountMetadata extends string = string,
+  TAccountMasterEdition extends string = string,
+  TAccountMint extends string = string,
+  TAccountAuthority extends string = string,
+  TAccountPayer extends string = string,
+  TAccountUpdateAuthority extends string = string,
+  TAccountSystemProgram extends string = string,
+  TAccountSysvarInstructions extends string = string,
+  TAccountSplTokenProgram extends string = string,
+> = {
+  /** Unallocated metadata account with address as pda of ['metadata', program id, mint id] */
+  metadata: Address<TAccountMetadata>;
+  /** Unallocated edition account with address as pda of ['metadata', program id, mint, 'edition'] */
+  masterEdition?: Address<TAccountMasterEdition>;
+  /** Mint of token asset */
+  mint: Address<TAccountMint> | TransactionSigner<TAccountMint>;
+  /** Mint authority */
+  authority: TransactionSigner<TAccountAuthority>;
+  /** Payer */
+  payer: TransactionSigner<TAccountPayer>;
+  /** Update authority for the metadata account */
+  updateAuthority?:
+    | Address<TAccountUpdateAuthority>
+    | TransactionSigner<TAccountUpdateAuthority>;
+  /** System program */
+  systemProgram?: Address<TAccountSystemProgram>;
+  /** Instructions sysvar account */
+  sysvarInstructions?: Address<TAccountSysvarInstructions>;
+  /** SPL Token program */
+  splTokenProgram?: Address<TAccountSplTokenProgram>;
+  createArgs: CreateInstructionDataArgs['createArgs'];
+  tokenStandard?: CreateInstructionExtraArgs['tokenStandard'];
+};
+
+export function getCreateInstruction<
+  TAccountMetadata extends string,
+  TAccountMasterEdition extends string,
+  TAccountMint extends string,
+  TAccountAuthority extends string,
+  TAccountPayer extends string,
+  TAccountUpdateAuthority extends string,
+  TAccountSystemProgram extends string,
+  TAccountSysvarInstructions extends string,
+  TAccountSplTokenProgram extends string,
+  TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
+>(
+  input: CreateInput<
+    TAccountMetadata,
+    TAccountMasterEdition,
     TAccountMint,
     TAccountAuthority,
     TAccountPayer,
@@ -276,9 +383,123 @@ export function getCreateInstruction<
     TAccountSystemProgram,
     TAccountSysvarInstructions,
     TAccountSplTokenProgram
+  >,
+  config?: { programAddress?: TProgramAddress }
+): CreateInstruction<
+  TProgramAddress,
+  TAccountMetadata,
+  TAccountMasterEdition,
+  (typeof input)['mint'] extends TransactionSigner<TAccountMint>
+    ? WritableSignerAccount<TAccountMint> & AccountSignerMeta<TAccountMint>
+    : TAccountMint,
+  TAccountAuthority,
+  TAccountPayer,
+  (typeof input)['updateAuthority'] extends TransactionSigner<TAccountUpdateAuthority>
+    ? ReadonlySignerAccount<TAccountUpdateAuthority> &
+        AccountSignerMeta<TAccountUpdateAuthority>
+    : TAccountUpdateAuthority,
+  TAccountSystemProgram,
+  TAccountSysvarInstructions,
+  TAccountSplTokenProgram
+> &
+  InstructionWithByteDelta {
+  // Program address.
+  const programAddress =
+    config?.programAddress ?? MPL_TOKEN_METADATA_PROGRAM_ADDRESS;
+
+  // Original accounts.
+  const originalAccounts = {
+    metadata: { value: input.metadata ?? null, isWritable: true },
+    masterEdition: { value: input.masterEdition ?? null, isWritable: true },
+    mint: { value: input.mint ?? null, isWritable: true },
+    authority: { value: input.authority ?? null, isWritable: false },
+    payer: { value: input.payer ?? null, isWritable: true },
+    updateAuthority: {
+      value: input.updateAuthority ?? null,
+      isWritable: false,
+    },
+    systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+    sysvarInstructions: {
+      value: input.sysvarInstructions ?? null,
+      isWritable: false,
+    },
+    splTokenProgram: {
+      value: input.splTokenProgram ?? null,
+      isWritable: false,
+    },
+  };
+  const accounts = originalAccounts as Record<
+    keyof typeof originalAccounts,
+    ResolvedAccount
   >;
 
-  return instruction;
+  // Original args.
+  const args = { ...input };
+
+  // Resolver scope.
+  const resolverScope = { programAddress, accounts, args };
+
+  // Resolve default values.
+  if (!accounts.updateAuthority.value) {
+    accounts.updateAuthority.value = expectSome(accounts.authority.value);
+  }
+  if (!accounts.systemProgram.value) {
+    accounts.systemProgram.value =
+      '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
+  }
+  if (!accounts.sysvarInstructions.value) {
+    accounts.sysvarInstructions.value =
+      'Sysvar1nstructions1111111111111111111111111' as Address<'Sysvar1nstructions1111111111111111111111111'>;
+  }
+  if (!args.tokenStandard) {
+    args.tokenStandard = TokenStandard.NonFungible;
+  }
+  if (!accounts.splTokenProgram.value) {
+    if (resolveIsNonFungibleOrIsMintSigner(resolverScope)) {
+      accounts.splTokenProgram.value =
+        'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
+    }
+  }
+
+  // Bytes created or reallocated by the instruction.
+  const byteDelta: number = [1427].reduce((a, b) => a + b, 0);
+
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
+  const instruction = {
+    accounts: [
+      getAccountMeta(accounts.metadata),
+      getAccountMeta(accounts.masterEdition),
+      getAccountMeta(accounts.mint),
+      getAccountMeta(accounts.authority),
+      getAccountMeta(accounts.payer),
+      getAccountMeta(accounts.updateAuthority),
+      getAccountMeta(accounts.systemProgram),
+      getAccountMeta(accounts.sysvarInstructions),
+      getAccountMeta(accounts.splTokenProgram),
+    ],
+    programAddress,
+    data: getCreateInstructionDataEncoder().encode(
+      args as CreateInstructionDataArgs
+    ),
+  } as CreateInstruction<
+    TProgramAddress,
+    TAccountMetadata,
+    TAccountMasterEdition,
+    (typeof input)['mint'] extends TransactionSigner<TAccountMint>
+      ? WritableSignerAccount<TAccountMint> & AccountSignerMeta<TAccountMint>
+      : TAccountMint,
+    TAccountAuthority,
+    TAccountPayer,
+    (typeof input)['updateAuthority'] extends TransactionSigner<TAccountUpdateAuthority>
+      ? ReadonlySignerAccount<TAccountUpdateAuthority> &
+          AccountSignerMeta<TAccountUpdateAuthority>
+      : TAccountUpdateAuthority,
+    TAccountSystemProgram,
+    TAccountSysvarInstructions,
+    TAccountSplTokenProgram
+  >;
+
+  return Object.freeze({ ...instruction, byteDelta });
 }
 
 export type ParsedCreateInstruction<
@@ -304,7 +525,7 @@ export type ParsedCreateInstruction<
     /** Instructions sysvar account */
     sysvarInstructions: TAccountMetas[7];
     /** SPL Token program */
-    splTokenProgram: TAccountMetas[8];
+    splTokenProgram?: TAccountMetas[8] | undefined;
   };
   data: CreateInstructionData;
 };
@@ -344,7 +565,7 @@ export function parseCreateInstruction<
       updateAuthority: getNextAccount(),
       systemProgram: getNextAccount(),
       sysvarInstructions: getNextAccount(),
-      splTokenProgram: getNextAccount(),
+      splTokenProgram: getNextOptionalAccount(),
     },
     data: getCreateInstructionDataDecoder().decode(instruction.data),
   };

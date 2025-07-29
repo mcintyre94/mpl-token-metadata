@@ -36,6 +36,7 @@ import {
   type Option,
   type OptionOrNullable,
 } from '@solana/kit';
+import { TokenRecordSeeds, findTokenRecordPda } from '../pdas';
 import {
   getKeyDecoder,
   getKeyEncoder,
@@ -150,4 +151,28 @@ export async function fetchAllMaybeTokenRecord(
 ): Promise<MaybeAccount<TokenRecord>[]> {
   const maybeAccounts = await fetchEncodedAccounts(rpc, addresses, config);
   return maybeAccounts.map((maybeAccount) => decodeTokenRecord(maybeAccount));
+}
+
+export function getTokenRecordSize(): number {
+  return 80;
+}
+
+export async function fetchTokenRecordFromSeeds(
+  rpc: Parameters<typeof fetchEncodedAccount>[0],
+  seeds: TokenRecordSeeds,
+  config: FetchAccountConfig & { programAddress?: Address } = {}
+): Promise<Account<TokenRecord>> {
+  const maybeAccount = await fetchMaybeTokenRecordFromSeeds(rpc, seeds, config);
+  assertAccountExists(maybeAccount);
+  return maybeAccount;
+}
+
+export async function fetchMaybeTokenRecordFromSeeds(
+  rpc: Parameters<typeof fetchEncodedAccount>[0],
+  seeds: TokenRecordSeeds,
+  config: FetchAccountConfig & { programAddress?: Address } = {}
+): Promise<MaybeAccount<TokenRecord>> {
+  const { programAddress, ...fetchConfig } = config;
+  const [address] = await findTokenRecordPda(seeds, { programAddress });
+  return await fetchMaybeTokenRecord(rpc, address, fetchConfig);
 }

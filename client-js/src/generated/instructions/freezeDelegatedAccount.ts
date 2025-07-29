@@ -28,8 +28,13 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/kit';
+import { findMasterEditionPda } from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
-import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
+import {
+  expectAddress,
+  getAccountMetaFactory,
+  type ResolvedAccount,
+} from '../shared';
 
 export const FREEZE_DELEGATED_ACCOUNT_DISCRIMINATOR = 26;
 
@@ -97,6 +102,102 @@ export function getFreezeDelegatedAccountInstructionDataCodec(): FixedSizeCodec<
     getFreezeDelegatedAccountInstructionDataEncoder(),
     getFreezeDelegatedAccountInstructionDataDecoder()
   );
+}
+
+export type FreezeDelegatedAccountAsyncInput<
+  TAccountDelegate extends string = string,
+  TAccountTokenAccount extends string = string,
+  TAccountEdition extends string = string,
+  TAccountMint extends string = string,
+  TAccountTokenProgram extends string = string,
+> = {
+  /** Delegate */
+  delegate: TransactionSigner<TAccountDelegate>;
+  /** Token account to freeze */
+  tokenAccount: Address<TAccountTokenAccount>;
+  /** Edition */
+  edition?: Address<TAccountEdition>;
+  /** Token mint */
+  mint: Address<TAccountMint>;
+  /** Token Program */
+  tokenProgram?: Address<TAccountTokenProgram>;
+};
+
+export async function getFreezeDelegatedAccountInstructionAsync<
+  TAccountDelegate extends string,
+  TAccountTokenAccount extends string,
+  TAccountEdition extends string,
+  TAccountMint extends string,
+  TAccountTokenProgram extends string,
+  TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
+>(
+  input: FreezeDelegatedAccountAsyncInput<
+    TAccountDelegate,
+    TAccountTokenAccount,
+    TAccountEdition,
+    TAccountMint,
+    TAccountTokenProgram
+  >,
+  config?: { programAddress?: TProgramAddress }
+): Promise<
+  FreezeDelegatedAccountInstruction<
+    TProgramAddress,
+    TAccountDelegate,
+    TAccountTokenAccount,
+    TAccountEdition,
+    TAccountMint,
+    TAccountTokenProgram
+  >
+> {
+  // Program address.
+  const programAddress =
+    config?.programAddress ?? MPL_TOKEN_METADATA_PROGRAM_ADDRESS;
+
+  // Original accounts.
+  const originalAccounts = {
+    delegate: { value: input.delegate ?? null, isWritable: true },
+    tokenAccount: { value: input.tokenAccount ?? null, isWritable: true },
+    edition: { value: input.edition ?? null, isWritable: false },
+    mint: { value: input.mint ?? null, isWritable: false },
+    tokenProgram: { value: input.tokenProgram ?? null, isWritable: false },
+  };
+  const accounts = originalAccounts as Record<
+    keyof typeof originalAccounts,
+    ResolvedAccount
+  >;
+
+  // Resolve default values.
+  if (!accounts.edition.value) {
+    accounts.edition.value = await findMasterEditionPda({
+      mint: expectAddress(accounts.mint.value),
+    });
+  }
+  if (!accounts.tokenProgram.value) {
+    accounts.tokenProgram.value =
+      'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
+  }
+
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
+  const instruction = {
+    accounts: [
+      getAccountMeta(accounts.delegate),
+      getAccountMeta(accounts.tokenAccount),
+      getAccountMeta(accounts.edition),
+      getAccountMeta(accounts.mint),
+      getAccountMeta(accounts.tokenProgram),
+    ],
+    programAddress,
+    data: getFreezeDelegatedAccountInstructionDataEncoder().encode({}),
+  } as FreezeDelegatedAccountInstruction<
+    TProgramAddress,
+    TAccountDelegate,
+    TAccountTokenAccount,
+    TAccountEdition,
+    TAccountMint,
+    TAccountTokenProgram
+  >;
+
+  return instruction;
 }
 
 export type FreezeDelegatedAccountInput<

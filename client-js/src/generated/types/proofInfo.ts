@@ -22,27 +22,22 @@ import {
   type ReadonlyUint8Array,
 } from '@solana/kit';
 
-export type LeafInfo = {
-  leaf: ReadonlyUint8Array;
-  proof: Array<ReadonlyUint8Array>;
-};
+export type ProofInfo = { proof: Array<ReadonlyUint8Array> };
 
-export type LeafInfoArgs = LeafInfo;
+export type ProofInfoArgs = ProofInfo;
 
-export function getLeafInfoEncoder(): Encoder<LeafInfoArgs> {
+export function getProofInfoEncoder(): Encoder<ProofInfoArgs> {
   return getStructEncoder([
-    ['leaf', fixEncoderSize(getBytesEncoder(), 32)],
     ['proof', getArrayEncoder(fixEncoderSize(getBytesEncoder(), 32))],
   ]);
 }
 
-export function getLeafInfoDecoder(): Decoder<LeafInfo> {
+export function getProofInfoDecoder(): Decoder<ProofInfo> {
   return getStructDecoder([
-    ['leaf', fixDecoderSize(getBytesDecoder(), 32)],
     ['proof', getArrayDecoder(fixDecoderSize(getBytesDecoder(), 32))],
   ]);
 }
 
-export function getLeafInfoCodec(): Codec<LeafInfoArgs, LeafInfo> {
-  return combineCodec(getLeafInfoEncoder(), getLeafInfoDecoder());
+export function getProofInfoCodec(): Codec<ProofInfoArgs, ProofInfo> {
+  return combineCodec(getProofInfoEncoder(), getProofInfoDecoder());
 }

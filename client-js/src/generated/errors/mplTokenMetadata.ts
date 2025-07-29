@@ -400,8 +400,29 @@ export const MPL_TOKEN_METADATA_ERROR__MISSING_DELEGATE_RECORD = 0xbe; // 190
 export const MPL_TOKEN_METADATA_ERROR__INVALID_FEE_ACCOUNT = 0xbf; // 191
 /** InvalidMetadataFlags */
 export const MPL_TOKEN_METADATA_ERROR__INVALID_METADATA_FLAGS = 0xc0; // 192
+/** CannotChangeUpdateAuthorityWithDelegate: Cannot change the update authority with a delegate */
+export const MPL_TOKEN_METADATA_ERROR__CANNOT_CHANGE_UPDATE_AUTHORITY_WITH_DELEGATE = 0xc1; // 193
+/** InvalidMintExtensionType: Invalid mint extension type */
+export const MPL_TOKEN_METADATA_ERROR__INVALID_MINT_EXTENSION_TYPE = 0xc2; // 194
+/** InvalidMintCloseAuthority: Invalid mint close authority */
+export const MPL_TOKEN_METADATA_ERROR__INVALID_MINT_CLOSE_AUTHORITY = 0xc3; // 195
+/** InvalidMetadataPointer: Invalid metadata pointer */
+export const MPL_TOKEN_METADATA_ERROR__INVALID_METADATA_POINTER = 0xc4; // 196
+/** InvalidTokenExtensionType: Invalid token extension type */
+export const MPL_TOKEN_METADATA_ERROR__INVALID_TOKEN_EXTENSION_TYPE = 0xc5; // 197
+/** MissingImmutableOwnerExtension: Missing immutable owner extension */
+export const MPL_TOKEN_METADATA_ERROR__MISSING_IMMUTABLE_OWNER_EXTENSION = 0xc6; // 198
+/** ExpectedUninitializedAccount: Expected account to be uninitialized */
+export const MPL_TOKEN_METADATA_ERROR__EXPECTED_UNINITIALIZED_ACCOUNT = 0xc7; // 199
+/** InvalidEditionAccountLength: Edition account has an invalid length */
+export const MPL_TOKEN_METADATA_ERROR__INVALID_EDITION_ACCOUNT_LENGTH = 0xc8; // 200
+/** AccountAlreadyResized: Account has already been resized */
+export const MPL_TOKEN_METADATA_ERROR__ACCOUNT_ALREADY_RESIZED = 0xc9; // 201
+/** ConditionsForClosingNotMet: Conditions for closing not met */
+export const MPL_TOKEN_METADATA_ERROR__CONDITIONS_FOR_CLOSING_NOT_MET = 0xca; // 202
 
 export type MplTokenMetadataError =
+  | typeof MPL_TOKEN_METADATA_ERROR__ACCOUNT_ALREADY_RESIZED
   | typeof MPL_TOKEN_METADATA_ERROR__ADDRESS_NOT_IN_RESERVATION
   | typeof MPL_TOKEN_METADATA_ERROR__ALREADY_INITIALIZED
   | typeof MPL_TOKEN_METADATA_ERROR__ALREADY_UNVERIFIED
@@ -414,6 +435,7 @@ export type MplTokenMetadataError =
   | typeof MPL_TOKEN_METADATA_ERROR__BORSH_SERIALIZATION_ERROR
   | typeof MPL_TOKEN_METADATA_ERROR__CANNOT_ADJUST_VERIFIED_CREATOR
   | typeof MPL_TOKEN_METADATA_ERROR__CANNOT_BURN_WITH_DELEGATE
+  | typeof MPL_TOKEN_METADATA_ERROR__CANNOT_CHANGE_UPDATE_AUTHORITY_WITH_DELEGATE
   | typeof MPL_TOKEN_METADATA_ERROR__CANNOT_CHANGE_USE_METHOD_AFTER_FIRST_USE
   | typeof MPL_TOKEN_METADATA_ERROR__CANNOT_CHANGE_USES_AFTER_FIRST_USE
   | typeof MPL_TOKEN_METADATA_ERROR__CANNOT_REMOVE_VERIFIED_CREATOR
@@ -428,6 +450,7 @@ export type MplTokenMetadataError =
   | typeof MPL_TOKEN_METADATA_ERROR__COLLECTION_MASTER_EDITION_ACCOUNT_INVALID
   | typeof MPL_TOKEN_METADATA_ERROR__COLLECTION_MUST_BE_A_UNIQUE_MASTER_EDITION
   | typeof MPL_TOKEN_METADATA_ERROR__COLLECTION_NOT_FOUND
+  | typeof MPL_TOKEN_METADATA_ERROR__CONDITIONS_FOR_CLOSING_NOT_MET
   | typeof MPL_TOKEN_METADATA_ERROR__COULD_NOT_DETERMINE_TOKEN_STANDARD
   | typeof MPL_TOKEN_METADATA_ERROR__CREATOR_NOT_FOUND
   | typeof MPL_TOKEN_METADATA_ERROR__CREATORS_MUST_BE_ATLEAST_ONE
@@ -448,6 +471,7 @@ export type MplTokenMetadataError =
   | typeof MPL_TOKEN_METADATA_ERROR__EDITION_OVERRIDE_CANNOT_BE_ZERO
   | typeof MPL_TOKEN_METADATA_ERROR__EDITIONS_MUST_HAVE_EXACTLY_ONE_TOKEN
   | typeof MPL_TOKEN_METADATA_ERROR__ESCROW_PARENT_HAS_DELEGATE
+  | typeof MPL_TOKEN_METADATA_ERROR__EXPECTED_UNINITIALIZED_ACCOUNT
   | typeof MPL_TOKEN_METADATA_ERROR__FEATURE_NOT_SUPPORTED
   | typeof MPL_TOKEN_METADATA_ERROR__INCORRECT_OWNER
   | typeof MPL_TOKEN_METADATA_ERROR__INCORRECT_TOKEN_STATE
@@ -470,6 +494,7 @@ export type MplTokenMetadataError =
   | typeof MPL_TOKEN_METADATA_ERROR__INVALID_DELEGATE_ARGS
   | typeof MPL_TOKEN_METADATA_ERROR__INVALID_DELEGATE_ROLE
   | typeof MPL_TOKEN_METADATA_ERROR__INVALID_DELEGATE_ROLE_FOR_TRANSFER
+  | typeof MPL_TOKEN_METADATA_ERROR__INVALID_EDITION_ACCOUNT_LENGTH
   | typeof MPL_TOKEN_METADATA_ERROR__INVALID_EDITION_INDEX
   | typeof MPL_TOKEN_METADATA_ERROR__INVALID_EDITION_KEY
   | typeof MPL_TOKEN_METADATA_ERROR__INVALID_EDITION_MARKER
@@ -483,7 +508,10 @@ export type MplTokenMetadataError =
   | typeof MPL_TOKEN_METADATA_ERROR__INVALID_MASTER_EDITION_ACCOUNT_LENGTH
   | typeof MPL_TOKEN_METADATA_ERROR__INVALID_METADATA_FLAGS
   | typeof MPL_TOKEN_METADATA_ERROR__INVALID_METADATA_KEY
+  | typeof MPL_TOKEN_METADATA_ERROR__INVALID_METADATA_POINTER
   | typeof MPL_TOKEN_METADATA_ERROR__INVALID_MINT_AUTHORITY
+  | typeof MPL_TOKEN_METADATA_ERROR__INVALID_MINT_CLOSE_AUTHORITY
+  | typeof MPL_TOKEN_METADATA_ERROR__INVALID_MINT_EXTENSION_TYPE
   | typeof MPL_TOKEN_METADATA_ERROR__INVALID_MINT_FOR_TOKEN_STANDARD
   | typeof MPL_TOKEN_METADATA_ERROR__INVALID_OPERATION
   | typeof MPL_TOKEN_METADATA_ERROR__INVALID_OWNER
@@ -492,6 +520,7 @@ export type MplTokenMetadataError =
   | typeof MPL_TOKEN_METADATA_ERROR__INVALID_PROGRAMMABLE_CONFIG
   | typeof MPL_TOKEN_METADATA_ERROR__INVALID_SYSTEM_PROGRAM
   | typeof MPL_TOKEN_METADATA_ERROR__INVALID_SYSTEM_WALLET
+  | typeof MPL_TOKEN_METADATA_ERROR__INVALID_TOKEN_EXTENSION_TYPE
   | typeof MPL_TOKEN_METADATA_ERROR__INVALID_TOKEN_PROGRAM
   | typeof MPL_TOKEN_METADATA_ERROR__INVALID_TOKEN_RECORD
   | typeof MPL_TOKEN_METADATA_ERROR__INVALID_TOKEN_STANDARD
@@ -521,6 +550,7 @@ export type MplTokenMetadataError =
   | typeof MPL_TOKEN_METADATA_ERROR__MISSING_EDITION
   | typeof MPL_TOKEN_METADATA_ERROR__MISSING_EDITION_ACCOUNT
   | typeof MPL_TOKEN_METADATA_ERROR__MISSING_EDITION_MARKER_ACCOUNT
+  | typeof MPL_TOKEN_METADATA_ERROR__MISSING_IMMUTABLE_OWNER_EXTENSION
   | typeof MPL_TOKEN_METADATA_ERROR__MISSING_LOCKED_TRANSFER_ADDRESS
   | typeof MPL_TOKEN_METADATA_ERROR__MISSING_MASTER_EDITION_ACCOUNT
   | typeof MPL_TOKEN_METADATA_ERROR__MISSING_MASTER_EDITION_MINT_ACCOUNT
@@ -601,6 +631,7 @@ let mplTokenMetadataErrorMessages:
   | undefined;
 if (process.env.NODE_ENV !== 'production') {
   mplTokenMetadataErrorMessages = {
+    [MPL_TOKEN_METADATA_ERROR__ACCOUNT_ALREADY_RESIZED]: `Account has already been resized`,
     [MPL_TOKEN_METADATA_ERROR__ADDRESS_NOT_IN_RESERVATION]: ``,
     [MPL_TOKEN_METADATA_ERROR__ALREADY_INITIALIZED]: `Already initialized`,
     [MPL_TOKEN_METADATA_ERROR__ALREADY_UNVERIFIED]: ``,
@@ -613,6 +644,7 @@ if (process.env.NODE_ENV !== 'production') {
     [MPL_TOKEN_METADATA_ERROR__BORSH_SERIALIZATION_ERROR]: `Borsh Serialization Error`,
     [MPL_TOKEN_METADATA_ERROR__CANNOT_ADJUST_VERIFIED_CREATOR]: ``,
     [MPL_TOKEN_METADATA_ERROR__CANNOT_BURN_WITH_DELEGATE]: `Cannot burn while persistent delegate is set`,
+    [MPL_TOKEN_METADATA_ERROR__CANNOT_CHANGE_UPDATE_AUTHORITY_WITH_DELEGATE]: `Cannot change the update authority with a delegate`,
     [MPL_TOKEN_METADATA_ERROR__CANNOT_CHANGE_USE_METHOD_AFTER_FIRST_USE]: `Cannot Change Use Method after the first use`,
     [MPL_TOKEN_METADATA_ERROR__CANNOT_CHANGE_USES_AFTER_FIRST_USE]: `Cannot Change Remaining or Available uses after the first use`,
     [MPL_TOKEN_METADATA_ERROR__CANNOT_REMOVE_VERIFIED_CREATOR]: `Verified creators cannot be removed.`,
@@ -627,6 +659,7 @@ if (process.env.NODE_ENV !== 'production') {
     [MPL_TOKEN_METADATA_ERROR__COLLECTION_MASTER_EDITION_ACCOUNT_INVALID]: `Edition account doesnt match collection `,
     [MPL_TOKEN_METADATA_ERROR__COLLECTION_MUST_BE_A_UNIQUE_MASTER_EDITION]: `Collection Must Be a Unique Master Edition v2`,
     [MPL_TOKEN_METADATA_ERROR__COLLECTION_NOT_FOUND]: `Collection Not Found on Metadata`,
+    [MPL_TOKEN_METADATA_ERROR__CONDITIONS_FOR_CLOSING_NOT_MET]: `Conditions for closing not met`,
     [MPL_TOKEN_METADATA_ERROR__COULD_NOT_DETERMINE_TOKEN_STANDARD]: `Could not determine a TokenStandard type.`,
     [MPL_TOKEN_METADATA_ERROR__CREATOR_NOT_FOUND]: `This creator address was not found`,
     [MPL_TOKEN_METADATA_ERROR__CREATORS_MUST_BE_ATLEAST_ONE]: `Creators must be at least one if set`,
@@ -647,6 +680,7 @@ if (process.env.NODE_ENV !== 'production') {
     [MPL_TOKEN_METADATA_ERROR__EDITION_OVERRIDE_CANNOT_BE_ZERO]: `Edition override cannot be zero`,
     [MPL_TOKEN_METADATA_ERROR__EDITIONS_MUST_HAVE_EXACTLY_ONE_TOKEN]: `Editions must have exactly one token`,
     [MPL_TOKEN_METADATA_ERROR__ESCROW_PARENT_HAS_DELEGATE]: `Escrow parent cannot have a delegate`,
+    [MPL_TOKEN_METADATA_ERROR__EXPECTED_UNINITIALIZED_ACCOUNT]: `Expected account to be uninitialized`,
     [MPL_TOKEN_METADATA_ERROR__FEATURE_NOT_SUPPORTED]: `Feature not supported currently`,
     [MPL_TOKEN_METADATA_ERROR__INCORRECT_OWNER]: `Incorrect account owner`,
     [MPL_TOKEN_METADATA_ERROR__INCORRECT_TOKEN_STATE]: `Incorrect token state`,
@@ -669,6 +703,7 @@ if (process.env.NODE_ENV !== 'production') {
     [MPL_TOKEN_METADATA_ERROR__INVALID_DELEGATE_ARGS]: `Invalid delegate args`,
     [MPL_TOKEN_METADATA_ERROR__INVALID_DELEGATE_ROLE]: `Invalid delegate role`,
     [MPL_TOKEN_METADATA_ERROR__INVALID_DELEGATE_ROLE_FOR_TRANSFER]: `Invalid delegate role for transfer`,
+    [MPL_TOKEN_METADATA_ERROR__INVALID_EDITION_ACCOUNT_LENGTH]: `Edition account has an invalid length`,
     [MPL_TOKEN_METADATA_ERROR__INVALID_EDITION_INDEX]: `You tried to insert one edition too many into an edition mark pda`,
     [MPL_TOKEN_METADATA_ERROR__INVALID_EDITION_KEY]: `Edition's key must match seed of ['metadata', program id, name, 'edition'] provided`,
     [MPL_TOKEN_METADATA_ERROR__INVALID_EDITION_MARKER]: `Invalid Edition Marker`,
@@ -682,7 +717,10 @@ if (process.env.NODE_ENV !== 'production') {
     [MPL_TOKEN_METADATA_ERROR__INVALID_MASTER_EDITION_ACCOUNT_LENGTH]: `Master edition account has an invalid length`,
     [MPL_TOKEN_METADATA_ERROR__INVALID_METADATA_FLAGS]: ``,
     [MPL_TOKEN_METADATA_ERROR__INVALID_METADATA_KEY]: ` Metadata's key must match seed of ['metadata', program id, mint] provided`,
+    [MPL_TOKEN_METADATA_ERROR__INVALID_METADATA_POINTER]: `Invalid metadata pointer`,
     [MPL_TOKEN_METADATA_ERROR__INVALID_MINT_AUTHORITY]: `Mint authority provided does not match the authority on the mint`,
+    [MPL_TOKEN_METADATA_ERROR__INVALID_MINT_CLOSE_AUTHORITY]: `Invalid mint close authority`,
+    [MPL_TOKEN_METADATA_ERROR__INVALID_MINT_EXTENSION_TYPE]: `Invalid mint extension type`,
     [MPL_TOKEN_METADATA_ERROR__INVALID_MINT_FOR_TOKEN_STANDARD]: `Invalid mint account for specified token standard`,
     [MPL_TOKEN_METADATA_ERROR__INVALID_OPERATION]: `Invalid operation`,
     [MPL_TOKEN_METADATA_ERROR__INVALID_OWNER]: `Invalid Owner`,
@@ -691,6 +729,7 @@ if (process.env.NODE_ENV !== 'production') {
     [MPL_TOKEN_METADATA_ERROR__INVALID_PROGRAMMABLE_CONFIG]: `Invalid programmable configuration`,
     [MPL_TOKEN_METADATA_ERROR__INVALID_SYSTEM_PROGRAM]: `Invalid System Program`,
     [MPL_TOKEN_METADATA_ERROR__INVALID_SYSTEM_WALLET]: `Invalid system wallet`,
+    [MPL_TOKEN_METADATA_ERROR__INVALID_TOKEN_EXTENSION_TYPE]: `Invalid token extension type`,
     [MPL_TOKEN_METADATA_ERROR__INVALID_TOKEN_PROGRAM]: `Invalid token program`,
     [MPL_TOKEN_METADATA_ERROR__INVALID_TOKEN_RECORD]: `Invalid token record account`,
     [MPL_TOKEN_METADATA_ERROR__INVALID_TOKEN_STANDARD]: `Invalid token standard`,
@@ -720,6 +759,7 @@ if (process.env.NODE_ENV !== 'production') {
     [MPL_TOKEN_METADATA_ERROR__MISSING_EDITION]: `Missing edition account`,
     [MPL_TOKEN_METADATA_ERROR__MISSING_EDITION_ACCOUNT]: `This mint account has an edition but none was provided.`,
     [MPL_TOKEN_METADATA_ERROR__MISSING_EDITION_MARKER_ACCOUNT]: `Missing edition marker account`,
+    [MPL_TOKEN_METADATA_ERROR__MISSING_IMMUTABLE_OWNER_EXTENSION]: `Missing immutable owner extension`,
     [MPL_TOKEN_METADATA_ERROR__MISSING_LOCKED_TRANSFER_ADDRESS]: `Missing address for locked transfer`,
     [MPL_TOKEN_METADATA_ERROR__MISSING_MASTER_EDITION_ACCOUNT]: `Missing master edition account`,
     [MPL_TOKEN_METADATA_ERROR__MISSING_MASTER_EDITION_MINT_ACCOUNT]: `Missing master edition mint account`,

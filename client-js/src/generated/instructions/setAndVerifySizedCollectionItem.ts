@@ -53,7 +53,8 @@ export type SetAndVerifySizedCollectionItemInstruction<
     | AccountMeta<string> = string,
   TAccountCollectionAuthorityRecord extends
     | string
-    | AccountMeta<string> = string,
+    | AccountMeta<string>
+    | undefined = undefined,
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -80,11 +81,15 @@ export type SetAndVerifySizedCollectionItemInstruction<
         ? WritableAccount<TAccountCollection>
         : TAccountCollection,
       TAccountCollectionMasterEditionAccount extends string
-        ? WritableAccount<TAccountCollectionMasterEditionAccount>
+        ? ReadonlyAccount<TAccountCollectionMasterEditionAccount>
         : TAccountCollectionMasterEditionAccount,
-      TAccountCollectionAuthorityRecord extends string
-        ? ReadonlyAccount<TAccountCollectionAuthorityRecord>
-        : TAccountCollectionAuthorityRecord,
+      ...(TAccountCollectionAuthorityRecord extends undefined
+        ? []
+        : [
+            TAccountCollectionAuthorityRecord extends string
+              ? ReadonlyAccount<TAccountCollectionAuthorityRecord>
+              : TAccountCollectionAuthorityRecord,
+          ]),
       ...TRemainingAccounts,
     ]
   >;
@@ -200,7 +205,7 @@ export function getSetAndVerifySizedCollectionItemInstruction<
     collection: { value: input.collection ?? null, isWritable: true },
     collectionMasterEditionAccount: {
       value: input.collectionMasterEditionAccount ?? null,
-      isWritable: true,
+      isWritable: false,
     },
     collectionAuthorityRecord: {
       value: input.collectionAuthorityRecord ?? null,
@@ -212,7 +217,7 @@ export function getSetAndVerifySizedCollectionItemInstruction<
     ResolvedAccount
   >;
 
-  const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'omitted');
   const instruction = {
     accounts: [
       getAccountMeta(accounts.metadata),
@@ -223,7 +228,7 @@ export function getSetAndVerifySizedCollectionItemInstruction<
       getAccountMeta(accounts.collection),
       getAccountMeta(accounts.collectionMasterEditionAccount),
       getAccountMeta(accounts.collectionAuthorityRecord),
-    ],
+    ].filter(<T,>(x: T | undefined): x is T => x !== undefined),
     programAddress,
     data: getSetAndVerifySizedCollectionItemInstructionDataEncoder().encode({}),
   } as SetAndVerifySizedCollectionItemInstruction<
@@ -275,7 +280,7 @@ export function parseSetAndVerifySizedCollectionItemInstruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>
 ): ParsedSetAndVerifySizedCollectionItemInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 8) {
+  if (instruction.accounts.length < 7) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -285,11 +290,11 @@ export function parseSetAndVerifySizedCollectionItemInstruction<
     accountIndex += 1;
     return accountMeta;
   };
+  let optionalAccountsRemaining = instruction.accounts.length - 7;
   const getNextOptionalAccount = () => {
-    const accountMeta = getNextAccount();
-    return accountMeta.address === MPL_TOKEN_METADATA_PROGRAM_ADDRESS
-      ? undefined
-      : accountMeta;
+    if (optionalAccountsRemaining === 0) return undefined;
+    optionalAccountsRemaining -= 1;
+    return getNextAccount();
   };
   return {
     programAddress: instruction.programAddress,
