@@ -18,6 +18,8 @@ import {
   getOptionEncoder,
   getStructDecoder,
   getStructEncoder,
+  none,
+  transformEncoder,
   type Address,
   type Codec,
   type Decoder,
@@ -146,7 +148,7 @@ export type UpdateArgsArgs =
       collectionDetails: CollectionDetailsToggleArgs;
       uses: UsesToggleArgs;
       ruleSet: RuleSetToggleArgs;
-      tokenStandard: OptionOrNullable<TokenStandardArgs>;
+      tokenStandard?: OptionOrNullable<TokenStandardArgs>;
       authorizationData: OptionOrNullable<AuthorizationDataArgs>;
     }
   | {
@@ -154,7 +156,7 @@ export type UpdateArgsArgs =
       newUpdateAuthority: OptionOrNullable<Address>;
       primarySaleHappened: OptionOrNullable<boolean>;
       isMutable: OptionOrNullable<boolean>;
-      tokenStandard: OptionOrNullable<TokenStandardArgs>;
+      tokenStandard?: OptionOrNullable<TokenStandardArgs>;
       authorizationData: OptionOrNullable<AuthorizationDataArgs>;
     }
   | {
@@ -206,28 +208,40 @@ export function getUpdateArgsEncoder(): Encoder<UpdateArgsArgs> {
     ],
     [
       'AsUpdateAuthorityV2',
-      getStructEncoder([
-        ['newUpdateAuthority', getOptionEncoder(getAddressEncoder())],
-        ['data', getOptionEncoder(getDataEncoder())],
-        ['primarySaleHappened', getOptionEncoder(getBooleanEncoder())],
-        ['isMutable', getOptionEncoder(getBooleanEncoder())],
-        ['collection', getCollectionToggleEncoder()],
-        ['collectionDetails', getCollectionDetailsToggleEncoder()],
-        ['uses', getUsesToggleEncoder()],
-        ['ruleSet', getRuleSetToggleEncoder()],
-        ['tokenStandard', getOptionEncoder(getTokenStandardEncoder())],
-        ['authorizationData', getOptionEncoder(getAuthorizationDataEncoder())],
-      ]),
+      transformEncoder(
+        getStructEncoder([
+          ['newUpdateAuthority', getOptionEncoder(getAddressEncoder())],
+          ['data', getOptionEncoder(getDataEncoder())],
+          ['primarySaleHappened', getOptionEncoder(getBooleanEncoder())],
+          ['isMutable', getOptionEncoder(getBooleanEncoder())],
+          ['collection', getCollectionToggleEncoder()],
+          ['collectionDetails', getCollectionDetailsToggleEncoder()],
+          ['uses', getUsesToggleEncoder()],
+          ['ruleSet', getRuleSetToggleEncoder()],
+          ['tokenStandard', getOptionEncoder(getTokenStandardEncoder())],
+          [
+            'authorizationData',
+            getOptionEncoder(getAuthorizationDataEncoder()),
+          ],
+        ]),
+        (value) => ({ ...value, tokenStandard: value.tokenStandard ?? none() })
+      ),
     ],
     [
       'AsAuthorityItemDelegateV2',
-      getStructEncoder([
-        ['newUpdateAuthority', getOptionEncoder(getAddressEncoder())],
-        ['primarySaleHappened', getOptionEncoder(getBooleanEncoder())],
-        ['isMutable', getOptionEncoder(getBooleanEncoder())],
-        ['tokenStandard', getOptionEncoder(getTokenStandardEncoder())],
-        ['authorizationData', getOptionEncoder(getAuthorizationDataEncoder())],
-      ]),
+      transformEncoder(
+        getStructEncoder([
+          ['newUpdateAuthority', getOptionEncoder(getAddressEncoder())],
+          ['primarySaleHappened', getOptionEncoder(getBooleanEncoder())],
+          ['isMutable', getOptionEncoder(getBooleanEncoder())],
+          ['tokenStandard', getOptionEncoder(getTokenStandardEncoder())],
+          [
+            'authorizationData',
+            getOptionEncoder(getAuthorizationDataEncoder()),
+          ],
+        ]),
+        (value) => ({ ...value, tokenStandard: value.tokenStandard ?? none() })
+      ),
     ],
     [
       'AsCollectionDelegateV2',

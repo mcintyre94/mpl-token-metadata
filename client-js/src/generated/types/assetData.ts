@@ -26,6 +26,8 @@ import {
   getU32Encoder,
   getUtf8Decoder,
   getUtf8Encoder,
+  none,
+  transformEncoder,
   type Address,
   type Codec,
   type Decoder,
@@ -73,34 +75,46 @@ export type AssetData = {
 
 export type AssetDataArgs = {
   name: string;
-  symbol: string;
+  symbol?: string;
   uri: string;
   sellerFeeBasisPoints: number;
   creators: OptionOrNullable<Array<CreatorArgs>>;
-  primarySaleHappened: boolean;
-  isMutable: boolean;
+  primarySaleHappened?: boolean;
+  isMutable?: boolean;
   tokenStandard: TokenStandardArgs;
-  collection: OptionOrNullable<CollectionArgs>;
-  uses: OptionOrNullable<UsesArgs>;
-  collectionDetails: OptionOrNullable<CollectionDetailsArgs>;
-  ruleSet: OptionOrNullable<Address>;
+  collection?: OptionOrNullable<CollectionArgs>;
+  uses?: OptionOrNullable<UsesArgs>;
+  collectionDetails?: OptionOrNullable<CollectionDetailsArgs>;
+  ruleSet?: OptionOrNullable<Address>;
 };
 
 export function getAssetDataEncoder(): Encoder<AssetDataArgs> {
-  return getStructEncoder([
-    ['name', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
-    ['symbol', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
-    ['uri', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
-    ['sellerFeeBasisPoints', getU16Encoder()],
-    ['creators', getOptionEncoder(getArrayEncoder(getCreatorEncoder()))],
-    ['primarySaleHappened', getBooleanEncoder()],
-    ['isMutable', getBooleanEncoder()],
-    ['tokenStandard', getTokenStandardEncoder()],
-    ['collection', getOptionEncoder(getCollectionEncoder())],
-    ['uses', getOptionEncoder(getUsesEncoder())],
-    ['collectionDetails', getOptionEncoder(getCollectionDetailsEncoder())],
-    ['ruleSet', getOptionEncoder(getAddressEncoder())],
-  ]);
+  return transformEncoder(
+    getStructEncoder([
+      ['name', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+      ['symbol', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+      ['uri', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+      ['sellerFeeBasisPoints', getU16Encoder()],
+      ['creators', getOptionEncoder(getArrayEncoder(getCreatorEncoder()))],
+      ['primarySaleHappened', getBooleanEncoder()],
+      ['isMutable', getBooleanEncoder()],
+      ['tokenStandard', getTokenStandardEncoder()],
+      ['collection', getOptionEncoder(getCollectionEncoder())],
+      ['uses', getOptionEncoder(getUsesEncoder())],
+      ['collectionDetails', getOptionEncoder(getCollectionDetailsEncoder())],
+      ['ruleSet', getOptionEncoder(getAddressEncoder())],
+    ]),
+    (value) => ({
+      ...value,
+      symbol: value.symbol ?? '',
+      primarySaleHappened: value.primarySaleHappened ?? false,
+      isMutable: value.isMutable ?? true,
+      collection: value.collection ?? none(),
+      uses: value.uses ?? none(),
+      collectionDetails: value.collectionDetails ?? none(),
+      ruleSet: value.ruleSet ?? none(),
+    })
+  );
 }
 
 export function getAssetDataDecoder(): Decoder<AssetData> {

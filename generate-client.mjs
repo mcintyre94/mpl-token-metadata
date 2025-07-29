@@ -24,13 +24,13 @@ import {
   resolverValueNode,
   argumentValueNode,
   enumValueNode,
-  structValueNode,
-  tupleValueNode,
   stringValueNode,
-  instructionArgumentNode,
   programLinkNode,
   setAccountDiscriminatorFromFieldVisitor,
   setNumberWrappersVisitor,
+  setStructDefaultValuesVisitor,
+  noneValueNode,
+  booleanValueNode,
 } from "codama";
 
 import anchorIdl from "./idl.json" with { type: "json" };
@@ -625,12 +625,34 @@ codama.update(
   })
 );
 
+// Wrap leaves.
 codama.update(
   setNumberWrappersVisitor({
     "AssetData.sellerFeeBasisPoints": {
       kind: "Amount",
       decimals: 2,
       unit: "%",
+    },
+  })
+);
+
+// Set struct default values.
+codama.update(
+  setStructDefaultValuesVisitor({
+    assetData: {
+      symbol: stringValueNode(""),
+      isMutable: booleanValueNode(true),
+      primarySaleHappened: booleanValueNode(false),
+      collection: noneValueNode(),
+      uses: noneValueNode(),
+      collectionDetails: noneValueNode(),
+      ruleSet: noneValueNode(),
+    },
+    "updateArgs.AsUpdateAuthorityV2": {
+      tokenStandard: noneValueNode(),
+    },
+    "updateArgs.AsAuthorityItemDelegateV2": {
+      tokenStandard: noneValueNode(),
     },
   })
 );
@@ -672,17 +694,6 @@ codama.accept(
 );
 
 /*
-// Wrap leaves.
-kinobi.update(
-  k.setNumberWrappersVisitor({
-    "AssetData.sellerFeeBasisPoints": {
-      kind: "Amount",
-      decimals: 2,
-      unit: "%",
-    },
-  })
-);
-
 // Set struct default values.
 kinobi.update(
   k.setStructDefaultValuesVisitor({
