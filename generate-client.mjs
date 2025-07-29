@@ -30,6 +30,7 @@ import {
   instructionArgumentNode,
   programLinkNode,
   setAccountDiscriminatorFromFieldVisitor,
+  setNumberWrappersVisitor,
 } from "codama";
 
 import anchorIdl from "./idl.json" with { type: "json" };
@@ -624,6 +625,16 @@ codama.update(
   })
 );
 
+codama.update(
+  setNumberWrappersVisitor({
+    "AssetData.sellerFeeBasisPoints": {
+      kind: "Amount",
+      decimals: 2,
+      unit: "%",
+    },
+  })
+);
+
 /* Temporary */
 // need to pull this forward for the splTokenProgram dependency on argumentValueNode("tokenStandard")
 // can we pull this into the first updateInstructionsVisitor?
@@ -661,27 +672,6 @@ codama.accept(
 );
 
 /*
-// Set account discriminators.
-const key = (name) => ({
-  field: "key",
-  value: k.enumValueNode("Key", name),
-});
-kinobi.update(
-  k.setAccountDiscriminatorFromFieldVisitor({
-    Edition: key("EditionV1"),
-    Metadata: key("MetadataV1"),
-    MasterEdition: key("MasterEditionV2"),
-    EditionMarker: key("EditionMarker"),
-    UseAuthorityRecord: key("UseAuthorityRecord"),
-    CollectionAuthorityRecord: key("CollectionAuthorityRecord"),
-    TokenOwnedEscrow: key("TokenOwnedEscrow"),
-    TokenRecord: key("TokenRecord"),
-    MetadataDelegate: key("MetadataDelegate"),
-    DeprecatedMasterEditionV1: key("MasterEditionV1"),
-    HolderDelegate: key("HolderDelegate"),
-  })
-);
-
 // Wrap leaves.
 kinobi.update(
   k.setNumberWrappersVisitor({
