@@ -16,6 +16,7 @@ import {
   getStructEncoder,
   getU64Decoder,
   getU64Encoder,
+  transformEncoder,
   type Codec,
   type Decoder,
   type Encoder,
@@ -39,7 +40,7 @@ export type MintArgs = {
 
 export type MintArgsArgs = {
   __kind: 'V1';
-  amount: number | bigint;
+  amount?: number | bigint;
   authorizationData: OptionOrNullable<AuthorizationDataArgs>;
 };
 
@@ -47,10 +48,16 @@ export function getMintArgsEncoder(): Encoder<MintArgsArgs> {
   return getDiscriminatedUnionEncoder([
     [
       'V1',
-      getStructEncoder([
-        ['amount', getU64Encoder()],
-        ['authorizationData', getOptionEncoder(getAuthorizationDataEncoder())],
-      ]),
+      transformEncoder(
+        getStructEncoder([
+          ['amount', getU64Encoder()],
+          [
+            'authorizationData',
+            getOptionEncoder(getAuthorizationDataEncoder()),
+          ],
+        ]),
+        (value) => ({ ...value, amount: value.amount ?? 1 })
+      ),
     ],
   ]);
 }

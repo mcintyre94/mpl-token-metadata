@@ -31,6 +31,10 @@ import {
   setStructDefaultValuesVisitor,
   noneValueNode,
   booleanValueNode,
+  bottomUpTransformerVisitor,
+  assertIsNode,
+  isNode,
+  structFieldTypeNode,
 } from "codama";
 
 import anchorIdl from "./idl.json" with { type: "json" };
@@ -657,6 +661,73 @@ codama.update(
   })
 );
 
+// Set more struct default values dynamically.
+codama.update(
+  bottomUpTransformerVisitor([
+    {
+      select: "[structFieldTypeNode|instructionArgumentNode]amount",
+      transform: (node) => {
+        assertIsNode(node, ["structFieldTypeNode", "instructionArgumentNode"]);
+        return {
+          ...node,
+          defaultValueStrategy: "optional",
+          defaultValue: numberValueNode(1),
+        };
+      },
+    },
+    {
+      select: (node) => {
+        const names = [
+          "authorizationData",
+          "decimals",
+          "printSupply",
+          "newUpdateAuthority",
+          "data",
+          "primarySaleHappened",
+          "isMutable",
+        ];
+        return (
+          isNode(node, ["structFieldTypeNode", "instructionArgumentNode"]) &&
+          isNode(node.type, "optionTypeNode") &&
+          names.includes(node.name)
+        );
+      },
+      transform: (node) => {
+        assertIsNode(node, ["structFieldTypeNode", "instructionArgumentNode"]);
+        return {
+          ...node,
+          defaultValueStrategy: "optional",
+          defaultValue: k.noneValueNode(),
+        };
+      },
+    },
+    {
+      select: (node) => {
+        const toggles = [
+          "collectionToggle",
+          "collectionDetailsToggle",
+          "usesToggle",
+          "ruleSetToggle",
+        ];
+        return (
+          isNode(node, "structFieldTypeNode") &&
+          isNode(node.type, "definedTypeLinkNode") &&
+          toggles.includes(node.type.name)
+        );
+      },
+      transform: (node) => {
+        assertIsNode(node, "structFieldTypeNode");
+        assertIsNode(node.type, "definedTypeLinkNode");
+        return structFieldTypeNode({
+          ...node,
+          defaultValueStrategy: "optional",
+          defaultValue: enumValueNode(node.type, "None"),
+        });
+      },
+    },
+  ])
+);
+
 /* Temporary */
 // need to pull this forward for the splTokenProgram dependency on argumentValueNode("tokenStandard")
 // can we pull this into the first updateInstructionsVisitor?
@@ -694,98 +765,6 @@ codama.accept(
 );
 
 /*
-// Set struct default values.
-kinobi.update(
-  k.setStructDefaultValuesVisitor({
-    assetData: {
-      symbol: k.stringValueNode(""),
-      isMutable: k.booleanValueNode(true),
-      primarySaleHappened: k.booleanValueNode(false),
-      collection: k.noneValueNode(),
-      uses: k.noneValueNode(),
-      collectionDetails: k.noneValueNode(),
-      ruleSet: k.noneValueNode(),
-    },
-    "updateArgs.AsUpdateAuthorityV2": { tokenStandard: k.noneValueNode() },
-    "updateArgs.AsAuthorityItemDelegateV2": {
-      tokenStandard: k.noneValueNode(),
-    },
-  })
-);
-
-// Set more struct default values dynamically.
-kinobi.update(
-  k.bottomUpTransformerVisitor([
-    {
-      select: "[structFieldTypeNode|instructionArgumentNode]amount",
-      transform: (node) => {
-        k.assertIsNode(node, [
-          "structFieldTypeNode",
-          "instructionArgumentNode",
-        ]);
-        return {
-          ...node,
-          defaultValueStrategy: "optional",
-          defaultValue: k.numberValueNode(1),
-        };
-      },
-    },
-    {
-      select: (node) => {
-        const names = [
-          "authorizationData",
-          "decimals",
-          "printSupply",
-          "newUpdateAuthority",
-          "data",
-          "primarySaleHappened",
-          "isMutable",
-        ];
-        return (
-          k.isNode(node, ["structFieldTypeNode", "instructionArgumentNode"]) &&
-          k.isNode(node.type, "optionTypeNode") &&
-          names.includes(node.name)
-        );
-      },
-      transform: (node) => {
-        k.assertIsNode(node, [
-          "structFieldTypeNode",
-          "instructionArgumentNode",
-        ]);
-        return {
-          ...node,
-          defaultValueStrategy: "optional",
-          defaultValue: k.noneValueNode(),
-        };
-      },
-    },
-    {
-      select: (node) => {
-        const toggles = [
-          "collectionToggle",
-          "collectionDetailsToggle",
-          "usesToggle",
-          "ruleSetToggle",
-        ];
-        return (
-          k.isNode(node, "structFieldTypeNode") &&
-          k.isNode(node.type, "definedTypeLinkNode") &&
-          toggles.includes(node.type.name)
-        );
-      },
-      transform: (node) => {
-        k.assertIsNode(node, "structFieldTypeNode");
-        k.assertIsNode(node.type, "definedTypeLinkNode");
-        return k.structFieldTypeNode({
-          ...node,
-          defaultValueStrategy: "optional",
-          defaultValue: k.enumValueNode(node.type, "None"),
-        });
-      },
-    },
-  ])
-);
-
 // Unwrap types and structs.
 kinobi.update(k.unwrapDefinedTypesVisitor(["AssetData"]));
 kinobi.update(k.unwrapTypeDefinedLinksVisitor(["metadata.data"]));

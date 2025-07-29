@@ -126,7 +126,7 @@ export type TransferOutOfEscrowInstructionData = {
 };
 
 export type TransferOutOfEscrowInstructionDataArgs = {
-  amount: number | bigint;
+  amount?: number | bigint;
 };
 
 export function getTransferOutOfEscrowInstructionDataEncoder(): FixedSizeEncoder<TransferOutOfEscrowInstructionDataArgs> {
@@ -138,6 +138,7 @@ export function getTransferOutOfEscrowInstructionDataEncoder(): FixedSizeEncoder
     (value) => ({
       ...value,
       discriminator: TRANSFER_OUT_OF_ESCROW_DISCRIMINATOR,
+      amount: value.amount ?? 1,
     })
   );
 }
@@ -200,7 +201,7 @@ export type TransferOutOfEscrowInput<
   sysvarInstructions?: Address<TAccountSysvarInstructions>;
   /** Authority/creator of the escrow account */
   authority?: TransactionSigner<TAccountAuthority>;
-  amount: TransferOutOfEscrowInstructionDataArgs['amount'];
+  amount?: TransferOutOfEscrowInstructionDataArgs['amount'];
 };
 
 export function getTransferOutOfEscrowInstruction<

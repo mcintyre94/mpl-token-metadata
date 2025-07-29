@@ -18,6 +18,7 @@ import {
   getStructEncoder,
   getU64Decoder,
   getU64Encoder,
+  transformEncoder,
   type Address,
   type Codec,
   type Decoder,
@@ -84,12 +85,12 @@ export type DelegateArgsArgs =
     }
   | {
       __kind: 'SaleV1';
-      amount: number | bigint;
+      amount?: number | bigint;
       authorizationData: OptionOrNullable<AuthorizationDataArgs>;
     }
   | {
       __kind: 'TransferV1';
-      amount: number | bigint;
+      amount?: number | bigint;
       authorizationData: OptionOrNullable<AuthorizationDataArgs>;
     }
   | {
@@ -98,18 +99,18 @@ export type DelegateArgsArgs =
     }
   | {
       __kind: 'UtilityV1';
-      amount: number | bigint;
+      amount?: number | bigint;
       authorizationData: OptionOrNullable<AuthorizationDataArgs>;
     }
   | {
       __kind: 'StakingV1';
-      amount: number | bigint;
+      amount?: number | bigint;
       authorizationData: OptionOrNullable<AuthorizationDataArgs>;
     }
-  | { __kind: 'StandardV1'; amount: number | bigint }
+  | { __kind: 'StandardV1'; amount?: number | bigint }
   | {
       __kind: 'LockedTransferV1';
-      amount: number | bigint;
+      amount?: number | bigint;
       lockedAddress: Address;
       authorizationData: OptionOrNullable<AuthorizationDataArgs>;
     }
@@ -148,17 +149,29 @@ export function getDelegateArgsEncoder(): Encoder<DelegateArgsArgs> {
     ],
     [
       'SaleV1',
-      getStructEncoder([
-        ['amount', getU64Encoder()],
-        ['authorizationData', getOptionEncoder(getAuthorizationDataEncoder())],
-      ]),
+      transformEncoder(
+        getStructEncoder([
+          ['amount', getU64Encoder()],
+          [
+            'authorizationData',
+            getOptionEncoder(getAuthorizationDataEncoder()),
+          ],
+        ]),
+        (value) => ({ ...value, amount: value.amount ?? 1 })
+      ),
     ],
     [
       'TransferV1',
-      getStructEncoder([
-        ['amount', getU64Encoder()],
-        ['authorizationData', getOptionEncoder(getAuthorizationDataEncoder())],
-      ]),
+      transformEncoder(
+        getStructEncoder([
+          ['amount', getU64Encoder()],
+          [
+            'authorizationData',
+            getOptionEncoder(getAuthorizationDataEncoder()),
+          ],
+        ]),
+        (value) => ({ ...value, amount: value.amount ?? 1 })
+      ),
     ],
     [
       'DataV1',
@@ -168,26 +181,50 @@ export function getDelegateArgsEncoder(): Encoder<DelegateArgsArgs> {
     ],
     [
       'UtilityV1',
-      getStructEncoder([
-        ['amount', getU64Encoder()],
-        ['authorizationData', getOptionEncoder(getAuthorizationDataEncoder())],
-      ]),
+      transformEncoder(
+        getStructEncoder([
+          ['amount', getU64Encoder()],
+          [
+            'authorizationData',
+            getOptionEncoder(getAuthorizationDataEncoder()),
+          ],
+        ]),
+        (value) => ({ ...value, amount: value.amount ?? 1 })
+      ),
     ],
     [
       'StakingV1',
-      getStructEncoder([
-        ['amount', getU64Encoder()],
-        ['authorizationData', getOptionEncoder(getAuthorizationDataEncoder())],
-      ]),
+      transformEncoder(
+        getStructEncoder([
+          ['amount', getU64Encoder()],
+          [
+            'authorizationData',
+            getOptionEncoder(getAuthorizationDataEncoder()),
+          ],
+        ]),
+        (value) => ({ ...value, amount: value.amount ?? 1 })
+      ),
     ],
-    ['StandardV1', getStructEncoder([['amount', getU64Encoder()]])],
+    [
+      'StandardV1',
+      transformEncoder(
+        getStructEncoder([['amount', getU64Encoder()]]),
+        (value) => ({ ...value, amount: value.amount ?? 1 })
+      ),
+    ],
     [
       'LockedTransferV1',
-      getStructEncoder([
-        ['amount', getU64Encoder()],
-        ['lockedAddress', getAddressEncoder()],
-        ['authorizationData', getOptionEncoder(getAuthorizationDataEncoder())],
-      ]),
+      transformEncoder(
+        getStructEncoder([
+          ['amount', getU64Encoder()],
+          ['lockedAddress', getAddressEncoder()],
+          [
+            'authorizationData',
+            getOptionEncoder(getAuthorizationDataEncoder()),
+          ],
+        ]),
+        (value) => ({ ...value, amount: value.amount ?? 1 })
+      ),
     ],
     [
       'ProgrammableConfigV1',

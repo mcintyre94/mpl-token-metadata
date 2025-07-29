@@ -14,6 +14,7 @@ import {
   getStructEncoder,
   getU64Decoder,
   getU64Encoder,
+  transformEncoder,
   type FixedSizeCodec,
   type FixedSizeDecoder,
   type FixedSizeEncoder,
@@ -23,11 +24,17 @@ import {
 
 export type BurnArgs = { __kind: 'V1'; amount: bigint };
 
-export type BurnArgsArgs = { __kind: 'V1'; amount: number | bigint };
+export type BurnArgsArgs = { __kind: 'V1'; amount?: number | bigint };
 
 export function getBurnArgsEncoder(): FixedSizeEncoder<BurnArgsArgs> {
   return getDiscriminatedUnionEncoder([
-    ['V1', getStructEncoder([['amount', getU64Encoder()]])],
+    [
+      'V1',
+      transformEncoder(
+        getStructEncoder([['amount', getU64Encoder()]]),
+        (value) => ({ ...value, amount: value.amount ?? 1 })
+      ),
+    ],
   ]) as FixedSizeEncoder<BurnArgsArgs>;
 }
 
