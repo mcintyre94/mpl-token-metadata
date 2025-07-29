@@ -732,6 +732,7 @@ codama.update(
 
 // Unwrap types and structs.
 codama.update(unwrapDefinedTypesVisitor(["AssetData"]));
+codama.update(unwrapTypeDefinedLinksVisitor(["metadata.data"]));
 
 /* Temporary */
 // need to pull this forward for the splTokenProgram dependency on argumentValueNode("tokenStandard")
