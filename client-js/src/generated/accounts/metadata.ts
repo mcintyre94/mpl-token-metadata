@@ -88,13 +88,11 @@ export type Metadata = {
   key: Key;
   updateAuthority: Address;
   mint: Address;
-  data: {
-    name: string;
-    symbol: string;
-    uri: string;
-    sellerFeeBasisPoints: number;
-    creators: Option<Array<Creator>>;
-  };
+  name: string;
+  symbol: string;
+  uri: string;
+  sellerFeeBasisPoints: number;
+  creators: Option<Array<Creator>>;
   primarySaleHappened: boolean;
   isMutable: boolean;
   editionNonce: Option<number>;
@@ -108,13 +106,11 @@ export type Metadata = {
 export type MetadataArgs = {
   updateAuthority: Address;
   mint: Address;
-  data: {
-    name: string;
-    symbol: string;
-    uri: string;
-    sellerFeeBasisPoints: number;
-    creators: OptionOrNullable<Array<CreatorArgs>>;
-  };
+  name: string;
+  symbol: string;
+  uri: string;
+  sellerFeeBasisPoints: number;
+  creators: OptionOrNullable<Array<CreatorArgs>>;
   primarySaleHappened: boolean;
   isMutable: boolean;
   editionNonce: OptionOrNullable<number>;
@@ -131,16 +127,11 @@ export function getMetadataEncoder(): Encoder<MetadataArgs> {
       ['key', getKeyEncoder()],
       ['updateAuthority', getAddressEncoder()],
       ['mint', getAddressEncoder()],
-      [
-        'data',
-        getStructEncoder([
-          ['name', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
-          ['symbol', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
-          ['uri', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
-          ['sellerFeeBasisPoints', getU16Encoder()],
-          ['creators', getOptionEncoder(getArrayEncoder(getCreatorEncoder()))],
-        ]),
-      ],
+      ['name', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+      ['symbol', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+      ['uri', addEncoderSizePrefix(getUtf8Encoder(), getU32Encoder())],
+      ['sellerFeeBasisPoints', getU16Encoder()],
+      ['creators', getOptionEncoder(getArrayEncoder(getCreatorEncoder()))],
       ['primarySaleHappened', getBooleanEncoder()],
       ['isMutable', getBooleanEncoder()],
       ['editionNonce', getOptionEncoder(getU8Encoder())],
@@ -159,16 +150,11 @@ export function getMetadataDecoder(): Decoder<Metadata> {
     ['key', getKeyDecoder()],
     ['updateAuthority', getAddressDecoder()],
     ['mint', getAddressDecoder()],
-    [
-      'data',
-      getStructDecoder([
-        ['name', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
-        ['symbol', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
-        ['uri', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
-        ['sellerFeeBasisPoints', getU16Decoder()],
-        ['creators', getOptionDecoder(getArrayDecoder(getCreatorDecoder()))],
-      ]),
-    ],
+    ['name', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+    ['symbol', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+    ['uri', addDecoderSizePrefix(getUtf8Decoder(), getU32Decoder())],
+    ['sellerFeeBasisPoints', getU16Decoder()],
+    ['creators', getOptionDecoder(getArrayDecoder(getCreatorDecoder()))],
     ['primarySaleHappened', getBooleanDecoder()],
     ['isMutable', getBooleanDecoder()],
     ['editionNonce', getOptionDecoder(getU8Decoder())],

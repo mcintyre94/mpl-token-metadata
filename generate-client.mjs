@@ -37,6 +37,7 @@ import {
   structFieldTypeNode,
   unwrapDefinedTypesVisitor,
   unwrapTypeDefinedLinksVisitor,
+  flattenStructVisitor,
 } from "codama";
 
 import anchorIdl from "./idl.json" with { type: "json" };
@@ -733,6 +734,12 @@ codama.update(
 // Unwrap types and structs.
 codama.update(unwrapDefinedTypesVisitor(["AssetData"]));
 codama.update(unwrapTypeDefinedLinksVisitor(["metadata.data"]));
+codama.update(
+  flattenStructVisitor({
+    Metadata: ["data"],
+    "CreateArgs.V1": ["assetData"],
+  })
+);
 
 /* Temporary */
 // need to pull this forward for the splTokenProgram dependency on argumentValueNode("tokenStandard")
