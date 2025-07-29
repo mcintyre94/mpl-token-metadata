@@ -19,6 +19,7 @@ import {
   getStructEncoder,
   getU64Decoder,
   getU64Encoder,
+  transformEncoder,
   type Account,
   type Address,
   type Codec,
@@ -33,7 +34,13 @@ import {
   type OptionOrNullable,
 } from '@solana/kit';
 import { MasterEditionSeeds, findMasterEditionPda } from '../pdas';
-import { getKeyDecoder, getKeyEncoder, type Key, type KeyArgs } from '../types';
+import { Key, getKeyDecoder, getKeyEncoder } from '../types';
+
+export const MASTER_EDITION_KEY = Key.MasterEditionV2;
+
+export function getMasterEditionKeyBytes() {
+  return getKeyEncoder().encode(MASTER_EDITION_KEY);
+}
 
 export type MasterEdition = {
   key: Key;
@@ -42,17 +49,19 @@ export type MasterEdition = {
 };
 
 export type MasterEditionArgs = {
-  key: KeyArgs;
   supply: number | bigint;
   maxSupply: OptionOrNullable<number | bigint>;
 };
 
 export function getMasterEditionEncoder(): Encoder<MasterEditionArgs> {
-  return getStructEncoder([
-    ['key', getKeyEncoder()],
-    ['supply', getU64Encoder()],
-    ['maxSupply', getOptionEncoder(getU64Encoder())],
-  ]);
+  return transformEncoder(
+    getStructEncoder([
+      ['key', getKeyEncoder()],
+      ['supply', getU64Encoder()],
+      ['maxSupply', getOptionEncoder(getU64Encoder())],
+    ]),
+    (value) => ({ ...value, key: MASTER_EDITION_KEY })
+  );
 }
 
 export function getMasterEditionDecoder(): Decoder<MasterEdition> {

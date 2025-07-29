@@ -19,6 +19,7 @@ import {
   getU64Encoder,
   getU8Decoder,
   getU8Encoder,
+  transformEncoder,
   type Account,
   type Address,
   type EncodedAccount,
@@ -31,7 +32,13 @@ import {
   type MaybeEncodedAccount,
 } from '@solana/kit';
 import { UseAuthorityRecordSeeds, findUseAuthorityRecordPda } from '../pdas';
-import { getKeyDecoder, getKeyEncoder, type Key, type KeyArgs } from '../types';
+import { Key, getKeyDecoder, getKeyEncoder } from '../types';
+
+export const USE_AUTHORITY_RECORD_KEY = Key.UseAuthorityRecord;
+
+export function getUseAuthorityRecordKeyBytes() {
+  return getKeyEncoder().encode(USE_AUTHORITY_RECORD_KEY);
+}
 
 export type UseAuthorityRecord = {
   key: Key;
@@ -40,17 +47,19 @@ export type UseAuthorityRecord = {
 };
 
 export type UseAuthorityRecordArgs = {
-  key: KeyArgs;
   allowedUses: number | bigint;
   bump: number;
 };
 
 export function getUseAuthorityRecordEncoder(): FixedSizeEncoder<UseAuthorityRecordArgs> {
-  return getStructEncoder([
-    ['key', getKeyEncoder()],
-    ['allowedUses', getU64Encoder()],
-    ['bump', getU8Encoder()],
-  ]);
+  return transformEncoder(
+    getStructEncoder([
+      ['key', getKeyEncoder()],
+      ['allowedUses', getU64Encoder()],
+      ['bump', getU8Encoder()],
+    ]),
+    (value) => ({ ...value, key: USE_AUTHORITY_RECORD_KEY })
+  );
 }
 
 export function getUseAuthorityRecordDecoder(): FixedSizeDecoder<UseAuthorityRecord> {

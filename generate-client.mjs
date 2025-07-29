@@ -29,6 +29,7 @@ import {
   stringValueNode,
   instructionArgumentNode,
   programLinkNode,
+  setAccountDiscriminatorFromFieldVisitor,
 } from "codama";
 
 import anchorIdl from "./idl.json" with { type: "json" };
@@ -224,7 +225,6 @@ function ataPdaDefault(mint = "mint", owner = "owner") {
     ]
   );
 }
-
 codama.update(
   updateInstructionsVisitor({
     create: {
@@ -598,6 +598,29 @@ codama.update(
     deprecatedCreateMasterEdition: { delete: true },
     deprecatedMintPrintingTokens: { delete: true },
     deprecatedMintPrintingTokensViaToken: { delete: true },
+  })
+);
+
+// Set account discriminators.
+function key(name) {
+  return {
+    field: "key",
+    value: enumValueNode("Key", name),
+  };
+}
+codama.update(
+  setAccountDiscriminatorFromFieldVisitor({
+    Edition: key("EditionV1"),
+    Metadata: key("MetadataV1"),
+    MasterEdition: key("MasterEditionV2"),
+    EditionMarker: key("EditionMarker"),
+    UseAuthorityRecord: key("UseAuthorityRecord"),
+    CollectionAuthorityRecord: key("CollectionAuthorityRecord"),
+    TokenOwnedEscrow: key("TokenOwnedEscrow"),
+    TokenRecord: key("TokenRecord"),
+    MetadataDelegate: key("MetadataDelegate"),
+    DeprecatedMasterEditionV1: key("MasterEditionV1"),
+    HolderDelegate: key("HolderDelegate"),
   })
 );
 

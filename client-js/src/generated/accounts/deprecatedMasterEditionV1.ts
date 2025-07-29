@@ -21,6 +21,7 @@ import {
   getStructEncoder,
   getU64Decoder,
   getU64Encoder,
+  transformEncoder,
   type Account,
   type Address,
   type Codec,
@@ -38,7 +39,13 @@ import {
   DeprecatedMasterEditionV1Seeds,
   findDeprecatedMasterEditionV1Pda,
 } from '../pdas';
-import { getKeyDecoder, getKeyEncoder, type Key, type KeyArgs } from '../types';
+import { Key, getKeyDecoder, getKeyEncoder } from '../types';
+
+export const DEPRECATED_MASTER_EDITION_V1_KEY = Key.MasterEditionV1;
+
+export function getDeprecatedMasterEditionV1KeyBytes() {
+  return getKeyEncoder().encode(DEPRECATED_MASTER_EDITION_V1_KEY);
+}
 
 export type DeprecatedMasterEditionV1 = {
   key: Key;
@@ -49,7 +56,6 @@ export type DeprecatedMasterEditionV1 = {
 };
 
 export type DeprecatedMasterEditionV1Args = {
-  key: KeyArgs;
   supply: number | bigint;
   maxSupply: OptionOrNullable<number | bigint>;
   printingMint: Address;
@@ -57,13 +63,16 @@ export type DeprecatedMasterEditionV1Args = {
 };
 
 export function getDeprecatedMasterEditionV1Encoder(): Encoder<DeprecatedMasterEditionV1Args> {
-  return getStructEncoder([
-    ['key', getKeyEncoder()],
-    ['supply', getU64Encoder()],
-    ['maxSupply', getOptionEncoder(getU64Encoder())],
-    ['printingMint', getAddressEncoder()],
-    ['oneTimePrintingAuthorizationMint', getAddressEncoder()],
-  ]);
+  return transformEncoder(
+    getStructEncoder([
+      ['key', getKeyEncoder()],
+      ['supply', getU64Encoder()],
+      ['maxSupply', getOptionEncoder(getU64Encoder())],
+      ['printingMint', getAddressEncoder()],
+      ['oneTimePrintingAuthorizationMint', getAddressEncoder()],
+    ]),
+    (value) => ({ ...value, key: DEPRECATED_MASTER_EDITION_V1_KEY })
+  );
 }
 
 export function getDeprecatedMasterEditionV1Decoder(): Decoder<DeprecatedMasterEditionV1> {

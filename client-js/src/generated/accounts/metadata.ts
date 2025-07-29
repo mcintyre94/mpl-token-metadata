@@ -23,6 +23,7 @@ import {
   getStructEncoder,
   getU8Decoder,
   getU8Encoder,
+  transformEncoder,
   type Account,
   type Address,
   type Codec,
@@ -38,6 +39,7 @@ import {
 } from '@solana/kit';
 import { MetadataSeeds, findMetadataPda } from '../pdas';
 import {
+  Key,
   getCollectionDecoder,
   getCollectionDetailsDecoder,
   getCollectionDetailsEncoder,
@@ -58,8 +60,6 @@ import {
   type CollectionDetailsArgs,
   type Data,
   type DataArgs,
-  type Key,
-  type KeyArgs,
   type ProgrammableConfig,
   type ProgrammableConfigArgs,
   type TokenStandard,
@@ -67,6 +67,12 @@ import {
   type Uses,
   type UsesArgs,
 } from '../types';
+
+export const METADATA_KEY = Key.MetadataV1;
+
+export function getMetadataKeyBytes() {
+  return getKeyEncoder().encode(METADATA_KEY);
+}
 
 export type Metadata = {
   key: Key;
@@ -84,7 +90,6 @@ export type Metadata = {
 };
 
 export type MetadataArgs = {
-  key: KeyArgs;
   updateAuthority: Address;
   mint: Address;
   data: DataArgs;
@@ -99,20 +104,23 @@ export type MetadataArgs = {
 };
 
 export function getMetadataEncoder(): Encoder<MetadataArgs> {
-  return getStructEncoder([
-    ['key', getKeyEncoder()],
-    ['updateAuthority', getAddressEncoder()],
-    ['mint', getAddressEncoder()],
-    ['data', getDataEncoder()],
-    ['primarySaleHappened', getBooleanEncoder()],
-    ['isMutable', getBooleanEncoder()],
-    ['editionNonce', getOptionEncoder(getU8Encoder())],
-    ['tokenStandard', getOptionEncoder(getTokenStandardEncoder())],
-    ['collection', getOptionEncoder(getCollectionEncoder())],
-    ['uses', getOptionEncoder(getUsesEncoder())],
-    ['collectionDetails', getOptionEncoder(getCollectionDetailsEncoder())],
-    ['programmableConfig', getOptionEncoder(getProgrammableConfigEncoder())],
-  ]);
+  return transformEncoder(
+    getStructEncoder([
+      ['key', getKeyEncoder()],
+      ['updateAuthority', getAddressEncoder()],
+      ['mint', getAddressEncoder()],
+      ['data', getDataEncoder()],
+      ['primarySaleHappened', getBooleanEncoder()],
+      ['isMutable', getBooleanEncoder()],
+      ['editionNonce', getOptionEncoder(getU8Encoder())],
+      ['tokenStandard', getOptionEncoder(getTokenStandardEncoder())],
+      ['collection', getOptionEncoder(getCollectionEncoder())],
+      ['uses', getOptionEncoder(getUsesEncoder())],
+      ['collectionDetails', getOptionEncoder(getCollectionDetailsEncoder())],
+      ['programmableConfig', getOptionEncoder(getProgrammableConfigEncoder())],
+    ]),
+    (value) => ({ ...value, key: METADATA_KEY })
+  );
 }
 
 export function getMetadataDecoder(): Decoder<Metadata> {

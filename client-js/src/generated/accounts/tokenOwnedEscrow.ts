@@ -19,6 +19,7 @@ import {
   getStructEncoder,
   getU8Decoder,
   getU8Encoder,
+  transformEncoder,
   type Account,
   type Address,
   type Codec,
@@ -31,15 +32,20 @@ import {
   type MaybeEncodedAccount,
 } from '@solana/kit';
 import {
+  Key,
   getEscrowAuthorityDecoder,
   getEscrowAuthorityEncoder,
   getKeyDecoder,
   getKeyEncoder,
   type EscrowAuthority,
   type EscrowAuthorityArgs,
-  type Key,
-  type KeyArgs,
 } from '../types';
+
+export const TOKEN_OWNED_ESCROW_KEY = Key.TokenOwnedEscrow;
+
+export function getTokenOwnedEscrowKeyBytes() {
+  return getKeyEncoder().encode(TOKEN_OWNED_ESCROW_KEY);
+}
 
 export type TokenOwnedEscrow = {
   key: Key;
@@ -49,19 +55,21 @@ export type TokenOwnedEscrow = {
 };
 
 export type TokenOwnedEscrowArgs = {
-  key: KeyArgs;
   baseToken: Address;
   authority: EscrowAuthorityArgs;
   bump: number;
 };
 
 export function getTokenOwnedEscrowEncoder(): Encoder<TokenOwnedEscrowArgs> {
-  return getStructEncoder([
-    ['key', getKeyEncoder()],
-    ['baseToken', getAddressEncoder()],
-    ['authority', getEscrowAuthorityEncoder()],
-    ['bump', getU8Encoder()],
-  ]);
+  return transformEncoder(
+    getStructEncoder([
+      ['key', getKeyEncoder()],
+      ['baseToken', getAddressEncoder()],
+      ['authority', getEscrowAuthorityEncoder()],
+      ['bump', getU8Encoder()],
+    ]),
+    (value) => ({ ...value, key: TOKEN_OWNED_ESCROW_KEY })
+  );
 }
 
 export function getTokenOwnedEscrowDecoder(): Decoder<TokenOwnedEscrow> {

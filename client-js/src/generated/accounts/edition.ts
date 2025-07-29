@@ -19,6 +19,7 @@ import {
   getStructEncoder,
   getU64Decoder,
   getU64Encoder,
+  transformEncoder,
   type Account,
   type Address,
   type EncodedAccount,
@@ -30,22 +31,27 @@ import {
   type MaybeAccount,
   type MaybeEncodedAccount,
 } from '@solana/kit';
-import { getKeyDecoder, getKeyEncoder, type Key, type KeyArgs } from '../types';
+import { Key, getKeyDecoder, getKeyEncoder } from '../types';
+
+export const EDITION_KEY = Key.EditionV1;
+
+export function getEditionKeyBytes() {
+  return getKeyEncoder().encode(EDITION_KEY);
+}
 
 export type Edition = { key: Key; parent: Address; edition: bigint };
 
-export type EditionArgs = {
-  key: KeyArgs;
-  parent: Address;
-  edition: number | bigint;
-};
+export type EditionArgs = { parent: Address; edition: number | bigint };
 
 export function getEditionEncoder(): FixedSizeEncoder<EditionArgs> {
-  return getStructEncoder([
-    ['key', getKeyEncoder()],
-    ['parent', getAddressEncoder()],
-    ['edition', getU64Encoder()],
-  ]);
+  return transformEncoder(
+    getStructEncoder([
+      ['key', getKeyEncoder()],
+      ['parent', getAddressEncoder()],
+      ['edition', getU64Encoder()],
+    ]),
+    (value) => ({ ...value, key: EDITION_KEY })
+  );
 }
 
 export function getEditionDecoder(): FixedSizeDecoder<Edition> {

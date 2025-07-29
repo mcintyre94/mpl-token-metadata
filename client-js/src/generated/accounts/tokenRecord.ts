@@ -23,6 +23,7 @@ import {
   getU64Encoder,
   getU8Decoder,
   getU8Encoder,
+  transformEncoder,
   type Account,
   type Address,
   type Codec,
@@ -38,19 +39,24 @@ import {
 } from '@solana/kit';
 import { TokenRecordSeeds, findTokenRecordPda } from '../pdas';
 import {
+  Key,
   getKeyDecoder,
   getKeyEncoder,
   getTokenDelegateRoleDecoder,
   getTokenDelegateRoleEncoder,
   getTokenStateDecoder,
   getTokenStateEncoder,
-  type Key,
-  type KeyArgs,
   type TokenDelegateRole,
   type TokenDelegateRoleArgs,
   type TokenState,
   type TokenStateArgs,
 } from '../types';
+
+export const TOKEN_RECORD_KEY = Key.TokenRecord;
+
+export function getTokenRecordKeyBytes() {
+  return getKeyEncoder().encode(TOKEN_RECORD_KEY);
+}
 
 export type TokenRecord = {
   key: Key;
@@ -63,7 +69,6 @@ export type TokenRecord = {
 };
 
 export type TokenRecordArgs = {
-  key: KeyArgs;
   bump: number;
   state: TokenStateArgs;
   ruleSetRevision: OptionOrNullable<number | bigint>;
@@ -73,15 +78,18 @@ export type TokenRecordArgs = {
 };
 
 export function getTokenRecordEncoder(): Encoder<TokenRecordArgs> {
-  return getStructEncoder([
-    ['key', getKeyEncoder()],
-    ['bump', getU8Encoder()],
-    ['state', getTokenStateEncoder()],
-    ['ruleSetRevision', getOptionEncoder(getU64Encoder())],
-    ['delegate', getOptionEncoder(getAddressEncoder())],
-    ['delegateRole', getOptionEncoder(getTokenDelegateRoleEncoder())],
-    ['lockedTransfer', getOptionEncoder(getAddressEncoder())],
-  ]);
+  return transformEncoder(
+    getStructEncoder([
+      ['key', getKeyEncoder()],
+      ['bump', getU8Encoder()],
+      ['state', getTokenStateEncoder()],
+      ['ruleSetRevision', getOptionEncoder(getU64Encoder())],
+      ['delegate', getOptionEncoder(getAddressEncoder())],
+      ['delegateRole', getOptionEncoder(getTokenDelegateRoleEncoder())],
+      ['lockedTransfer', getOptionEncoder(getAddressEncoder())],
+    ]),
+    (value) => ({ ...value, key: TOKEN_RECORD_KEY })
+  );
 }
 
 export function getTokenRecordDecoder(): Decoder<TokenRecord> {

@@ -19,6 +19,7 @@ import {
   getBytesEncoder,
   getStructDecoder,
   getStructEncoder,
+  transformEncoder,
   type Account,
   type Address,
   type EncodedAccount,
@@ -32,17 +33,26 @@ import {
   type ReadonlyUint8Array,
 } from '@solana/kit';
 import { EditionMarkerSeeds, findEditionMarkerPda } from '../pdas';
-import { getKeyDecoder, getKeyEncoder, type Key, type KeyArgs } from '../types';
+import { Key, getKeyDecoder, getKeyEncoder } from '../types';
+
+export const EDITION_MARKER_KEY = Key.EditionMarker;
+
+export function getEditionMarkerKeyBytes() {
+  return getKeyEncoder().encode(EDITION_MARKER_KEY);
+}
 
 export type EditionMarker = { key: Key; ledger: ReadonlyUint8Array };
 
-export type EditionMarkerArgs = { key: KeyArgs; ledger: ReadonlyUint8Array };
+export type EditionMarkerArgs = { ledger: ReadonlyUint8Array };
 
 export function getEditionMarkerEncoder(): FixedSizeEncoder<EditionMarkerArgs> {
-  return getStructEncoder([
-    ['key', getKeyEncoder()],
-    ['ledger', fixEncoderSize(getBytesEncoder(), 31)],
-  ]);
+  return transformEncoder(
+    getStructEncoder([
+      ['key', getKeyEncoder()],
+      ['ledger', fixEncoderSize(getBytesEncoder(), 31)],
+    ]),
+    (value) => ({ ...value, key: EDITION_MARKER_KEY })
+  );
 }
 
 export function getEditionMarkerDecoder(): FixedSizeDecoder<EditionMarker> {

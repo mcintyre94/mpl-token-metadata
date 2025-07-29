@@ -21,6 +21,7 @@ import {
   getStructEncoder,
   getU8Decoder,
   getU8Encoder,
+  transformEncoder,
   type Account,
   type Address,
   type Codec,
@@ -38,7 +39,13 @@ import {
   CollectionAuthorityRecordSeeds,
   findCollectionAuthorityRecordPda,
 } from '../pdas';
-import { getKeyDecoder, getKeyEncoder, type Key, type KeyArgs } from '../types';
+import { Key, getKeyDecoder, getKeyEncoder } from '../types';
+
+export const COLLECTION_AUTHORITY_RECORD_KEY = Key.CollectionAuthorityRecord;
+
+export function getCollectionAuthorityRecordKeyBytes() {
+  return getKeyEncoder().encode(COLLECTION_AUTHORITY_RECORD_KEY);
+}
 
 export type CollectionAuthorityRecord = {
   key: Key;
@@ -47,17 +54,19 @@ export type CollectionAuthorityRecord = {
 };
 
 export type CollectionAuthorityRecordArgs = {
-  key: KeyArgs;
   bump: number;
   updateAuthority: OptionOrNullable<Address>;
 };
 
 export function getCollectionAuthorityRecordEncoder(): Encoder<CollectionAuthorityRecordArgs> {
-  return getStructEncoder([
-    ['key', getKeyEncoder()],
-    ['bump', getU8Encoder()],
-    ['updateAuthority', getOptionEncoder(getAddressEncoder())],
-  ]);
+  return transformEncoder(
+    getStructEncoder([
+      ['key', getKeyEncoder()],
+      ['bump', getU8Encoder()],
+      ['updateAuthority', getOptionEncoder(getAddressEncoder())],
+    ]),
+    (value) => ({ ...value, key: COLLECTION_AUTHORITY_RECORD_KEY })
+  );
 }
 
 export function getCollectionAuthorityRecordDecoder(): Decoder<CollectionAuthorityRecord> {

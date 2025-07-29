@@ -63,6 +63,7 @@ import {
   type ParsedVerifyInstruction,
   type ParsedVerifySizedCollectionItemInstruction,
 } from '../instructions';
+import { Key, getKeyEncoder } from '../types';
 
 export const MPL_TOKEN_METADATA_PROGRAM_ADDRESS =
   'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s' as Address<'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s'>;
@@ -80,6 +81,48 @@ export enum MplTokenMetadataAccount {
   Metadata,
   TokenRecord,
   UseAuthorityRecord,
+}
+
+export function identifyMplTokenMetadataAccount(
+  account: { data: ReadonlyUint8Array } | ReadonlyUint8Array
+): MplTokenMetadataAccount {
+  const data = 'data' in account ? account.data : account;
+  if (
+    containsBytes(
+      data,
+      getKeyEncoder().encode(Key.CollectionAuthorityRecord),
+      0
+    )
+  ) {
+    return MplTokenMetadataAccount.CollectionAuthorityRecord;
+  }
+  if (containsBytes(data, getKeyEncoder().encode(Key.EditionV1), 0)) {
+    return MplTokenMetadataAccount.Edition;
+  }
+  if (containsBytes(data, getKeyEncoder().encode(Key.EditionMarker), 0)) {
+    return MplTokenMetadataAccount.EditionMarker;
+  }
+  if (containsBytes(data, getKeyEncoder().encode(Key.TokenOwnedEscrow), 0)) {
+    return MplTokenMetadataAccount.TokenOwnedEscrow;
+  }
+  if (containsBytes(data, getKeyEncoder().encode(Key.MasterEditionV2), 0)) {
+    return MplTokenMetadataAccount.MasterEdition;
+  }
+  if (containsBytes(data, getKeyEncoder().encode(Key.MasterEditionV1), 0)) {
+    return MplTokenMetadataAccount.DeprecatedMasterEditionV1;
+  }
+  if (containsBytes(data, getKeyEncoder().encode(Key.MetadataV1), 0)) {
+    return MplTokenMetadataAccount.Metadata;
+  }
+  if (containsBytes(data, getKeyEncoder().encode(Key.TokenRecord), 0)) {
+    return MplTokenMetadataAccount.TokenRecord;
+  }
+  if (containsBytes(data, getKeyEncoder().encode(Key.UseAuthorityRecord), 0)) {
+    return MplTokenMetadataAccount.UseAuthorityRecord;
+  }
+  throw new Error(
+    'The provided account could not be identified as a mplTokenMetadata account.'
+  );
 }
 
 export enum MplTokenMetadataInstruction {
