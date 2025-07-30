@@ -16,9 +16,9 @@ import {
   type AccountMeta,
   type AccountSignerMeta,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
   type Instruction,
   type InstructionWithAccounts,
   type InstructionWithData,
@@ -27,35 +27,36 @@ import {
   type ReadonlyUint8Array,
   type TransactionSigner,
   type WritableAccount,
+  type WritableSignerAccount,
 } from '@solana/kit';
-import { findMetadataPda } from '../pdas';
+import { resolveIsNonFungible } from '../../hooked';
+import { findMasterEditionPda, findMetadataPda } from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
 import {
   expectAddress,
   getAccountMetaFactory,
   type ResolvedAccount,
 } from '../shared';
-import {
-  getUseArgsDecoder,
-  getUseArgsEncoder,
-  type UseArgs,
-  type UseArgsArgs,
-} from '../types';
+import { type TokenStandardArgs } from '../types';
 
-export const USE_DISCRIMINATOR = 51;
+export const REVOKE_PROGRAMMABLE_CONFIG_ITEM_V1_DISCRIMINATOR = 45;
 
-export function getUseDiscriminatorBytes() {
-  return getU8Encoder().encode(USE_DISCRIMINATOR);
+export function getRevokeProgrammableConfigItemV1DiscriminatorBytes() {
+  return getU8Encoder().encode(
+    REVOKE_PROGRAMMABLE_CONFIG_ITEM_V1_DISCRIMINATOR
+  );
 }
 
-export type UseInstruction<
+export type RevokeProgrammableConfigItemV1Instruction<
   TProgram extends string = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
-  TAccountAuthority extends string | AccountMeta<string> = string,
   TAccountDelegateRecord extends string | AccountMeta<string> = string,
-  TAccountToken extends string | AccountMeta<string> = string,
-  TAccountMint extends string | AccountMeta<string> = string,
+  TAccountDelegate extends string | AccountMeta<string> = string,
   TAccountMetadata extends string | AccountMeta<string> = string,
-  TAccountEdition extends string | AccountMeta<string> = string,
+  TAccountMasterEdition extends string | AccountMeta<string> = string,
+  TAccountTokenRecord extends string | AccountMeta<string> = string,
+  TAccountMint extends string | AccountMeta<string> = string,
+  TAccountToken extends string | AccountMeta<string> = string,
+  TAccountAuthority extends string | AccountMeta<string> = string,
   TAccountPayer extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
@@ -73,27 +74,33 @@ export type UseInstruction<
   InstructionWithData<ReadonlyUint8Array> &
   InstructionWithAccounts<
     [
+      TAccountDelegateRecord extends string
+        ? WritableAccount<TAccountDelegateRecord>
+        : TAccountDelegateRecord,
+      TAccountDelegate extends string
+        ? ReadonlyAccount<TAccountDelegate>
+        : TAccountDelegate,
+      TAccountMetadata extends string
+        ? WritableAccount<TAccountMetadata>
+        : TAccountMetadata,
+      TAccountMasterEdition extends string
+        ? ReadonlyAccount<TAccountMasterEdition>
+        : TAccountMasterEdition,
+      TAccountTokenRecord extends string
+        ? WritableAccount<TAccountTokenRecord>
+        : TAccountTokenRecord,
+      TAccountMint extends string
+        ? ReadonlyAccount<TAccountMint>
+        : TAccountMint,
+      TAccountToken extends string
+        ? WritableAccount<TAccountToken>
+        : TAccountToken,
       TAccountAuthority extends string
         ? ReadonlySignerAccount<TAccountAuthority> &
             AccountSignerMeta<TAccountAuthority>
         : TAccountAuthority,
-      TAccountDelegateRecord extends string
-        ? WritableAccount<TAccountDelegateRecord>
-        : TAccountDelegateRecord,
-      TAccountToken extends string
-        ? WritableAccount<TAccountToken>
-        : TAccountToken,
-      TAccountMint extends string
-        ? ReadonlyAccount<TAccountMint>
-        : TAccountMint,
-      TAccountMetadata extends string
-        ? WritableAccount<TAccountMetadata>
-        : TAccountMetadata,
-      TAccountEdition extends string
-        ? WritableAccount<TAccountEdition>
-        : TAccountEdition,
       TAccountPayer extends string
-        ? ReadonlySignerAccount<TAccountPayer> &
+        ? WritableSignerAccount<TAccountPayer> &
             AccountSignerMeta<TAccountPayer>
         : TAccountPayer,
       TAccountSystemProgram extends string
@@ -115,44 +122,57 @@ export type UseInstruction<
     ]
   >;
 
-export type UseInstructionData = { discriminator: number; useArgs: UseArgs };
+export type RevokeProgrammableConfigItemV1InstructionData = {
+  discriminator: number;
+  revokeProgrammableConfigItemV1Discriminator: number;
+};
 
-export type UseInstructionDataArgs = { useArgs: UseArgsArgs };
+export type RevokeProgrammableConfigItemV1InstructionDataArgs = {};
 
-export function getUseInstructionDataEncoder(): Encoder<UseInstructionDataArgs> {
+export function getRevokeProgrammableConfigItemV1InstructionDataEncoder(): FixedSizeEncoder<RevokeProgrammableConfigItemV1InstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', getU8Encoder()],
-      ['useArgs', getUseArgsEncoder()],
+      ['revokeProgrammableConfigItemV1Discriminator', getU8Encoder()],
     ]),
-    (value) => ({ ...value, discriminator: USE_DISCRIMINATOR })
+    (value) => ({
+      ...value,
+      discriminator: REVOKE_PROGRAMMABLE_CONFIG_ITEM_V1_DISCRIMINATOR,
+      revokeProgrammableConfigItemV1Discriminator: 13,
+    })
   );
 }
 
-export function getUseInstructionDataDecoder(): Decoder<UseInstructionData> {
+export function getRevokeProgrammableConfigItemV1InstructionDataDecoder(): FixedSizeDecoder<RevokeProgrammableConfigItemV1InstructionData> {
   return getStructDecoder([
     ['discriminator', getU8Decoder()],
-    ['useArgs', getUseArgsDecoder()],
+    ['revokeProgrammableConfigItemV1Discriminator', getU8Decoder()],
   ]);
 }
 
-export function getUseInstructionDataCodec(): Codec<
-  UseInstructionDataArgs,
-  UseInstructionData
+export function getRevokeProgrammableConfigItemV1InstructionDataCodec(): FixedSizeCodec<
+  RevokeProgrammableConfigItemV1InstructionDataArgs,
+  RevokeProgrammableConfigItemV1InstructionData
 > {
   return combineCodec(
-    getUseInstructionDataEncoder(),
-    getUseInstructionDataDecoder()
+    getRevokeProgrammableConfigItemV1InstructionDataEncoder(),
+    getRevokeProgrammableConfigItemV1InstructionDataDecoder()
   );
 }
 
-export type UseAsyncInput<
-  TAccountAuthority extends string = string,
+export type RevokeProgrammableConfigItemV1InstructionExtraArgs = {
+  tokenStandard: TokenStandardArgs;
+};
+
+export type RevokeProgrammableConfigItemV1AsyncInput<
   TAccountDelegateRecord extends string = string,
-  TAccountToken extends string = string,
-  TAccountMint extends string = string,
+  TAccountDelegate extends string = string,
   TAccountMetadata extends string = string,
-  TAccountEdition extends string = string,
+  TAccountMasterEdition extends string = string,
+  TAccountTokenRecord extends string = string,
+  TAccountMint extends string = string,
+  TAccountToken extends string = string,
+  TAccountAuthority extends string = string,
   TAccountPayer extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountSysvarInstructions extends string = string,
@@ -160,23 +180,27 @@ export type UseAsyncInput<
   TAccountAuthorizationRulesProgram extends string = string,
   TAccountAuthorizationRules extends string = string,
 > = {
-  /** Token owner or delegate */
-  authority: TransactionSigner<TAccountAuthority>;
-  /** Delegate record PDA */
+  /** Delegate record account */
   delegateRecord?: Address<TAccountDelegateRecord>;
-  /** Token account */
-  token?: Address<TAccountToken>;
-  /** Mint account */
-  mint: Address<TAccountMint>;
+  /** Owner of the delegated account */
+  delegate: Address<TAccountDelegate>;
   /** Metadata account */
   metadata?: Address<TAccountMetadata>;
-  /** Edition account */
-  edition?: Address<TAccountEdition>;
+  /** Master Edition account */
+  masterEdition?: Address<TAccountMasterEdition>;
+  /** Token record account */
+  tokenRecord?: Address<TAccountTokenRecord>;
+  /** Mint of metadata */
+  mint: Address<TAccountMint>;
+  /** Token account of mint */
+  token?: Address<TAccountToken>;
+  /** Update authority or token owner */
+  authority: TransactionSigner<TAccountAuthority>;
   /** Payer */
   payer: TransactionSigner<TAccountPayer>;
-  /** System program */
+  /** System Program */
   systemProgram?: Address<TAccountSystemProgram>;
-  /** System program */
+  /** Instructions sysvar account */
   sysvarInstructions?: Address<TAccountSysvarInstructions>;
   /** SPL Token Program */
   splTokenProgram?: Address<TAccountSplTokenProgram>;
@@ -184,16 +208,18 @@ export type UseAsyncInput<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  useArgs: UseInstructionDataArgs['useArgs'];
+  tokenStandard: RevokeProgrammableConfigItemV1InstructionExtraArgs['tokenStandard'];
 };
 
-export async function getUseInstructionAsync<
-  TAccountAuthority extends string,
+export async function getRevokeProgrammableConfigItemV1InstructionAsync<
   TAccountDelegateRecord extends string,
-  TAccountToken extends string,
-  TAccountMint extends string,
+  TAccountDelegate extends string,
   TAccountMetadata extends string,
-  TAccountEdition extends string,
+  TAccountMasterEdition extends string,
+  TAccountTokenRecord extends string,
+  TAccountMint extends string,
+  TAccountToken extends string,
+  TAccountAuthority extends string,
   TAccountPayer extends string,
   TAccountSystemProgram extends string,
   TAccountSysvarInstructions extends string,
@@ -202,13 +228,15 @@ export async function getUseInstructionAsync<
   TAccountAuthorizationRules extends string,
   TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
 >(
-  input: UseAsyncInput<
-    TAccountAuthority,
+  input: RevokeProgrammableConfigItemV1AsyncInput<
     TAccountDelegateRecord,
-    TAccountToken,
-    TAccountMint,
+    TAccountDelegate,
     TAccountMetadata,
-    TAccountEdition,
+    TAccountMasterEdition,
+    TAccountTokenRecord,
+    TAccountMint,
+    TAccountToken,
+    TAccountAuthority,
     TAccountPayer,
     TAccountSystemProgram,
     TAccountSysvarInstructions,
@@ -218,14 +246,16 @@ export async function getUseInstructionAsync<
   >,
   config?: { programAddress?: TProgramAddress }
 ): Promise<
-  UseInstruction<
+  RevokeProgrammableConfigItemV1Instruction<
     TProgramAddress,
-    TAccountAuthority,
     TAccountDelegateRecord,
-    TAccountToken,
-    TAccountMint,
+    TAccountDelegate,
     TAccountMetadata,
-    TAccountEdition,
+    TAccountMasterEdition,
+    TAccountTokenRecord,
+    TAccountMint,
+    TAccountToken,
+    TAccountAuthority,
     TAccountPayer,
     TAccountSystemProgram,
     TAccountSysvarInstructions,
@@ -240,13 +270,15 @@ export async function getUseInstructionAsync<
 
   // Original accounts.
   const originalAccounts = {
-    authority: { value: input.authority ?? null, isWritable: false },
     delegateRecord: { value: input.delegateRecord ?? null, isWritable: true },
-    token: { value: input.token ?? null, isWritable: true },
-    mint: { value: input.mint ?? null, isWritable: false },
+    delegate: { value: input.delegate ?? null, isWritable: false },
     metadata: { value: input.metadata ?? null, isWritable: true },
-    edition: { value: input.edition ?? null, isWritable: true },
-    payer: { value: input.payer ?? null, isWritable: false },
+    masterEdition: { value: input.masterEdition ?? null, isWritable: false },
+    tokenRecord: { value: input.tokenRecord ?? null, isWritable: true },
+    mint: { value: input.mint ?? null, isWritable: false },
+    token: { value: input.token ?? null, isWritable: true },
+    authority: { value: input.authority ?? null, isWritable: false },
+    payer: { value: input.payer ?? null, isWritable: true },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
     sysvarInstructions: {
       value: input.sysvarInstructions ?? null,
@@ -273,11 +305,21 @@ export async function getUseInstructionAsync<
   // Original args.
   const args = { ...input };
 
+  // Resolver scope.
+  const resolverScope = { programAddress, accounts, args };
+
   // Resolve default values.
   if (!accounts.metadata.value) {
     accounts.metadata.value = await findMetadataPda({
       mint: expectAddress(accounts.mint.value),
     });
+  }
+  if (!accounts.masterEdition.value) {
+    if (resolveIsNonFungible(resolverScope)) {
+      accounts.masterEdition.value = await findMasterEditionPda({
+        mint: expectAddress(accounts.mint.value),
+      });
+    }
   }
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
@@ -297,12 +339,14 @@ export async function getUseInstructionAsync<
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
     accounts: [
-      getAccountMeta(accounts.authority),
       getAccountMeta(accounts.delegateRecord),
-      getAccountMeta(accounts.token),
-      getAccountMeta(accounts.mint),
+      getAccountMeta(accounts.delegate),
       getAccountMeta(accounts.metadata),
-      getAccountMeta(accounts.edition),
+      getAccountMeta(accounts.masterEdition),
+      getAccountMeta(accounts.tokenRecord),
+      getAccountMeta(accounts.mint),
+      getAccountMeta(accounts.token),
+      getAccountMeta(accounts.authority),
       getAccountMeta(accounts.payer),
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.sysvarInstructions),
@@ -311,15 +355,17 @@ export async function getUseInstructionAsync<
       getAccountMeta(accounts.authorizationRules),
     ],
     programAddress,
-    data: getUseInstructionDataEncoder().encode(args as UseInstructionDataArgs),
-  } as UseInstruction<
+    data: getRevokeProgrammableConfigItemV1InstructionDataEncoder().encode({}),
+  } as RevokeProgrammableConfigItemV1Instruction<
     TProgramAddress,
-    TAccountAuthority,
     TAccountDelegateRecord,
-    TAccountToken,
-    TAccountMint,
+    TAccountDelegate,
     TAccountMetadata,
-    TAccountEdition,
+    TAccountMasterEdition,
+    TAccountTokenRecord,
+    TAccountMint,
+    TAccountToken,
+    TAccountAuthority,
     TAccountPayer,
     TAccountSystemProgram,
     TAccountSysvarInstructions,
@@ -331,13 +377,15 @@ export async function getUseInstructionAsync<
   return instruction;
 }
 
-export type UseInput<
-  TAccountAuthority extends string = string,
+export type RevokeProgrammableConfigItemV1Input<
   TAccountDelegateRecord extends string = string,
-  TAccountToken extends string = string,
-  TAccountMint extends string = string,
+  TAccountDelegate extends string = string,
   TAccountMetadata extends string = string,
-  TAccountEdition extends string = string,
+  TAccountMasterEdition extends string = string,
+  TAccountTokenRecord extends string = string,
+  TAccountMint extends string = string,
+  TAccountToken extends string = string,
+  TAccountAuthority extends string = string,
   TAccountPayer extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountSysvarInstructions extends string = string,
@@ -345,23 +393,27 @@ export type UseInput<
   TAccountAuthorizationRulesProgram extends string = string,
   TAccountAuthorizationRules extends string = string,
 > = {
-  /** Token owner or delegate */
-  authority: TransactionSigner<TAccountAuthority>;
-  /** Delegate record PDA */
+  /** Delegate record account */
   delegateRecord?: Address<TAccountDelegateRecord>;
-  /** Token account */
-  token?: Address<TAccountToken>;
-  /** Mint account */
-  mint: Address<TAccountMint>;
+  /** Owner of the delegated account */
+  delegate: Address<TAccountDelegate>;
   /** Metadata account */
   metadata: Address<TAccountMetadata>;
-  /** Edition account */
-  edition?: Address<TAccountEdition>;
+  /** Master Edition account */
+  masterEdition?: Address<TAccountMasterEdition>;
+  /** Token record account */
+  tokenRecord?: Address<TAccountTokenRecord>;
+  /** Mint of metadata */
+  mint: Address<TAccountMint>;
+  /** Token account of mint */
+  token?: Address<TAccountToken>;
+  /** Update authority or token owner */
+  authority: TransactionSigner<TAccountAuthority>;
   /** Payer */
   payer: TransactionSigner<TAccountPayer>;
-  /** System program */
+  /** System Program */
   systemProgram?: Address<TAccountSystemProgram>;
-  /** System program */
+  /** Instructions sysvar account */
   sysvarInstructions?: Address<TAccountSysvarInstructions>;
   /** SPL Token Program */
   splTokenProgram?: Address<TAccountSplTokenProgram>;
@@ -369,16 +421,18 @@ export type UseInput<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  useArgs: UseInstructionDataArgs['useArgs'];
+  tokenStandard: RevokeProgrammableConfigItemV1InstructionExtraArgs['tokenStandard'];
 };
 
-export function getUseInstruction<
-  TAccountAuthority extends string,
+export function getRevokeProgrammableConfigItemV1Instruction<
   TAccountDelegateRecord extends string,
-  TAccountToken extends string,
-  TAccountMint extends string,
+  TAccountDelegate extends string,
   TAccountMetadata extends string,
-  TAccountEdition extends string,
+  TAccountMasterEdition extends string,
+  TAccountTokenRecord extends string,
+  TAccountMint extends string,
+  TAccountToken extends string,
+  TAccountAuthority extends string,
   TAccountPayer extends string,
   TAccountSystemProgram extends string,
   TAccountSysvarInstructions extends string,
@@ -387,13 +441,15 @@ export function getUseInstruction<
   TAccountAuthorizationRules extends string,
   TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
 >(
-  input: UseInput<
-    TAccountAuthority,
+  input: RevokeProgrammableConfigItemV1Input<
     TAccountDelegateRecord,
-    TAccountToken,
-    TAccountMint,
+    TAccountDelegate,
     TAccountMetadata,
-    TAccountEdition,
+    TAccountMasterEdition,
+    TAccountTokenRecord,
+    TAccountMint,
+    TAccountToken,
+    TAccountAuthority,
     TAccountPayer,
     TAccountSystemProgram,
     TAccountSysvarInstructions,
@@ -402,14 +458,16 @@ export function getUseInstruction<
     TAccountAuthorizationRules
   >,
   config?: { programAddress?: TProgramAddress }
-): UseInstruction<
+): RevokeProgrammableConfigItemV1Instruction<
   TProgramAddress,
-  TAccountAuthority,
   TAccountDelegateRecord,
-  TAccountToken,
-  TAccountMint,
+  TAccountDelegate,
   TAccountMetadata,
-  TAccountEdition,
+  TAccountMasterEdition,
+  TAccountTokenRecord,
+  TAccountMint,
+  TAccountToken,
+  TAccountAuthority,
   TAccountPayer,
   TAccountSystemProgram,
   TAccountSysvarInstructions,
@@ -423,13 +481,15 @@ export function getUseInstruction<
 
   // Original accounts.
   const originalAccounts = {
-    authority: { value: input.authority ?? null, isWritable: false },
     delegateRecord: { value: input.delegateRecord ?? null, isWritable: true },
-    token: { value: input.token ?? null, isWritable: true },
-    mint: { value: input.mint ?? null, isWritable: false },
+    delegate: { value: input.delegate ?? null, isWritable: false },
     metadata: { value: input.metadata ?? null, isWritable: true },
-    edition: { value: input.edition ?? null, isWritable: true },
-    payer: { value: input.payer ?? null, isWritable: false },
+    masterEdition: { value: input.masterEdition ?? null, isWritable: false },
+    tokenRecord: { value: input.tokenRecord ?? null, isWritable: true },
+    mint: { value: input.mint ?? null, isWritable: false },
+    token: { value: input.token ?? null, isWritable: true },
+    authority: { value: input.authority ?? null, isWritable: false },
+    payer: { value: input.payer ?? null, isWritable: true },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
     sysvarInstructions: {
       value: input.sysvarInstructions ?? null,
@@ -475,12 +535,14 @@ export function getUseInstruction<
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
     accounts: [
-      getAccountMeta(accounts.authority),
       getAccountMeta(accounts.delegateRecord),
-      getAccountMeta(accounts.token),
-      getAccountMeta(accounts.mint),
+      getAccountMeta(accounts.delegate),
       getAccountMeta(accounts.metadata),
-      getAccountMeta(accounts.edition),
+      getAccountMeta(accounts.masterEdition),
+      getAccountMeta(accounts.tokenRecord),
+      getAccountMeta(accounts.mint),
+      getAccountMeta(accounts.token),
+      getAccountMeta(accounts.authority),
       getAccountMeta(accounts.payer),
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.sysvarInstructions),
@@ -489,15 +551,17 @@ export function getUseInstruction<
       getAccountMeta(accounts.authorizationRules),
     ],
     programAddress,
-    data: getUseInstructionDataEncoder().encode(args as UseInstructionDataArgs),
-  } as UseInstruction<
+    data: getRevokeProgrammableConfigItemV1InstructionDataEncoder().encode({}),
+  } as RevokeProgrammableConfigItemV1Instruction<
     TProgramAddress,
-    TAccountAuthority,
     TAccountDelegateRecord,
-    TAccountToken,
-    TAccountMint,
+    TAccountDelegate,
     TAccountMetadata,
-    TAccountEdition,
+    TAccountMasterEdition,
+    TAccountTokenRecord,
+    TAccountMint,
+    TAccountToken,
+    TAccountAuthority,
     TAccountPayer,
     TAccountSystemProgram,
     TAccountSysvarInstructions,
@@ -509,49 +573,53 @@ export function getUseInstruction<
   return instruction;
 }
 
-export type ParsedUseInstruction<
+export type ParsedRevokeProgrammableConfigItemV1Instruction<
   TProgram extends string = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
   TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
 > = {
   programAddress: Address<TProgram>;
   accounts: {
-    /** Token owner or delegate */
-    authority: TAccountMetas[0];
-    /** Delegate record PDA */
-    delegateRecord?: TAccountMetas[1] | undefined;
-    /** Token account */
-    token?: TAccountMetas[2] | undefined;
-    /** Mint account */
-    mint: TAccountMetas[3];
+    /** Delegate record account */
+    delegateRecord?: TAccountMetas[0] | undefined;
+    /** Owner of the delegated account */
+    delegate: TAccountMetas[1];
     /** Metadata account */
-    metadata: TAccountMetas[4];
-    /** Edition account */
-    edition?: TAccountMetas[5] | undefined;
+    metadata: TAccountMetas[2];
+    /** Master Edition account */
+    masterEdition?: TAccountMetas[3] | undefined;
+    /** Token record account */
+    tokenRecord?: TAccountMetas[4] | undefined;
+    /** Mint of metadata */
+    mint: TAccountMetas[5];
+    /** Token account of mint */
+    token?: TAccountMetas[6] | undefined;
+    /** Update authority or token owner */
+    authority: TAccountMetas[7];
     /** Payer */
-    payer: TAccountMetas[6];
-    /** System program */
-    systemProgram: TAccountMetas[7];
-    /** System program */
-    sysvarInstructions: TAccountMetas[8];
+    payer: TAccountMetas[8];
+    /** System Program */
+    systemProgram: TAccountMetas[9];
+    /** Instructions sysvar account */
+    sysvarInstructions: TAccountMetas[10];
     /** SPL Token Program */
-    splTokenProgram?: TAccountMetas[9] | undefined;
+    splTokenProgram?: TAccountMetas[11] | undefined;
     /** Token Authorization Rules Program */
-    authorizationRulesProgram?: TAccountMetas[10] | undefined;
+    authorizationRulesProgram?: TAccountMetas[12] | undefined;
     /** Token Authorization Rules account */
-    authorizationRules?: TAccountMetas[11] | undefined;
+    authorizationRules?: TAccountMetas[13] | undefined;
   };
-  data: UseInstructionData;
+  data: RevokeProgrammableConfigItemV1InstructionData;
 };
 
-export function parseUseInstruction<
+export function parseRevokeProgrammableConfigItemV1Instruction<
   TProgram extends string,
   TAccountMetas extends readonly AccountMeta[],
 >(
   instruction: Instruction<TProgram> &
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>
-): ParsedUseInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 12) {
+): ParsedRevokeProgrammableConfigItemV1Instruction<TProgram, TAccountMetas> {
+  if (instruction.accounts.length < 14) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -570,12 +638,14 @@ export function parseUseInstruction<
   return {
     programAddress: instruction.programAddress,
     accounts: {
-      authority: getNextAccount(),
       delegateRecord: getNextOptionalAccount(),
-      token: getNextOptionalAccount(),
-      mint: getNextAccount(),
+      delegate: getNextAccount(),
       metadata: getNextAccount(),
-      edition: getNextOptionalAccount(),
+      masterEdition: getNextOptionalAccount(),
+      tokenRecord: getNextOptionalAccount(),
+      mint: getNextAccount(),
+      token: getNextOptionalAccount(),
+      authority: getNextAccount(),
       payer: getNextAccount(),
       systemProgram: getNextAccount(),
       sysvarInstructions: getNextAccount(),
@@ -583,6 +653,8 @@ export function parseUseInstruction<
       authorizationRulesProgram: getNextOptionalAccount(),
       authorizationRules: getNextOptionalAccount(),
     },
-    data: getUseInstructionDataDecoder().decode(instruction.data),
+    data: getRevokeProgrammableConfigItemV1InstructionDataDecoder().decode(
+      instruction.data
+    ),
   };
 }

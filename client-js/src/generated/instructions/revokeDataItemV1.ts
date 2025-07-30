@@ -16,9 +16,9 @@ import {
   type AccountMeta,
   type AccountSignerMeta,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
   type Instruction,
   type InstructionWithAccounts,
   type InstructionWithData,
@@ -37,21 +37,15 @@ import {
   getAccountMetaFactory,
   type ResolvedAccount,
 } from '../shared';
-import {
-  getDelegateArgsDecoder,
-  getDelegateArgsEncoder,
-  type DelegateArgs,
-  type DelegateArgsArgs,
-  type TokenStandardArgs,
-} from '../types';
+import { type TokenStandardArgs } from '../types';
 
-export const DELEGATE_DISCRIMINATOR = 44;
+export const REVOKE_DATA_ITEM_V1_DISCRIMINATOR = 45;
 
-export function getDelegateDiscriminatorBytes() {
-  return getU8Encoder().encode(DELEGATE_DISCRIMINATOR);
+export function getRevokeDataItemV1DiscriminatorBytes() {
+  return getU8Encoder().encode(REVOKE_DATA_ITEM_V1_DISCRIMINATOR);
 }
 
-export type DelegateInstruction<
+export type RevokeDataItemV1Instruction<
   TProgram extends string = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
   TAccountDelegateRecord extends string | AccountMeta<string> = string,
   TAccountDelegate extends string | AccountMeta<string> = string,
@@ -126,43 +120,49 @@ export type DelegateInstruction<
     ]
   >;
 
-export type DelegateInstructionData = {
+export type RevokeDataItemV1InstructionData = {
   discriminator: number;
-  delegateArgs: DelegateArgs;
+  revokeDataItemV1Discriminator: number;
 };
 
-export type DelegateInstructionDataArgs = { delegateArgs: DelegateArgsArgs };
+export type RevokeDataItemV1InstructionDataArgs = {};
 
-export function getDelegateInstructionDataEncoder(): Encoder<DelegateInstructionDataArgs> {
+export function getRevokeDataItemV1InstructionDataEncoder(): FixedSizeEncoder<RevokeDataItemV1InstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', getU8Encoder()],
-      ['delegateArgs', getDelegateArgsEncoder()],
+      ['revokeDataItemV1Discriminator', getU8Encoder()],
     ]),
-    (value) => ({ ...value, discriminator: DELEGATE_DISCRIMINATOR })
+    (value) => ({
+      ...value,
+      discriminator: REVOKE_DATA_ITEM_V1_DISCRIMINATOR,
+      revokeDataItemV1Discriminator: 11,
+    })
   );
 }
 
-export function getDelegateInstructionDataDecoder(): Decoder<DelegateInstructionData> {
+export function getRevokeDataItemV1InstructionDataDecoder(): FixedSizeDecoder<RevokeDataItemV1InstructionData> {
   return getStructDecoder([
     ['discriminator', getU8Decoder()],
-    ['delegateArgs', getDelegateArgsDecoder()],
+    ['revokeDataItemV1Discriminator', getU8Decoder()],
   ]);
 }
 
-export function getDelegateInstructionDataCodec(): Codec<
-  DelegateInstructionDataArgs,
-  DelegateInstructionData
+export function getRevokeDataItemV1InstructionDataCodec(): FixedSizeCodec<
+  RevokeDataItemV1InstructionDataArgs,
+  RevokeDataItemV1InstructionData
 > {
   return combineCodec(
-    getDelegateInstructionDataEncoder(),
-    getDelegateInstructionDataDecoder()
+    getRevokeDataItemV1InstructionDataEncoder(),
+    getRevokeDataItemV1InstructionDataDecoder()
   );
 }
 
-export type DelegateInstructionExtraArgs = { tokenStandard: TokenStandardArgs };
+export type RevokeDataItemV1InstructionExtraArgs = {
+  tokenStandard: TokenStandardArgs;
+};
 
-export type DelegateAsyncInput<
+export type RevokeDataItemV1AsyncInput<
   TAccountDelegateRecord extends string = string,
   TAccountDelegate extends string = string,
   TAccountMetadata extends string = string,
@@ -206,11 +206,10 @@ export type DelegateAsyncInput<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  delegateArgs: DelegateInstructionDataArgs['delegateArgs'];
-  tokenStandard: DelegateInstructionExtraArgs['tokenStandard'];
+  tokenStandard: RevokeDataItemV1InstructionExtraArgs['tokenStandard'];
 };
 
-export async function getDelegateInstructionAsync<
+export async function getRevokeDataItemV1InstructionAsync<
   TAccountDelegateRecord extends string,
   TAccountDelegate extends string,
   TAccountMetadata extends string,
@@ -227,7 +226,7 @@ export async function getDelegateInstructionAsync<
   TAccountAuthorizationRules extends string,
   TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
 >(
-  input: DelegateAsyncInput<
+  input: RevokeDataItemV1AsyncInput<
     TAccountDelegateRecord,
     TAccountDelegate,
     TAccountMetadata,
@@ -245,7 +244,7 @@ export async function getDelegateInstructionAsync<
   >,
   config?: { programAddress?: TProgramAddress }
 ): Promise<
-  DelegateInstruction<
+  RevokeDataItemV1Instruction<
     TProgramAddress,
     TAccountDelegateRecord,
     TAccountDelegate,
@@ -354,10 +353,8 @@ export async function getDelegateInstructionAsync<
       getAccountMeta(accounts.authorizationRules),
     ],
     programAddress,
-    data: getDelegateInstructionDataEncoder().encode(
-      args as DelegateInstructionDataArgs
-    ),
-  } as DelegateInstruction<
+    data: getRevokeDataItemV1InstructionDataEncoder().encode({}),
+  } as RevokeDataItemV1Instruction<
     TProgramAddress,
     TAccountDelegateRecord,
     TAccountDelegate,
@@ -378,7 +375,7 @@ export async function getDelegateInstructionAsync<
   return instruction;
 }
 
-export type DelegateInput<
+export type RevokeDataItemV1Input<
   TAccountDelegateRecord extends string = string,
   TAccountDelegate extends string = string,
   TAccountMetadata extends string = string,
@@ -422,11 +419,10 @@ export type DelegateInput<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  delegateArgs: DelegateInstructionDataArgs['delegateArgs'];
-  tokenStandard: DelegateInstructionExtraArgs['tokenStandard'];
+  tokenStandard: RevokeDataItemV1InstructionExtraArgs['tokenStandard'];
 };
 
-export function getDelegateInstruction<
+export function getRevokeDataItemV1Instruction<
   TAccountDelegateRecord extends string,
   TAccountDelegate extends string,
   TAccountMetadata extends string,
@@ -443,7 +439,7 @@ export function getDelegateInstruction<
   TAccountAuthorizationRules extends string,
   TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
 >(
-  input: DelegateInput<
+  input: RevokeDataItemV1Input<
     TAccountDelegateRecord,
     TAccountDelegate,
     TAccountMetadata,
@@ -460,7 +456,7 @@ export function getDelegateInstruction<
     TAccountAuthorizationRules
   >,
   config?: { programAddress?: TProgramAddress }
-): DelegateInstruction<
+): RevokeDataItemV1Instruction<
   TProgramAddress,
   TAccountDelegateRecord,
   TAccountDelegate,
@@ -553,10 +549,8 @@ export function getDelegateInstruction<
       getAccountMeta(accounts.authorizationRules),
     ],
     programAddress,
-    data: getDelegateInstructionDataEncoder().encode(
-      args as DelegateInstructionDataArgs
-    ),
-  } as DelegateInstruction<
+    data: getRevokeDataItemV1InstructionDataEncoder().encode({}),
+  } as RevokeDataItemV1Instruction<
     TProgramAddress,
     TAccountDelegateRecord,
     TAccountDelegate,
@@ -577,7 +571,7 @@ export function getDelegateInstruction<
   return instruction;
 }
 
-export type ParsedDelegateInstruction<
+export type ParsedRevokeDataItemV1Instruction<
   TProgram extends string = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
   TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
 > = {
@@ -612,17 +606,17 @@ export type ParsedDelegateInstruction<
     /** Token Authorization Rules account */
     authorizationRules?: TAccountMetas[13] | undefined;
   };
-  data: DelegateInstructionData;
+  data: RevokeDataItemV1InstructionData;
 };
 
-export function parseDelegateInstruction<
+export function parseRevokeDataItemV1Instruction<
   TProgram extends string,
   TAccountMetas extends readonly AccountMeta[],
 >(
   instruction: Instruction<TProgram> &
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>
-): ParsedDelegateInstruction<TProgram, TAccountMetas> {
+): ParsedRevokeDataItemV1Instruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 14) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
@@ -657,6 +651,6 @@ export function parseDelegateInstruction<
       authorizationRulesProgram: getNextOptionalAccount(),
       authorizationRules: getNextOptionalAccount(),
     },
-    data: getDelegateInstructionDataDecoder().decode(instruction.data),
+    data: getRevokeDataItemV1InstructionDataDecoder().decode(instruction.data),
   };
 }

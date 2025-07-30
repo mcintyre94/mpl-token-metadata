@@ -16,9 +16,9 @@ import {
   type AccountMeta,
   type AccountSignerMeta,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
   type Instruction,
   type InstructionWithAccounts,
   type InstructionWithData,
@@ -29,34 +29,32 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/kit';
-import { findMetadataPda } from '../pdas';
+import { resolveIsNonFungible } from '../../hooked';
+import { findMasterEditionPda, findMetadataPda } from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
 import {
   expectAddress,
   getAccountMetaFactory,
   type ResolvedAccount,
 } from '../shared';
-import {
-  getUpdateArgsDecoder,
-  getUpdateArgsEncoder,
-  type UpdateArgs,
-  type UpdateArgsArgs,
-} from '../types';
+import { type TokenStandardArgs } from '../types';
 
-export const UPDATE_DISCRIMINATOR = 50;
+export const REVOKE_TRANSFER_V1_DISCRIMINATOR = 45;
 
-export function getUpdateDiscriminatorBytes() {
-  return getU8Encoder().encode(UPDATE_DISCRIMINATOR);
+export function getRevokeTransferV1DiscriminatorBytes() {
+  return getU8Encoder().encode(REVOKE_TRANSFER_V1_DISCRIMINATOR);
 }
 
-export type UpdateInstruction<
+export type RevokeTransferV1Instruction<
   TProgram extends string = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
-  TAccountAuthority extends string | AccountMeta<string> = string,
   TAccountDelegateRecord extends string | AccountMeta<string> = string,
-  TAccountToken extends string | AccountMeta<string> = string,
-  TAccountMint extends string | AccountMeta<string> = string,
+  TAccountDelegate extends string | AccountMeta<string> = string,
   TAccountMetadata extends string | AccountMeta<string> = string,
-  TAccountEdition extends string | AccountMeta<string> = string,
+  TAccountMasterEdition extends string | AccountMeta<string> = string,
+  TAccountTokenRecord extends string | AccountMeta<string> = string,
+  TAccountMint extends string | AccountMeta<string> = string,
+  TAccountToken extends string | AccountMeta<string> = string,
+  TAccountAuthority extends string | AccountMeta<string> = string,
   TAccountPayer extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
@@ -64,6 +62,7 @@ export type UpdateInstruction<
   TAccountSysvarInstructions extends
     | string
     | AccountMeta<string> = 'Sysvar1nstructions1111111111111111111111111',
+  TAccountSplTokenProgram extends string | AccountMeta<string> = string,
   TAccountAuthorizationRulesProgram extends
     | string
     | AccountMeta<string> = string,
@@ -73,25 +72,31 @@ export type UpdateInstruction<
   InstructionWithData<ReadonlyUint8Array> &
   InstructionWithAccounts<
     [
+      TAccountDelegateRecord extends string
+        ? WritableAccount<TAccountDelegateRecord>
+        : TAccountDelegateRecord,
+      TAccountDelegate extends string
+        ? ReadonlyAccount<TAccountDelegate>
+        : TAccountDelegate,
+      TAccountMetadata extends string
+        ? WritableAccount<TAccountMetadata>
+        : TAccountMetadata,
+      TAccountMasterEdition extends string
+        ? ReadonlyAccount<TAccountMasterEdition>
+        : TAccountMasterEdition,
+      TAccountTokenRecord extends string
+        ? WritableAccount<TAccountTokenRecord>
+        : TAccountTokenRecord,
+      TAccountMint extends string
+        ? ReadonlyAccount<TAccountMint>
+        : TAccountMint,
+      TAccountToken extends string
+        ? WritableAccount<TAccountToken>
+        : TAccountToken,
       TAccountAuthority extends string
         ? ReadonlySignerAccount<TAccountAuthority> &
             AccountSignerMeta<TAccountAuthority>
         : TAccountAuthority,
-      TAccountDelegateRecord extends string
-        ? ReadonlyAccount<TAccountDelegateRecord>
-        : TAccountDelegateRecord,
-      TAccountToken extends string
-        ? ReadonlyAccount<TAccountToken>
-        : TAccountToken,
-      TAccountMint extends string
-        ? ReadonlyAccount<TAccountMint>
-        : TAccountMint,
-      TAccountMetadata extends string
-        ? WritableAccount<TAccountMetadata>
-        : TAccountMetadata,
-      TAccountEdition extends string
-        ? ReadonlyAccount<TAccountEdition>
-        : TAccountEdition,
       TAccountPayer extends string
         ? WritableSignerAccount<TAccountPayer> &
             AccountSignerMeta<TAccountPayer>
@@ -102,6 +107,9 @@ export type UpdateInstruction<
       TAccountSysvarInstructions extends string
         ? ReadonlyAccount<TAccountSysvarInstructions>
         : TAccountSysvarInstructions,
+      TAccountSplTokenProgram extends string
+        ? ReadonlyAccount<TAccountSplTokenProgram>
+        : TAccountSplTokenProgram,
       TAccountAuthorizationRulesProgram extends string
         ? ReadonlyAccount<TAccountAuthorizationRulesProgram>
         : TAccountAuthorizationRulesProgram,
@@ -112,118 +120,144 @@ export type UpdateInstruction<
     ]
   >;
 
-export type UpdateInstructionData = {
+export type RevokeTransferV1InstructionData = {
   discriminator: number;
-  updateArgs: UpdateArgs;
+  revokeTransferV1Discriminator: number;
 };
 
-export type UpdateInstructionDataArgs = { updateArgs: UpdateArgsArgs };
+export type RevokeTransferV1InstructionDataArgs = {};
 
-export function getUpdateInstructionDataEncoder(): Encoder<UpdateInstructionDataArgs> {
+export function getRevokeTransferV1InstructionDataEncoder(): FixedSizeEncoder<RevokeTransferV1InstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', getU8Encoder()],
-      ['updateArgs', getUpdateArgsEncoder()],
+      ['revokeTransferV1Discriminator', getU8Encoder()],
     ]),
-    (value) => ({ ...value, discriminator: UPDATE_DISCRIMINATOR })
+    (value) => ({
+      ...value,
+      discriminator: REVOKE_TRANSFER_V1_DISCRIMINATOR,
+      revokeTransferV1Discriminator: 2,
+    })
   );
 }
 
-export function getUpdateInstructionDataDecoder(): Decoder<UpdateInstructionData> {
+export function getRevokeTransferV1InstructionDataDecoder(): FixedSizeDecoder<RevokeTransferV1InstructionData> {
   return getStructDecoder([
     ['discriminator', getU8Decoder()],
-    ['updateArgs', getUpdateArgsDecoder()],
+    ['revokeTransferV1Discriminator', getU8Decoder()],
   ]);
 }
 
-export function getUpdateInstructionDataCodec(): Codec<
-  UpdateInstructionDataArgs,
-  UpdateInstructionData
+export function getRevokeTransferV1InstructionDataCodec(): FixedSizeCodec<
+  RevokeTransferV1InstructionDataArgs,
+  RevokeTransferV1InstructionData
 > {
   return combineCodec(
-    getUpdateInstructionDataEncoder(),
-    getUpdateInstructionDataDecoder()
+    getRevokeTransferV1InstructionDataEncoder(),
+    getRevokeTransferV1InstructionDataDecoder()
   );
 }
 
-export type UpdateAsyncInput<
-  TAccountAuthority extends string = string,
+export type RevokeTransferV1InstructionExtraArgs = {
+  tokenStandard: TokenStandardArgs;
+};
+
+export type RevokeTransferV1AsyncInput<
   TAccountDelegateRecord extends string = string,
-  TAccountToken extends string = string,
-  TAccountMint extends string = string,
+  TAccountDelegate extends string = string,
   TAccountMetadata extends string = string,
-  TAccountEdition extends string = string,
+  TAccountMasterEdition extends string = string,
+  TAccountTokenRecord extends string = string,
+  TAccountMint extends string = string,
+  TAccountToken extends string = string,
+  TAccountAuthority extends string = string,
   TAccountPayer extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountSysvarInstructions extends string = string,
+  TAccountSplTokenProgram extends string = string,
   TAccountAuthorizationRulesProgram extends string = string,
   TAccountAuthorizationRules extends string = string,
 > = {
-  /** Update authority or delegate */
-  authority: TransactionSigner<TAccountAuthority>;
-  /** Delegate record PDA */
+  /** Delegate record account */
   delegateRecord?: Address<TAccountDelegateRecord>;
-  /** Token account */
-  token?: Address<TAccountToken>;
-  /** Mint account */
-  mint: Address<TAccountMint>;
+  /** Owner of the delegated account */
+  delegate: Address<TAccountDelegate>;
   /** Metadata account */
   metadata?: Address<TAccountMetadata>;
-  /** Edition account */
-  edition?: Address<TAccountEdition>;
+  /** Master Edition account */
+  masterEdition?: Address<TAccountMasterEdition>;
+  /** Token record account */
+  tokenRecord?: Address<TAccountTokenRecord>;
+  /** Mint of metadata */
+  mint: Address<TAccountMint>;
+  /** Token account of mint */
+  token?: Address<TAccountToken>;
+  /** Update authority or token owner */
+  authority: TransactionSigner<TAccountAuthority>;
   /** Payer */
   payer: TransactionSigner<TAccountPayer>;
-  /** System program */
+  /** System Program */
   systemProgram?: Address<TAccountSystemProgram>;
   /** Instructions sysvar account */
   sysvarInstructions?: Address<TAccountSysvarInstructions>;
+  /** SPL Token Program */
+  splTokenProgram?: Address<TAccountSplTokenProgram>;
   /** Token Authorization Rules Program */
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  updateArgs: UpdateInstructionDataArgs['updateArgs'];
+  tokenStandard: RevokeTransferV1InstructionExtraArgs['tokenStandard'];
 };
 
-export async function getUpdateInstructionAsync<
-  TAccountAuthority extends string,
+export async function getRevokeTransferV1InstructionAsync<
   TAccountDelegateRecord extends string,
-  TAccountToken extends string,
-  TAccountMint extends string,
+  TAccountDelegate extends string,
   TAccountMetadata extends string,
-  TAccountEdition extends string,
+  TAccountMasterEdition extends string,
+  TAccountTokenRecord extends string,
+  TAccountMint extends string,
+  TAccountToken extends string,
+  TAccountAuthority extends string,
   TAccountPayer extends string,
   TAccountSystemProgram extends string,
   TAccountSysvarInstructions extends string,
+  TAccountSplTokenProgram extends string,
   TAccountAuthorizationRulesProgram extends string,
   TAccountAuthorizationRules extends string,
   TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
 >(
-  input: UpdateAsyncInput<
-    TAccountAuthority,
+  input: RevokeTransferV1AsyncInput<
     TAccountDelegateRecord,
-    TAccountToken,
-    TAccountMint,
+    TAccountDelegate,
     TAccountMetadata,
-    TAccountEdition,
+    TAccountMasterEdition,
+    TAccountTokenRecord,
+    TAccountMint,
+    TAccountToken,
+    TAccountAuthority,
     TAccountPayer,
     TAccountSystemProgram,
     TAccountSysvarInstructions,
+    TAccountSplTokenProgram,
     TAccountAuthorizationRulesProgram,
     TAccountAuthorizationRules
   >,
   config?: { programAddress?: TProgramAddress }
 ): Promise<
-  UpdateInstruction<
+  RevokeTransferV1Instruction<
     TProgramAddress,
-    TAccountAuthority,
     TAccountDelegateRecord,
-    TAccountToken,
-    TAccountMint,
+    TAccountDelegate,
     TAccountMetadata,
-    TAccountEdition,
+    TAccountMasterEdition,
+    TAccountTokenRecord,
+    TAccountMint,
+    TAccountToken,
+    TAccountAuthority,
     TAccountPayer,
     TAccountSystemProgram,
     TAccountSysvarInstructions,
+    TAccountSplTokenProgram,
     TAccountAuthorizationRulesProgram,
     TAccountAuthorizationRules
   >
@@ -234,16 +268,22 @@ export async function getUpdateInstructionAsync<
 
   // Original accounts.
   const originalAccounts = {
-    authority: { value: input.authority ?? null, isWritable: false },
-    delegateRecord: { value: input.delegateRecord ?? null, isWritable: false },
-    token: { value: input.token ?? null, isWritable: false },
-    mint: { value: input.mint ?? null, isWritable: false },
+    delegateRecord: { value: input.delegateRecord ?? null, isWritable: true },
+    delegate: { value: input.delegate ?? null, isWritable: false },
     metadata: { value: input.metadata ?? null, isWritable: true },
-    edition: { value: input.edition ?? null, isWritable: false },
+    masterEdition: { value: input.masterEdition ?? null, isWritable: false },
+    tokenRecord: { value: input.tokenRecord ?? null, isWritable: true },
+    mint: { value: input.mint ?? null, isWritable: false },
+    token: { value: input.token ?? null, isWritable: true },
+    authority: { value: input.authority ?? null, isWritable: false },
     payer: { value: input.payer ?? null, isWritable: true },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
     sysvarInstructions: {
       value: input.sysvarInstructions ?? null,
+      isWritable: false,
+    },
+    splTokenProgram: {
+      value: input.splTokenProgram ?? null,
       isWritable: false,
     },
     authorizationRulesProgram: {
@@ -263,11 +303,21 @@ export async function getUpdateInstructionAsync<
   // Original args.
   const args = { ...input };
 
+  // Resolver scope.
+  const resolverScope = { programAddress, accounts, args };
+
   // Resolve default values.
   if (!accounts.metadata.value) {
     accounts.metadata.value = await findMetadataPda({
       mint: expectAddress(accounts.mint.value),
     });
+  }
+  if (!accounts.masterEdition.value) {
+    if (resolveIsNonFungible(resolverScope)) {
+      accounts.masterEdition.value = await findMasterEditionPda({
+        mint: expectAddress(accounts.mint.value),
+      });
+    }
   }
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
@@ -287,33 +337,37 @@ export async function getUpdateInstructionAsync<
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
     accounts: [
-      getAccountMeta(accounts.authority),
       getAccountMeta(accounts.delegateRecord),
-      getAccountMeta(accounts.token),
-      getAccountMeta(accounts.mint),
+      getAccountMeta(accounts.delegate),
       getAccountMeta(accounts.metadata),
-      getAccountMeta(accounts.edition),
+      getAccountMeta(accounts.masterEdition),
+      getAccountMeta(accounts.tokenRecord),
+      getAccountMeta(accounts.mint),
+      getAccountMeta(accounts.token),
+      getAccountMeta(accounts.authority),
       getAccountMeta(accounts.payer),
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.sysvarInstructions),
+      getAccountMeta(accounts.splTokenProgram),
       getAccountMeta(accounts.authorizationRulesProgram),
       getAccountMeta(accounts.authorizationRules),
     ],
     programAddress,
-    data: getUpdateInstructionDataEncoder().encode(
-      args as UpdateInstructionDataArgs
-    ),
-  } as UpdateInstruction<
+    data: getRevokeTransferV1InstructionDataEncoder().encode({}),
+  } as RevokeTransferV1Instruction<
     TProgramAddress,
-    TAccountAuthority,
     TAccountDelegateRecord,
-    TAccountToken,
-    TAccountMint,
+    TAccountDelegate,
     TAccountMetadata,
-    TAccountEdition,
+    TAccountMasterEdition,
+    TAccountTokenRecord,
+    TAccountMint,
+    TAccountToken,
+    TAccountAuthority,
     TAccountPayer,
     TAccountSystemProgram,
     TAccountSysvarInstructions,
+    TAccountSplTokenProgram,
     TAccountAuthorizationRulesProgram,
     TAccountAuthorizationRules
   >;
@@ -321,83 +375,101 @@ export async function getUpdateInstructionAsync<
   return instruction;
 }
 
-export type UpdateInput<
-  TAccountAuthority extends string = string,
+export type RevokeTransferV1Input<
   TAccountDelegateRecord extends string = string,
-  TAccountToken extends string = string,
-  TAccountMint extends string = string,
+  TAccountDelegate extends string = string,
   TAccountMetadata extends string = string,
-  TAccountEdition extends string = string,
+  TAccountMasterEdition extends string = string,
+  TAccountTokenRecord extends string = string,
+  TAccountMint extends string = string,
+  TAccountToken extends string = string,
+  TAccountAuthority extends string = string,
   TAccountPayer extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountSysvarInstructions extends string = string,
+  TAccountSplTokenProgram extends string = string,
   TAccountAuthorizationRulesProgram extends string = string,
   TAccountAuthorizationRules extends string = string,
 > = {
-  /** Update authority or delegate */
-  authority: TransactionSigner<TAccountAuthority>;
-  /** Delegate record PDA */
+  /** Delegate record account */
   delegateRecord?: Address<TAccountDelegateRecord>;
-  /** Token account */
-  token?: Address<TAccountToken>;
-  /** Mint account */
-  mint: Address<TAccountMint>;
+  /** Owner of the delegated account */
+  delegate: Address<TAccountDelegate>;
   /** Metadata account */
   metadata: Address<TAccountMetadata>;
-  /** Edition account */
-  edition?: Address<TAccountEdition>;
+  /** Master Edition account */
+  masterEdition?: Address<TAccountMasterEdition>;
+  /** Token record account */
+  tokenRecord?: Address<TAccountTokenRecord>;
+  /** Mint of metadata */
+  mint: Address<TAccountMint>;
+  /** Token account of mint */
+  token?: Address<TAccountToken>;
+  /** Update authority or token owner */
+  authority: TransactionSigner<TAccountAuthority>;
   /** Payer */
   payer: TransactionSigner<TAccountPayer>;
-  /** System program */
+  /** System Program */
   systemProgram?: Address<TAccountSystemProgram>;
   /** Instructions sysvar account */
   sysvarInstructions?: Address<TAccountSysvarInstructions>;
+  /** SPL Token Program */
+  splTokenProgram?: Address<TAccountSplTokenProgram>;
   /** Token Authorization Rules Program */
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  updateArgs: UpdateInstructionDataArgs['updateArgs'];
+  tokenStandard: RevokeTransferV1InstructionExtraArgs['tokenStandard'];
 };
 
-export function getUpdateInstruction<
-  TAccountAuthority extends string,
+export function getRevokeTransferV1Instruction<
   TAccountDelegateRecord extends string,
-  TAccountToken extends string,
-  TAccountMint extends string,
+  TAccountDelegate extends string,
   TAccountMetadata extends string,
-  TAccountEdition extends string,
+  TAccountMasterEdition extends string,
+  TAccountTokenRecord extends string,
+  TAccountMint extends string,
+  TAccountToken extends string,
+  TAccountAuthority extends string,
   TAccountPayer extends string,
   TAccountSystemProgram extends string,
   TAccountSysvarInstructions extends string,
+  TAccountSplTokenProgram extends string,
   TAccountAuthorizationRulesProgram extends string,
   TAccountAuthorizationRules extends string,
   TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
 >(
-  input: UpdateInput<
-    TAccountAuthority,
+  input: RevokeTransferV1Input<
     TAccountDelegateRecord,
-    TAccountToken,
-    TAccountMint,
+    TAccountDelegate,
     TAccountMetadata,
-    TAccountEdition,
+    TAccountMasterEdition,
+    TAccountTokenRecord,
+    TAccountMint,
+    TAccountToken,
+    TAccountAuthority,
     TAccountPayer,
     TAccountSystemProgram,
     TAccountSysvarInstructions,
+    TAccountSplTokenProgram,
     TAccountAuthorizationRulesProgram,
     TAccountAuthorizationRules
   >,
   config?: { programAddress?: TProgramAddress }
-): UpdateInstruction<
+): RevokeTransferV1Instruction<
   TProgramAddress,
-  TAccountAuthority,
   TAccountDelegateRecord,
-  TAccountToken,
-  TAccountMint,
+  TAccountDelegate,
   TAccountMetadata,
-  TAccountEdition,
+  TAccountMasterEdition,
+  TAccountTokenRecord,
+  TAccountMint,
+  TAccountToken,
+  TAccountAuthority,
   TAccountPayer,
   TAccountSystemProgram,
   TAccountSysvarInstructions,
+  TAccountSplTokenProgram,
   TAccountAuthorizationRulesProgram,
   TAccountAuthorizationRules
 > {
@@ -407,16 +479,22 @@ export function getUpdateInstruction<
 
   // Original accounts.
   const originalAccounts = {
-    authority: { value: input.authority ?? null, isWritable: false },
-    delegateRecord: { value: input.delegateRecord ?? null, isWritable: false },
-    token: { value: input.token ?? null, isWritable: false },
-    mint: { value: input.mint ?? null, isWritable: false },
+    delegateRecord: { value: input.delegateRecord ?? null, isWritable: true },
+    delegate: { value: input.delegate ?? null, isWritable: false },
     metadata: { value: input.metadata ?? null, isWritable: true },
-    edition: { value: input.edition ?? null, isWritable: false },
+    masterEdition: { value: input.masterEdition ?? null, isWritable: false },
+    tokenRecord: { value: input.tokenRecord ?? null, isWritable: true },
+    mint: { value: input.mint ?? null, isWritable: false },
+    token: { value: input.token ?? null, isWritable: true },
+    authority: { value: input.authority ?? null, isWritable: false },
     payer: { value: input.payer ?? null, isWritable: true },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
     sysvarInstructions: {
       value: input.sysvarInstructions ?? null,
+      isWritable: false,
+    },
+    splTokenProgram: {
+      value: input.splTokenProgram ?? null,
       isWritable: false,
     },
     authorizationRulesProgram: {
@@ -455,33 +533,37 @@ export function getUpdateInstruction<
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
     accounts: [
-      getAccountMeta(accounts.authority),
       getAccountMeta(accounts.delegateRecord),
-      getAccountMeta(accounts.token),
-      getAccountMeta(accounts.mint),
+      getAccountMeta(accounts.delegate),
       getAccountMeta(accounts.metadata),
-      getAccountMeta(accounts.edition),
+      getAccountMeta(accounts.masterEdition),
+      getAccountMeta(accounts.tokenRecord),
+      getAccountMeta(accounts.mint),
+      getAccountMeta(accounts.token),
+      getAccountMeta(accounts.authority),
       getAccountMeta(accounts.payer),
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.sysvarInstructions),
+      getAccountMeta(accounts.splTokenProgram),
       getAccountMeta(accounts.authorizationRulesProgram),
       getAccountMeta(accounts.authorizationRules),
     ],
     programAddress,
-    data: getUpdateInstructionDataEncoder().encode(
-      args as UpdateInstructionDataArgs
-    ),
-  } as UpdateInstruction<
+    data: getRevokeTransferV1InstructionDataEncoder().encode({}),
+  } as RevokeTransferV1Instruction<
     TProgramAddress,
-    TAccountAuthority,
     TAccountDelegateRecord,
-    TAccountToken,
-    TAccountMint,
+    TAccountDelegate,
     TAccountMetadata,
-    TAccountEdition,
+    TAccountMasterEdition,
+    TAccountTokenRecord,
+    TAccountMint,
+    TAccountToken,
+    TAccountAuthority,
     TAccountPayer,
     TAccountSystemProgram,
     TAccountSysvarInstructions,
+    TAccountSplTokenProgram,
     TAccountAuthorizationRulesProgram,
     TAccountAuthorizationRules
   >;
@@ -489,47 +571,53 @@ export function getUpdateInstruction<
   return instruction;
 }
 
-export type ParsedUpdateInstruction<
+export type ParsedRevokeTransferV1Instruction<
   TProgram extends string = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
   TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
 > = {
   programAddress: Address<TProgram>;
   accounts: {
-    /** Update authority or delegate */
-    authority: TAccountMetas[0];
-    /** Delegate record PDA */
-    delegateRecord?: TAccountMetas[1] | undefined;
-    /** Token account */
-    token?: TAccountMetas[2] | undefined;
-    /** Mint account */
-    mint: TAccountMetas[3];
+    /** Delegate record account */
+    delegateRecord?: TAccountMetas[0] | undefined;
+    /** Owner of the delegated account */
+    delegate: TAccountMetas[1];
     /** Metadata account */
-    metadata: TAccountMetas[4];
-    /** Edition account */
-    edition?: TAccountMetas[5] | undefined;
+    metadata: TAccountMetas[2];
+    /** Master Edition account */
+    masterEdition?: TAccountMetas[3] | undefined;
+    /** Token record account */
+    tokenRecord?: TAccountMetas[4] | undefined;
+    /** Mint of metadata */
+    mint: TAccountMetas[5];
+    /** Token account of mint */
+    token?: TAccountMetas[6] | undefined;
+    /** Update authority or token owner */
+    authority: TAccountMetas[7];
     /** Payer */
-    payer: TAccountMetas[6];
-    /** System program */
-    systemProgram: TAccountMetas[7];
+    payer: TAccountMetas[8];
+    /** System Program */
+    systemProgram: TAccountMetas[9];
     /** Instructions sysvar account */
-    sysvarInstructions: TAccountMetas[8];
+    sysvarInstructions: TAccountMetas[10];
+    /** SPL Token Program */
+    splTokenProgram?: TAccountMetas[11] | undefined;
     /** Token Authorization Rules Program */
-    authorizationRulesProgram?: TAccountMetas[9] | undefined;
+    authorizationRulesProgram?: TAccountMetas[12] | undefined;
     /** Token Authorization Rules account */
-    authorizationRules?: TAccountMetas[10] | undefined;
+    authorizationRules?: TAccountMetas[13] | undefined;
   };
-  data: UpdateInstructionData;
+  data: RevokeTransferV1InstructionData;
 };
 
-export function parseUpdateInstruction<
+export function parseRevokeTransferV1Instruction<
   TProgram extends string,
   TAccountMetas extends readonly AccountMeta[],
 >(
   instruction: Instruction<TProgram> &
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>
-): ParsedUpdateInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 11) {
+): ParsedRevokeTransferV1Instruction<TProgram, TAccountMetas> {
+  if (instruction.accounts.length < 14) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -548,18 +636,21 @@ export function parseUpdateInstruction<
   return {
     programAddress: instruction.programAddress,
     accounts: {
-      authority: getNextAccount(),
       delegateRecord: getNextOptionalAccount(),
-      token: getNextOptionalAccount(),
-      mint: getNextAccount(),
+      delegate: getNextAccount(),
       metadata: getNextAccount(),
-      edition: getNextOptionalAccount(),
+      masterEdition: getNextOptionalAccount(),
+      tokenRecord: getNextOptionalAccount(),
+      mint: getNextAccount(),
+      token: getNextOptionalAccount(),
+      authority: getNextAccount(),
       payer: getNextAccount(),
       systemProgram: getNextAccount(),
       sysvarInstructions: getNextAccount(),
+      splTokenProgram: getNextOptionalAccount(),
       authorizationRulesProgram: getNextOptionalAccount(),
       authorizationRules: getNextOptionalAccount(),
     },
-    data: getUpdateInstructionDataDecoder().decode(instruction.data),
+    data: getRevokeTransferV1InstructionDataDecoder().decode(instruction.data),
   };
 }

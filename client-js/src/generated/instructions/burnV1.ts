@@ -11,6 +11,8 @@ import {
   combineCodec,
   getStructDecoder,
   getStructEncoder,
+  getU64Decoder,
+  getU64Encoder,
   getU8Decoder,
   getU8Encoder,
   transformEncoder,
@@ -42,22 +44,15 @@ import {
   getAccountMetaFactory,
   type ResolvedAccount,
 } from '../shared';
-import {
-  TokenStandard,
-  getBurnArgsDecoder,
-  getBurnArgsEncoder,
-  type BurnArgs,
-  type BurnArgsArgs,
-  type TokenStandardArgs,
-} from '../types';
+import { TokenStandard, type TokenStandardArgs } from '../types';
 
-export const BURN_DISCRIMINATOR = 41;
+export const BURN_V1_DISCRIMINATOR = 41;
 
-export function getBurnDiscriminatorBytes() {
-  return getU8Encoder().encode(BURN_DISCRIMINATOR);
+export function getBurnV1DiscriminatorBytes() {
+  return getU8Encoder().encode(BURN_V1_DISCRIMINATOR);
 }
 
-export type BurnInstruction<
+export type BurnV1Instruction<
   TProgram extends string = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
   TAccountAuthority extends string | AccountMeta<string> = string,
   TAccountCollectionMetadata extends string | AccountMeta<string> = string,
@@ -131,43 +126,54 @@ export type BurnInstruction<
     ]
   >;
 
-export type BurnInstructionData = { discriminator: number; burnArgs: BurnArgs };
+export type BurnV1InstructionData = {
+  discriminator: number;
+  burnV1Discriminator: number;
+  amount: bigint;
+};
 
-export type BurnInstructionDataArgs = { burnArgs: BurnArgsArgs };
+export type BurnV1InstructionDataArgs = { amount?: number | bigint };
 
-export function getBurnInstructionDataEncoder(): FixedSizeEncoder<BurnInstructionDataArgs> {
+export function getBurnV1InstructionDataEncoder(): FixedSizeEncoder<BurnV1InstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', getU8Encoder()],
-      ['burnArgs', getBurnArgsEncoder()],
+      ['burnV1Discriminator', getU8Encoder()],
+      ['amount', getU64Encoder()],
     ]),
-    (value) => ({ ...value, discriminator: BURN_DISCRIMINATOR })
+    (value) => ({
+      ...value,
+      discriminator: BURN_V1_DISCRIMINATOR,
+      burnV1Discriminator: 0,
+      amount: value.amount ?? 1,
+    })
   );
 }
 
-export function getBurnInstructionDataDecoder(): FixedSizeDecoder<BurnInstructionData> {
+export function getBurnV1InstructionDataDecoder(): FixedSizeDecoder<BurnV1InstructionData> {
   return getStructDecoder([
     ['discriminator', getU8Decoder()],
-    ['burnArgs', getBurnArgsDecoder()],
+    ['burnV1Discriminator', getU8Decoder()],
+    ['amount', getU64Decoder()],
   ]);
 }
 
-export function getBurnInstructionDataCodec(): FixedSizeCodec<
-  BurnInstructionDataArgs,
-  BurnInstructionData
+export function getBurnV1InstructionDataCodec(): FixedSizeCodec<
+  BurnV1InstructionDataArgs,
+  BurnV1InstructionData
 > {
   return combineCodec(
-    getBurnInstructionDataEncoder(),
-    getBurnInstructionDataDecoder()
+    getBurnV1InstructionDataEncoder(),
+    getBurnV1InstructionDataDecoder()
   );
 }
 
-export type BurnInstructionExtraArgs = {
+export type BurnV1InstructionExtraArgs = {
   tokenOwner: Address;
   tokenStandard: TokenStandardArgs;
 };
 
-export type BurnAsyncInput<
+export type BurnV1AsyncInput<
   TAccountAuthority extends string = string,
   TAccountCollectionMetadata extends string = string,
   TAccountMetadata extends string = string,
@@ -211,12 +217,12 @@ export type BurnAsyncInput<
   sysvarInstructions?: Address<TAccountSysvarInstructions>;
   /** SPL Token Program */
   splTokenProgram?: Address<TAccountSplTokenProgram>;
-  burnArgs: BurnInstructionDataArgs['burnArgs'];
-  tokenOwner?: BurnInstructionExtraArgs['tokenOwner'];
-  tokenStandard: BurnInstructionExtraArgs['tokenStandard'];
+  amount?: BurnV1InstructionDataArgs['amount'];
+  tokenOwner?: BurnV1InstructionExtraArgs['tokenOwner'];
+  tokenStandard: BurnV1InstructionExtraArgs['tokenStandard'];
 };
 
-export async function getBurnInstructionAsync<
+export async function getBurnV1InstructionAsync<
   TAccountAuthority extends string,
   TAccountCollectionMetadata extends string,
   TAccountMetadata extends string,
@@ -233,7 +239,7 @@ export async function getBurnInstructionAsync<
   TAccountSplTokenProgram extends string,
   TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
 >(
-  input: BurnAsyncInput<
+  input: BurnV1AsyncInput<
     TAccountAuthority,
     TAccountCollectionMetadata,
     TAccountMetadata,
@@ -251,7 +257,7 @@ export async function getBurnInstructionAsync<
   >,
   config?: { programAddress?: TProgramAddress }
 ): Promise<
-  BurnInstruction<
+  BurnV1Instruction<
     TProgramAddress,
     TAccountAuthority,
     TAccountCollectionMetadata,
@@ -383,10 +389,10 @@ export async function getBurnInstructionAsync<
       getAccountMeta(accounts.splTokenProgram),
     ],
     programAddress,
-    data: getBurnInstructionDataEncoder().encode(
-      args as BurnInstructionDataArgs
+    data: getBurnV1InstructionDataEncoder().encode(
+      args as BurnV1InstructionDataArgs
     ),
-  } as BurnInstruction<
+  } as BurnV1Instruction<
     TProgramAddress,
     TAccountAuthority,
     TAccountCollectionMetadata,
@@ -407,7 +413,7 @@ export async function getBurnInstructionAsync<
   return instruction;
 }
 
-export type BurnInput<
+export type BurnV1Input<
   TAccountAuthority extends string = string,
   TAccountCollectionMetadata extends string = string,
   TAccountMetadata extends string = string,
@@ -451,12 +457,12 @@ export type BurnInput<
   sysvarInstructions?: Address<TAccountSysvarInstructions>;
   /** SPL Token Program */
   splTokenProgram?: Address<TAccountSplTokenProgram>;
-  burnArgs: BurnInstructionDataArgs['burnArgs'];
-  tokenOwner?: BurnInstructionExtraArgs['tokenOwner'];
-  tokenStandard: BurnInstructionExtraArgs['tokenStandard'];
+  amount?: BurnV1InstructionDataArgs['amount'];
+  tokenOwner?: BurnV1InstructionExtraArgs['tokenOwner'];
+  tokenStandard: BurnV1InstructionExtraArgs['tokenStandard'];
 };
 
-export function getBurnInstruction<
+export function getBurnV1Instruction<
   TAccountAuthority extends string,
   TAccountCollectionMetadata extends string,
   TAccountMetadata extends string,
@@ -473,7 +479,7 @@ export function getBurnInstruction<
   TAccountSplTokenProgram extends string,
   TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
 >(
-  input: BurnInput<
+  input: BurnV1Input<
     TAccountAuthority,
     TAccountCollectionMetadata,
     TAccountMetadata,
@@ -490,7 +496,7 @@ export function getBurnInstruction<
     TAccountSplTokenProgram
   >,
   config?: { programAddress?: TProgramAddress }
-): BurnInstruction<
+): BurnV1Instruction<
   TProgramAddress,
   TAccountAuthority,
   TAccountCollectionMetadata,
@@ -584,10 +590,10 @@ export function getBurnInstruction<
       getAccountMeta(accounts.splTokenProgram),
     ],
     programAddress,
-    data: getBurnInstructionDataEncoder().encode(
-      args as BurnInstructionDataArgs
+    data: getBurnV1InstructionDataEncoder().encode(
+      args as BurnV1InstructionDataArgs
     ),
-  } as BurnInstruction<
+  } as BurnV1Instruction<
     TProgramAddress,
     TAccountAuthority,
     TAccountCollectionMetadata,
@@ -608,7 +614,7 @@ export function getBurnInstruction<
   return instruction;
 }
 
-export type ParsedBurnInstruction<
+export type ParsedBurnV1Instruction<
   TProgram extends string = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
   TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
 > = {
@@ -643,17 +649,17 @@ export type ParsedBurnInstruction<
     /** SPL Token Program */
     splTokenProgram: TAccountMetas[13];
   };
-  data: BurnInstructionData;
+  data: BurnV1InstructionData;
 };
 
-export function parseBurnInstruction<
+export function parseBurnV1Instruction<
   TProgram extends string,
   TAccountMetas extends readonly AccountMeta[],
 >(
   instruction: Instruction<TProgram> &
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>
-): ParsedBurnInstruction<TProgram, TAccountMetas> {
+): ParsedBurnV1Instruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 14) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
@@ -688,6 +694,6 @@ export function parseBurnInstruction<
       sysvarInstructions: getNextAccount(),
       splTokenProgram: getNextAccount(),
     },
-    data: getBurnInstructionDataDecoder().decode(instruction.data),
+    data: getBurnV1InstructionDataDecoder().decode(instruction.data),
   };
 }

@@ -6,7 +6,6 @@
  * @see https://github.com/codama-idl/codama
  */
 
-import { findAssociatedTokenPda } from '@solana-program/token';
 import {
   combineCodec,
   getStructDecoder,
@@ -17,9 +16,9 @@ import {
   type AccountMeta,
   type AccountSignerMeta,
   type Address,
-  type Codec,
-  type Decoder,
-  type Encoder,
+  type FixedSizeCodec,
+  type FixedSizeDecoder,
+  type FixedSizeEncoder,
   type Instruction,
   type InstructionWithAccounts,
   type InstructionWithData,
@@ -30,43 +29,31 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/kit';
-import {
-  findMasterEditionPda,
-  findMetadataPda,
-  findTokenRecordPda,
-} from '../pdas';
+import { resolveIsNonFungible } from '../../hooked';
+import { findMasterEditionPda, findMetadataPda } from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
 import {
   expectAddress,
   getAccountMetaFactory,
   type ResolvedAccount,
 } from '../shared';
-import {
-  TokenStandard,
-  getTransferArgsDecoder,
-  getTransferArgsEncoder,
-  type TokenStandardArgs,
-  type TransferArgs,
-  type TransferArgsArgs,
-} from '../types';
+import { type TokenStandardArgs } from '../types';
 
-export const TRANSFER_DISCRIMINATOR = 49;
+export const REVOKE_PRINT_DELEGATE_V1_DISCRIMINATOR = 45;
 
-export function getTransferDiscriminatorBytes() {
-  return getU8Encoder().encode(TRANSFER_DISCRIMINATOR);
+export function getRevokePrintDelegateV1DiscriminatorBytes() {
+  return getU8Encoder().encode(REVOKE_PRINT_DELEGATE_V1_DISCRIMINATOR);
 }
 
-export type TransferInstruction<
+export type RevokePrintDelegateV1Instruction<
   TProgram extends string = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
-  TAccountToken extends string | AccountMeta<string> = string,
-  TAccountTokenOwner extends string | AccountMeta<string> = string,
-  TAccountDestinationToken extends string | AccountMeta<string> = string,
-  TAccountDestinationOwner extends string | AccountMeta<string> = string,
-  TAccountMint extends string | AccountMeta<string> = string,
+  TAccountDelegateRecord extends string | AccountMeta<string> = string,
+  TAccountDelegate extends string | AccountMeta<string> = string,
   TAccountMetadata extends string | AccountMeta<string> = string,
-  TAccountEdition extends string | AccountMeta<string> = string,
+  TAccountMasterEdition extends string | AccountMeta<string> = string,
   TAccountTokenRecord extends string | AccountMeta<string> = string,
-  TAccountDestinationTokenRecord extends string | AccountMeta<string> = string,
+  TAccountMint extends string | AccountMeta<string> = string,
+  TAccountToken extends string | AccountMeta<string> = string,
   TAccountAuthority extends string | AccountMeta<string> = string,
   TAccountPayer extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
@@ -75,12 +62,7 @@ export type TransferInstruction<
   TAccountSysvarInstructions extends
     | string
     | AccountMeta<string> = 'Sysvar1nstructions1111111111111111111111111',
-  TAccountSplTokenProgram extends
-    | string
-    | AccountMeta<string> = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
-  TAccountSplAtaProgram extends
-    | string
-    | AccountMeta<string> = 'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL',
+  TAccountSplTokenProgram extends string | AccountMeta<string> = string,
   TAccountAuthorizationRulesProgram extends
     | string
     | AccountMeta<string> = string,
@@ -90,33 +72,27 @@ export type TransferInstruction<
   InstructionWithData<ReadonlyUint8Array> &
   InstructionWithAccounts<
     [
-      TAccountToken extends string
-        ? WritableAccount<TAccountToken>
-        : TAccountToken,
-      TAccountTokenOwner extends string
-        ? ReadonlyAccount<TAccountTokenOwner>
-        : TAccountTokenOwner,
-      TAccountDestinationToken extends string
-        ? WritableAccount<TAccountDestinationToken>
-        : TAccountDestinationToken,
-      TAccountDestinationOwner extends string
-        ? ReadonlyAccount<TAccountDestinationOwner>
-        : TAccountDestinationOwner,
-      TAccountMint extends string
-        ? ReadonlyAccount<TAccountMint>
-        : TAccountMint,
+      TAccountDelegateRecord extends string
+        ? WritableAccount<TAccountDelegateRecord>
+        : TAccountDelegateRecord,
+      TAccountDelegate extends string
+        ? ReadonlyAccount<TAccountDelegate>
+        : TAccountDelegate,
       TAccountMetadata extends string
         ? WritableAccount<TAccountMetadata>
         : TAccountMetadata,
-      TAccountEdition extends string
-        ? ReadonlyAccount<TAccountEdition>
-        : TAccountEdition,
+      TAccountMasterEdition extends string
+        ? ReadonlyAccount<TAccountMasterEdition>
+        : TAccountMasterEdition,
       TAccountTokenRecord extends string
         ? WritableAccount<TAccountTokenRecord>
         : TAccountTokenRecord,
-      TAccountDestinationTokenRecord extends string
-        ? WritableAccount<TAccountDestinationTokenRecord>
-        : TAccountDestinationTokenRecord,
+      TAccountMint extends string
+        ? ReadonlyAccount<TAccountMint>
+        : TAccountMint,
+      TAccountToken extends string
+        ? WritableAccount<TAccountToken>
+        : TAccountToken,
       TAccountAuthority extends string
         ? ReadonlySignerAccount<TAccountAuthority> &
             AccountSignerMeta<TAccountAuthority>
@@ -134,9 +110,6 @@ export type TransferInstruction<
       TAccountSplTokenProgram extends string
         ? ReadonlyAccount<TAccountSplTokenProgram>
         : TAccountSplTokenProgram,
-      TAccountSplAtaProgram extends string
-        ? ReadonlyAccount<TAccountSplAtaProgram>
-        : TAccountSplAtaProgram,
       TAccountAuthorizationRulesProgram extends string
         ? ReadonlyAccount<TAccountAuthorizationRulesProgram>
         : TAccountAuthorizationRulesProgram,
@@ -147,80 +120,79 @@ export type TransferInstruction<
     ]
   >;
 
-export type TransferInstructionData = {
+export type RevokePrintDelegateV1InstructionData = {
   discriminator: number;
-  transferArgs: TransferArgs;
+  revokePrintDelegateV1Discriminator: number;
 };
 
-export type TransferInstructionDataArgs = { transferArgs: TransferArgsArgs };
+export type RevokePrintDelegateV1InstructionDataArgs = {};
 
-export function getTransferInstructionDataEncoder(): Encoder<TransferInstructionDataArgs> {
+export function getRevokePrintDelegateV1InstructionDataEncoder(): FixedSizeEncoder<RevokePrintDelegateV1InstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', getU8Encoder()],
-      ['transferArgs', getTransferArgsEncoder()],
+      ['revokePrintDelegateV1Discriminator', getU8Encoder()],
     ]),
-    (value) => ({ ...value, discriminator: TRANSFER_DISCRIMINATOR })
+    (value) => ({
+      ...value,
+      discriminator: REVOKE_PRINT_DELEGATE_V1_DISCRIMINATOR,
+      revokePrintDelegateV1Discriminator: 14,
+    })
   );
 }
 
-export function getTransferInstructionDataDecoder(): Decoder<TransferInstructionData> {
+export function getRevokePrintDelegateV1InstructionDataDecoder(): FixedSizeDecoder<RevokePrintDelegateV1InstructionData> {
   return getStructDecoder([
     ['discriminator', getU8Decoder()],
-    ['transferArgs', getTransferArgsDecoder()],
+    ['revokePrintDelegateV1Discriminator', getU8Decoder()],
   ]);
 }
 
-export function getTransferInstructionDataCodec(): Codec<
-  TransferInstructionDataArgs,
-  TransferInstructionData
+export function getRevokePrintDelegateV1InstructionDataCodec(): FixedSizeCodec<
+  RevokePrintDelegateV1InstructionDataArgs,
+  RevokePrintDelegateV1InstructionData
 > {
   return combineCodec(
-    getTransferInstructionDataEncoder(),
-    getTransferInstructionDataDecoder()
+    getRevokePrintDelegateV1InstructionDataEncoder(),
+    getRevokePrintDelegateV1InstructionDataDecoder()
   );
 }
 
-export type TransferInstructionExtraArgs = { tokenStandard: TokenStandardArgs };
+export type RevokePrintDelegateV1InstructionExtraArgs = {
+  tokenStandard: TokenStandardArgs;
+};
 
-export type TransferAsyncInput<
-  TAccountToken extends string = string,
-  TAccountTokenOwner extends string = string,
-  TAccountDestinationToken extends string = string,
-  TAccountDestinationOwner extends string = string,
-  TAccountMint extends string = string,
+export type RevokePrintDelegateV1AsyncInput<
+  TAccountDelegateRecord extends string = string,
+  TAccountDelegate extends string = string,
   TAccountMetadata extends string = string,
-  TAccountEdition extends string = string,
+  TAccountMasterEdition extends string = string,
   TAccountTokenRecord extends string = string,
-  TAccountDestinationTokenRecord extends string = string,
+  TAccountMint extends string = string,
+  TAccountToken extends string = string,
   TAccountAuthority extends string = string,
   TAccountPayer extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountSysvarInstructions extends string = string,
   TAccountSplTokenProgram extends string = string,
-  TAccountSplAtaProgram extends string = string,
   TAccountAuthorizationRulesProgram extends string = string,
   TAccountAuthorizationRules extends string = string,
 > = {
-  /** Token account */
-  token?: Address<TAccountToken>;
-  /** Token account owner */
-  tokenOwner: Address<TAccountTokenOwner>;
-  /** Destination token account */
-  destinationToken?: Address<TAccountDestinationToken>;
-  /** Destination token account owner */
-  destinationOwner: Address<TAccountDestinationOwner>;
-  /** Mint of token asset */
-  mint: Address<TAccountMint>;
-  /** Metadata (pda of ['metadata', program id, mint id]) */
+  /** Delegate record account */
+  delegateRecord?: Address<TAccountDelegateRecord>;
+  /** Owner of the delegated account */
+  delegate: Address<TAccountDelegate>;
+  /** Metadata account */
   metadata?: Address<TAccountMetadata>;
-  /** Edition of token asset */
-  edition?: Address<TAccountEdition>;
-  /** Owner token record account */
+  /** Master Edition account */
+  masterEdition?: Address<TAccountMasterEdition>;
+  /** Token record account */
   tokenRecord?: Address<TAccountTokenRecord>;
-  /** Destination token record account */
-  destinationTokenRecord?: Address<TAccountDestinationTokenRecord>;
-  /** Transfer authority (token owner or delegate) */
+  /** Mint of metadata */
+  mint: Address<TAccountMint>;
+  /** Token account of mint */
+  token?: Address<TAccountToken>;
+  /** Update authority or token owner */
   authority: TransactionSigner<TAccountAuthority>;
   /** Payer */
   payer: TransactionSigner<TAccountPayer>;
@@ -230,74 +202,62 @@ export type TransferAsyncInput<
   sysvarInstructions?: Address<TAccountSysvarInstructions>;
   /** SPL Token Program */
   splTokenProgram?: Address<TAccountSplTokenProgram>;
-  /** SPL Associated Token Account program */
-  splAtaProgram?: Address<TAccountSplAtaProgram>;
   /** Token Authorization Rules Program */
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  transferArgs: TransferInstructionDataArgs['transferArgs'];
-  tokenStandard: TransferInstructionExtraArgs['tokenStandard'];
+  tokenStandard: RevokePrintDelegateV1InstructionExtraArgs['tokenStandard'];
 };
 
-export async function getTransferInstructionAsync<
-  TAccountToken extends string,
-  TAccountTokenOwner extends string,
-  TAccountDestinationToken extends string,
-  TAccountDestinationOwner extends string,
-  TAccountMint extends string,
+export async function getRevokePrintDelegateV1InstructionAsync<
+  TAccountDelegateRecord extends string,
+  TAccountDelegate extends string,
   TAccountMetadata extends string,
-  TAccountEdition extends string,
+  TAccountMasterEdition extends string,
   TAccountTokenRecord extends string,
-  TAccountDestinationTokenRecord extends string,
+  TAccountMint extends string,
+  TAccountToken extends string,
   TAccountAuthority extends string,
   TAccountPayer extends string,
   TAccountSystemProgram extends string,
   TAccountSysvarInstructions extends string,
   TAccountSplTokenProgram extends string,
-  TAccountSplAtaProgram extends string,
   TAccountAuthorizationRulesProgram extends string,
   TAccountAuthorizationRules extends string,
   TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
 >(
-  input: TransferAsyncInput<
-    TAccountToken,
-    TAccountTokenOwner,
-    TAccountDestinationToken,
-    TAccountDestinationOwner,
-    TAccountMint,
+  input: RevokePrintDelegateV1AsyncInput<
+    TAccountDelegateRecord,
+    TAccountDelegate,
     TAccountMetadata,
-    TAccountEdition,
+    TAccountMasterEdition,
     TAccountTokenRecord,
-    TAccountDestinationTokenRecord,
+    TAccountMint,
+    TAccountToken,
     TAccountAuthority,
     TAccountPayer,
     TAccountSystemProgram,
     TAccountSysvarInstructions,
     TAccountSplTokenProgram,
-    TAccountSplAtaProgram,
     TAccountAuthorizationRulesProgram,
     TAccountAuthorizationRules
   >,
   config?: { programAddress?: TProgramAddress }
 ): Promise<
-  TransferInstruction<
+  RevokePrintDelegateV1Instruction<
     TProgramAddress,
-    TAccountToken,
-    TAccountTokenOwner,
-    TAccountDestinationToken,
-    TAccountDestinationOwner,
-    TAccountMint,
+    TAccountDelegateRecord,
+    TAccountDelegate,
     TAccountMetadata,
-    TAccountEdition,
+    TAccountMasterEdition,
     TAccountTokenRecord,
-    TAccountDestinationTokenRecord,
+    TAccountMint,
+    TAccountToken,
     TAccountAuthority,
     TAccountPayer,
     TAccountSystemProgram,
     TAccountSysvarInstructions,
     TAccountSplTokenProgram,
-    TAccountSplAtaProgram,
     TAccountAuthorizationRulesProgram,
     TAccountAuthorizationRules
   >
@@ -308,24 +268,13 @@ export async function getTransferInstructionAsync<
 
   // Original accounts.
   const originalAccounts = {
-    token: { value: input.token ?? null, isWritable: true },
-    tokenOwner: { value: input.tokenOwner ?? null, isWritable: false },
-    destinationToken: {
-      value: input.destinationToken ?? null,
-      isWritable: true,
-    },
-    destinationOwner: {
-      value: input.destinationOwner ?? null,
-      isWritable: false,
-    },
-    mint: { value: input.mint ?? null, isWritable: false },
+    delegateRecord: { value: input.delegateRecord ?? null, isWritable: true },
+    delegate: { value: input.delegate ?? null, isWritable: false },
     metadata: { value: input.metadata ?? null, isWritable: true },
-    edition: { value: input.edition ?? null, isWritable: false },
+    masterEdition: { value: input.masterEdition ?? null, isWritable: false },
     tokenRecord: { value: input.tokenRecord ?? null, isWritable: true },
-    destinationTokenRecord: {
-      value: input.destinationTokenRecord ?? null,
-      isWritable: true,
-    },
+    mint: { value: input.mint ?? null, isWritable: false },
+    token: { value: input.token ?? null, isWritable: true },
     authority: { value: input.authority ?? null, isWritable: false },
     payer: { value: input.payer ?? null, isWritable: true },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
@@ -337,7 +286,6 @@ export async function getTransferInstructionAsync<
       value: input.splTokenProgram ?? null,
       isWritable: false,
     },
-    splAtaProgram: { value: input.splAtaProgram ?? null, isWritable: false },
     authorizationRulesProgram: {
       value: input.authorizationRulesProgram ?? null,
       isWritable: false,
@@ -355,49 +303,18 @@ export async function getTransferInstructionAsync<
   // Original args.
   const args = { ...input };
 
+  // Resolver scope.
+  const resolverScope = { programAddress, accounts, args };
+
   // Resolve default values.
-  if (!accounts.splTokenProgram.value) {
-    accounts.splTokenProgram.value =
-      'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
-  }
-  if (!accounts.token.value) {
-    accounts.token.value = await findAssociatedTokenPda({
-      mint: expectAddress(accounts.mint.value),
-      tokenProgram: expectAddress(accounts.splTokenProgram.value),
-      owner: expectAddress(accounts.tokenOwner.value),
-    });
-  }
-  if (!accounts.destinationToken.value) {
-    accounts.destinationToken.value = await findAssociatedTokenPda({
-      mint: expectAddress(accounts.mint.value),
-      tokenProgram: expectAddress(accounts.splTokenProgram.value),
-      owner: expectAddress(accounts.destinationOwner.value),
-    });
-  }
   if (!accounts.metadata.value) {
     accounts.metadata.value = await findMetadataPda({
       mint: expectAddress(accounts.mint.value),
     });
   }
-  if (!accounts.edition.value) {
-    if (args.tokenStandard === TokenStandard.ProgrammableNonFungible) {
-      accounts.edition.value = await findMasterEditionPda({
-        mint: expectAddress(accounts.mint.value),
-      });
-    }
-  }
-  if (!accounts.tokenRecord.value) {
-    if (args.tokenStandard === TokenStandard.ProgrammableNonFungible) {
-      accounts.tokenRecord.value = await findTokenRecordPda({
-        mint: expectAddress(accounts.mint.value),
-        token: expectAddress(accounts.token.value),
-      });
-    }
-  }
-  if (!accounts.destinationTokenRecord.value) {
-    if (args.tokenStandard === TokenStandard.ProgrammableNonFungible) {
-      accounts.destinationTokenRecord.value = await findTokenRecordPda({
-        token: expectAddress(accounts.destinationToken.value),
+  if (!accounts.masterEdition.value) {
+    if (resolveIsNonFungible(resolverScope)) {
+      accounts.masterEdition.value = await findMasterEditionPda({
         mint: expectAddress(accounts.mint.value),
       });
     }
@@ -410,10 +327,6 @@ export async function getTransferInstructionAsync<
     accounts.sysvarInstructions.value =
       'Sysvar1nstructions1111111111111111111111111' as Address<'Sysvar1nstructions1111111111111111111111111'>;
   }
-  if (!accounts.splAtaProgram.value) {
-    accounts.splAtaProgram.value =
-      'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL' as Address<'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL'>;
-  }
   if (!accounts.authorizationRulesProgram.value) {
     if (accounts.authorizationRules.value) {
       accounts.authorizationRulesProgram.value =
@@ -424,45 +337,37 @@ export async function getTransferInstructionAsync<
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
     accounts: [
-      getAccountMeta(accounts.token),
-      getAccountMeta(accounts.tokenOwner),
-      getAccountMeta(accounts.destinationToken),
-      getAccountMeta(accounts.destinationOwner),
-      getAccountMeta(accounts.mint),
+      getAccountMeta(accounts.delegateRecord),
+      getAccountMeta(accounts.delegate),
       getAccountMeta(accounts.metadata),
-      getAccountMeta(accounts.edition),
+      getAccountMeta(accounts.masterEdition),
       getAccountMeta(accounts.tokenRecord),
-      getAccountMeta(accounts.destinationTokenRecord),
+      getAccountMeta(accounts.mint),
+      getAccountMeta(accounts.token),
       getAccountMeta(accounts.authority),
       getAccountMeta(accounts.payer),
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.sysvarInstructions),
       getAccountMeta(accounts.splTokenProgram),
-      getAccountMeta(accounts.splAtaProgram),
       getAccountMeta(accounts.authorizationRulesProgram),
       getAccountMeta(accounts.authorizationRules),
     ],
     programAddress,
-    data: getTransferInstructionDataEncoder().encode(
-      args as TransferInstructionDataArgs
-    ),
-  } as TransferInstruction<
+    data: getRevokePrintDelegateV1InstructionDataEncoder().encode({}),
+  } as RevokePrintDelegateV1Instruction<
     TProgramAddress,
-    TAccountToken,
-    TAccountTokenOwner,
-    TAccountDestinationToken,
-    TAccountDestinationOwner,
-    TAccountMint,
+    TAccountDelegateRecord,
+    TAccountDelegate,
     TAccountMetadata,
-    TAccountEdition,
+    TAccountMasterEdition,
     TAccountTokenRecord,
-    TAccountDestinationTokenRecord,
+    TAccountMint,
+    TAccountToken,
     TAccountAuthority,
     TAccountPayer,
     TAccountSystemProgram,
     TAccountSysvarInstructions,
     TAccountSplTokenProgram,
-    TAccountSplAtaProgram,
     TAccountAuthorizationRulesProgram,
     TAccountAuthorizationRules
   >;
@@ -470,44 +375,37 @@ export async function getTransferInstructionAsync<
   return instruction;
 }
 
-export type TransferInput<
-  TAccountToken extends string = string,
-  TAccountTokenOwner extends string = string,
-  TAccountDestinationToken extends string = string,
-  TAccountDestinationOwner extends string = string,
-  TAccountMint extends string = string,
+export type RevokePrintDelegateV1Input<
+  TAccountDelegateRecord extends string = string,
+  TAccountDelegate extends string = string,
   TAccountMetadata extends string = string,
-  TAccountEdition extends string = string,
+  TAccountMasterEdition extends string = string,
   TAccountTokenRecord extends string = string,
-  TAccountDestinationTokenRecord extends string = string,
+  TAccountMint extends string = string,
+  TAccountToken extends string = string,
   TAccountAuthority extends string = string,
   TAccountPayer extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountSysvarInstructions extends string = string,
   TAccountSplTokenProgram extends string = string,
-  TAccountSplAtaProgram extends string = string,
   TAccountAuthorizationRulesProgram extends string = string,
   TAccountAuthorizationRules extends string = string,
 > = {
-  /** Token account */
-  token: Address<TAccountToken>;
-  /** Token account owner */
-  tokenOwner: Address<TAccountTokenOwner>;
-  /** Destination token account */
-  destinationToken: Address<TAccountDestinationToken>;
-  /** Destination token account owner */
-  destinationOwner: Address<TAccountDestinationOwner>;
-  /** Mint of token asset */
-  mint: Address<TAccountMint>;
-  /** Metadata (pda of ['metadata', program id, mint id]) */
+  /** Delegate record account */
+  delegateRecord?: Address<TAccountDelegateRecord>;
+  /** Owner of the delegated account */
+  delegate: Address<TAccountDelegate>;
+  /** Metadata account */
   metadata: Address<TAccountMetadata>;
-  /** Edition of token asset */
-  edition?: Address<TAccountEdition>;
-  /** Owner token record account */
+  /** Master Edition account */
+  masterEdition?: Address<TAccountMasterEdition>;
+  /** Token record account */
   tokenRecord?: Address<TAccountTokenRecord>;
-  /** Destination token record account */
-  destinationTokenRecord?: Address<TAccountDestinationTokenRecord>;
-  /** Transfer authority (token owner or delegate) */
+  /** Mint of metadata */
+  mint: Address<TAccountMint>;
+  /** Token account of mint */
+  token?: Address<TAccountToken>;
+  /** Update authority or token owner */
   authority: TransactionSigner<TAccountAuthority>;
   /** Payer */
   payer: TransactionSigner<TAccountPayer>;
@@ -517,73 +415,61 @@ export type TransferInput<
   sysvarInstructions?: Address<TAccountSysvarInstructions>;
   /** SPL Token Program */
   splTokenProgram?: Address<TAccountSplTokenProgram>;
-  /** SPL Associated Token Account program */
-  splAtaProgram?: Address<TAccountSplAtaProgram>;
   /** Token Authorization Rules Program */
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  transferArgs: TransferInstructionDataArgs['transferArgs'];
-  tokenStandard: TransferInstructionExtraArgs['tokenStandard'];
+  tokenStandard: RevokePrintDelegateV1InstructionExtraArgs['tokenStandard'];
 };
 
-export function getTransferInstruction<
-  TAccountToken extends string,
-  TAccountTokenOwner extends string,
-  TAccountDestinationToken extends string,
-  TAccountDestinationOwner extends string,
-  TAccountMint extends string,
+export function getRevokePrintDelegateV1Instruction<
+  TAccountDelegateRecord extends string,
+  TAccountDelegate extends string,
   TAccountMetadata extends string,
-  TAccountEdition extends string,
+  TAccountMasterEdition extends string,
   TAccountTokenRecord extends string,
-  TAccountDestinationTokenRecord extends string,
+  TAccountMint extends string,
+  TAccountToken extends string,
   TAccountAuthority extends string,
   TAccountPayer extends string,
   TAccountSystemProgram extends string,
   TAccountSysvarInstructions extends string,
   TAccountSplTokenProgram extends string,
-  TAccountSplAtaProgram extends string,
   TAccountAuthorizationRulesProgram extends string,
   TAccountAuthorizationRules extends string,
   TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
 >(
-  input: TransferInput<
-    TAccountToken,
-    TAccountTokenOwner,
-    TAccountDestinationToken,
-    TAccountDestinationOwner,
-    TAccountMint,
+  input: RevokePrintDelegateV1Input<
+    TAccountDelegateRecord,
+    TAccountDelegate,
     TAccountMetadata,
-    TAccountEdition,
+    TAccountMasterEdition,
     TAccountTokenRecord,
-    TAccountDestinationTokenRecord,
+    TAccountMint,
+    TAccountToken,
     TAccountAuthority,
     TAccountPayer,
     TAccountSystemProgram,
     TAccountSysvarInstructions,
     TAccountSplTokenProgram,
-    TAccountSplAtaProgram,
     TAccountAuthorizationRulesProgram,
     TAccountAuthorizationRules
   >,
   config?: { programAddress?: TProgramAddress }
-): TransferInstruction<
+): RevokePrintDelegateV1Instruction<
   TProgramAddress,
-  TAccountToken,
-  TAccountTokenOwner,
-  TAccountDestinationToken,
-  TAccountDestinationOwner,
-  TAccountMint,
+  TAccountDelegateRecord,
+  TAccountDelegate,
   TAccountMetadata,
-  TAccountEdition,
+  TAccountMasterEdition,
   TAccountTokenRecord,
-  TAccountDestinationTokenRecord,
+  TAccountMint,
+  TAccountToken,
   TAccountAuthority,
   TAccountPayer,
   TAccountSystemProgram,
   TAccountSysvarInstructions,
   TAccountSplTokenProgram,
-  TAccountSplAtaProgram,
   TAccountAuthorizationRulesProgram,
   TAccountAuthorizationRules
 > {
@@ -593,24 +479,13 @@ export function getTransferInstruction<
 
   // Original accounts.
   const originalAccounts = {
-    token: { value: input.token ?? null, isWritable: true },
-    tokenOwner: { value: input.tokenOwner ?? null, isWritable: false },
-    destinationToken: {
-      value: input.destinationToken ?? null,
-      isWritable: true,
-    },
-    destinationOwner: {
-      value: input.destinationOwner ?? null,
-      isWritable: false,
-    },
-    mint: { value: input.mint ?? null, isWritable: false },
+    delegateRecord: { value: input.delegateRecord ?? null, isWritable: true },
+    delegate: { value: input.delegate ?? null, isWritable: false },
     metadata: { value: input.metadata ?? null, isWritable: true },
-    edition: { value: input.edition ?? null, isWritable: false },
+    masterEdition: { value: input.masterEdition ?? null, isWritable: false },
     tokenRecord: { value: input.tokenRecord ?? null, isWritable: true },
-    destinationTokenRecord: {
-      value: input.destinationTokenRecord ?? null,
-      isWritable: true,
-    },
+    mint: { value: input.mint ?? null, isWritable: false },
+    token: { value: input.token ?? null, isWritable: true },
     authority: { value: input.authority ?? null, isWritable: false },
     payer: { value: input.payer ?? null, isWritable: true },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
@@ -622,7 +497,6 @@ export function getTransferInstruction<
       value: input.splTokenProgram ?? null,
       isWritable: false,
     },
-    splAtaProgram: { value: input.splAtaProgram ?? null, isWritable: false },
     authorizationRulesProgram: {
       value: input.authorizationRulesProgram ?? null,
       isWritable: false,
@@ -641,10 +515,6 @@ export function getTransferInstruction<
   const args = { ...input };
 
   // Resolve default values.
-  if (!accounts.splTokenProgram.value) {
-    accounts.splTokenProgram.value =
-      'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
-  }
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
       '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
@@ -652,10 +522,6 @@ export function getTransferInstruction<
   if (!accounts.sysvarInstructions.value) {
     accounts.sysvarInstructions.value =
       'Sysvar1nstructions1111111111111111111111111' as Address<'Sysvar1nstructions1111111111111111111111111'>;
-  }
-  if (!accounts.splAtaProgram.value) {
-    accounts.splAtaProgram.value =
-      'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL' as Address<'ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL'>;
   }
   if (!accounts.authorizationRulesProgram.value) {
     if (accounts.authorizationRules.value) {
@@ -667,45 +533,37 @@ export function getTransferInstruction<
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
     accounts: [
-      getAccountMeta(accounts.token),
-      getAccountMeta(accounts.tokenOwner),
-      getAccountMeta(accounts.destinationToken),
-      getAccountMeta(accounts.destinationOwner),
-      getAccountMeta(accounts.mint),
+      getAccountMeta(accounts.delegateRecord),
+      getAccountMeta(accounts.delegate),
       getAccountMeta(accounts.metadata),
-      getAccountMeta(accounts.edition),
+      getAccountMeta(accounts.masterEdition),
       getAccountMeta(accounts.tokenRecord),
-      getAccountMeta(accounts.destinationTokenRecord),
+      getAccountMeta(accounts.mint),
+      getAccountMeta(accounts.token),
       getAccountMeta(accounts.authority),
       getAccountMeta(accounts.payer),
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.sysvarInstructions),
       getAccountMeta(accounts.splTokenProgram),
-      getAccountMeta(accounts.splAtaProgram),
       getAccountMeta(accounts.authorizationRulesProgram),
       getAccountMeta(accounts.authorizationRules),
     ],
     programAddress,
-    data: getTransferInstructionDataEncoder().encode(
-      args as TransferInstructionDataArgs
-    ),
-  } as TransferInstruction<
+    data: getRevokePrintDelegateV1InstructionDataEncoder().encode({}),
+  } as RevokePrintDelegateV1Instruction<
     TProgramAddress,
-    TAccountToken,
-    TAccountTokenOwner,
-    TAccountDestinationToken,
-    TAccountDestinationOwner,
-    TAccountMint,
+    TAccountDelegateRecord,
+    TAccountDelegate,
     TAccountMetadata,
-    TAccountEdition,
+    TAccountMasterEdition,
     TAccountTokenRecord,
-    TAccountDestinationTokenRecord,
+    TAccountMint,
+    TAccountToken,
     TAccountAuthority,
     TAccountPayer,
     TAccountSystemProgram,
     TAccountSysvarInstructions,
     TAccountSplTokenProgram,
-    TAccountSplAtaProgram,
     TAccountAuthorizationRulesProgram,
     TAccountAuthorizationRules
   >;
@@ -713,59 +571,53 @@ export function getTransferInstruction<
   return instruction;
 }
 
-export type ParsedTransferInstruction<
+export type ParsedRevokePrintDelegateV1Instruction<
   TProgram extends string = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
   TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
 > = {
   programAddress: Address<TProgram>;
   accounts: {
-    /** Token account */
-    token: TAccountMetas[0];
-    /** Token account owner */
-    tokenOwner: TAccountMetas[1];
-    /** Destination token account */
-    destinationToken: TAccountMetas[2];
-    /** Destination token account owner */
-    destinationOwner: TAccountMetas[3];
-    /** Mint of token asset */
-    mint: TAccountMetas[4];
-    /** Metadata (pda of ['metadata', program id, mint id]) */
-    metadata: TAccountMetas[5];
-    /** Edition of token asset */
-    edition?: TAccountMetas[6] | undefined;
-    /** Owner token record account */
-    tokenRecord?: TAccountMetas[7] | undefined;
-    /** Destination token record account */
-    destinationTokenRecord?: TAccountMetas[8] | undefined;
-    /** Transfer authority (token owner or delegate) */
-    authority: TAccountMetas[9];
+    /** Delegate record account */
+    delegateRecord?: TAccountMetas[0] | undefined;
+    /** Owner of the delegated account */
+    delegate: TAccountMetas[1];
+    /** Metadata account */
+    metadata: TAccountMetas[2];
+    /** Master Edition account */
+    masterEdition?: TAccountMetas[3] | undefined;
+    /** Token record account */
+    tokenRecord?: TAccountMetas[4] | undefined;
+    /** Mint of metadata */
+    mint: TAccountMetas[5];
+    /** Token account of mint */
+    token?: TAccountMetas[6] | undefined;
+    /** Update authority or token owner */
+    authority: TAccountMetas[7];
     /** Payer */
-    payer: TAccountMetas[10];
+    payer: TAccountMetas[8];
     /** System Program */
-    systemProgram: TAccountMetas[11];
+    systemProgram: TAccountMetas[9];
     /** Instructions sysvar account */
-    sysvarInstructions: TAccountMetas[12];
+    sysvarInstructions: TAccountMetas[10];
     /** SPL Token Program */
-    splTokenProgram: TAccountMetas[13];
-    /** SPL Associated Token Account program */
-    splAtaProgram: TAccountMetas[14];
+    splTokenProgram?: TAccountMetas[11] | undefined;
     /** Token Authorization Rules Program */
-    authorizationRulesProgram?: TAccountMetas[15] | undefined;
+    authorizationRulesProgram?: TAccountMetas[12] | undefined;
     /** Token Authorization Rules account */
-    authorizationRules?: TAccountMetas[16] | undefined;
+    authorizationRules?: TAccountMetas[13] | undefined;
   };
-  data: TransferInstructionData;
+  data: RevokePrintDelegateV1InstructionData;
 };
 
-export function parseTransferInstruction<
+export function parseRevokePrintDelegateV1Instruction<
   TProgram extends string,
   TAccountMetas extends readonly AccountMeta[],
 >(
   instruction: Instruction<TProgram> &
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>
-): ParsedTransferInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 17) {
+): ParsedRevokePrintDelegateV1Instruction<TProgram, TAccountMetas> {
+  if (instruction.accounts.length < 14) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -784,24 +636,23 @@ export function parseTransferInstruction<
   return {
     programAddress: instruction.programAddress,
     accounts: {
-      token: getNextAccount(),
-      tokenOwner: getNextAccount(),
-      destinationToken: getNextAccount(),
-      destinationOwner: getNextAccount(),
-      mint: getNextAccount(),
+      delegateRecord: getNextOptionalAccount(),
+      delegate: getNextAccount(),
       metadata: getNextAccount(),
-      edition: getNextOptionalAccount(),
+      masterEdition: getNextOptionalAccount(),
       tokenRecord: getNextOptionalAccount(),
-      destinationTokenRecord: getNextOptionalAccount(),
+      mint: getNextAccount(),
+      token: getNextOptionalAccount(),
       authority: getNextAccount(),
       payer: getNextAccount(),
       systemProgram: getNextAccount(),
       sysvarInstructions: getNextAccount(),
-      splTokenProgram: getNextAccount(),
-      splAtaProgram: getNextAccount(),
+      splTokenProgram: getNextOptionalAccount(),
       authorizationRulesProgram: getNextOptionalAccount(),
       authorizationRules: getNextOptionalAccount(),
     },
-    data: getTransferInstructionDataDecoder().decode(instruction.data),
+    data: getRevokePrintDelegateV1InstructionDataDecoder().decode(
+      instruction.data
+    ),
   };
 }

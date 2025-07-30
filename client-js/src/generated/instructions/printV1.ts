@@ -11,6 +11,8 @@ import {
   combineCodec,
   getStructDecoder,
   getStructEncoder,
+  getU64Decoder,
+  getU64Encoder,
   getU8Decoder,
   getU8Encoder,
   transformEncoder,
@@ -42,22 +44,15 @@ import {
   getAccountMetaFactory,
   type ResolvedAccount,
 } from '../shared';
-import {
-  TokenStandard,
-  getPrintArgsDecoder,
-  getPrintArgsEncoder,
-  type PrintArgs,
-  type PrintArgsArgs,
-  type TokenStandardArgs,
-} from '../types';
+import { TokenStandard, type TokenStandardArgs } from '../types';
 
-export const PRINT_DISCRIMINATOR = 55;
+export const PRINT_V1_DISCRIMINATOR = 55;
 
-export function getPrintDiscriminatorBytes() {
-  return getU8Encoder().encode(PRINT_DISCRIMINATOR);
+export function getPrintV1DiscriminatorBytes() {
+  return getU8Encoder().encode(PRINT_V1_DISCRIMINATOR);
 }
 
-export type PrintInstruction<
+export type PrintV1Instruction<
   TProgram extends string = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
   TAccountEditionMetadata extends string | AccountMeta<string> = string,
   TAccountEdition extends string | AccountMeta<string> = string,
@@ -152,46 +147,53 @@ export type PrintInstruction<
     ]
   >;
 
-export type PrintInstructionData = {
+export type PrintV1InstructionData = {
   discriminator: number;
-  printArgs: PrintArgs;
+  printV1Discriminator: number;
+  edition: bigint;
 };
 
-export type PrintInstructionDataArgs = { printArgs: PrintArgsArgs };
+export type PrintV1InstructionDataArgs = { edition: number | bigint };
 
-export function getPrintInstructionDataEncoder(): FixedSizeEncoder<PrintInstructionDataArgs> {
+export function getPrintV1InstructionDataEncoder(): FixedSizeEncoder<PrintV1InstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', getU8Encoder()],
-      ['printArgs', getPrintArgsEncoder()],
+      ['printV1Discriminator', getU8Encoder()],
+      ['edition', getU64Encoder()],
     ]),
-    (value) => ({ ...value, discriminator: PRINT_DISCRIMINATOR })
+    (value) => ({
+      ...value,
+      discriminator: PRINT_V1_DISCRIMINATOR,
+      printV1Discriminator: 0,
+    })
   );
 }
 
-export function getPrintInstructionDataDecoder(): FixedSizeDecoder<PrintInstructionData> {
+export function getPrintV1InstructionDataDecoder(): FixedSizeDecoder<PrintV1InstructionData> {
   return getStructDecoder([
     ['discriminator', getU8Decoder()],
-    ['printArgs', getPrintArgsDecoder()],
+    ['printV1Discriminator', getU8Decoder()],
+    ['edition', getU64Decoder()],
   ]);
 }
 
-export function getPrintInstructionDataCodec(): FixedSizeCodec<
-  PrintInstructionDataArgs,
-  PrintInstructionData
+export function getPrintV1InstructionDataCodec(): FixedSizeCodec<
+  PrintV1InstructionDataArgs,
+  PrintV1InstructionData
 > {
   return combineCodec(
-    getPrintInstructionDataEncoder(),
-    getPrintInstructionDataDecoder()
+    getPrintV1InstructionDataEncoder(),
+    getPrintV1InstructionDataDecoder()
   );
 }
 
-export type PrintInstructionExtraArgs = {
+export type PrintV1InstructionExtraArgs = {
   masterEditionMint: Address;
   tokenStandard: TokenStandardArgs;
 };
 
-export type PrintAsyncInput<
+export type PrintV1AsyncInput<
   TAccountEditionMetadata extends string = string,
   TAccountEdition extends string = string,
   TAccountEditionMint extends string = string,
@@ -251,12 +253,12 @@ export type PrintAsyncInput<
   sysvarInstructions?: Address<TAccountSysvarInstructions>;
   /** System program */
   systemProgram?: Address<TAccountSystemProgram>;
-  printArgs: PrintInstructionDataArgs['printArgs'];
-  masterEditionMint: PrintInstructionExtraArgs['masterEditionMint'];
-  tokenStandard: PrintInstructionExtraArgs['tokenStandard'];
+  editionArg: PrintV1InstructionDataArgs['edition'];
+  masterEditionMint: PrintV1InstructionExtraArgs['masterEditionMint'];
+  tokenStandard: PrintV1InstructionExtraArgs['tokenStandard'];
 };
 
-export async function getPrintInstructionAsync<
+export async function getPrintV1InstructionAsync<
   TAccountEditionMetadata extends string,
   TAccountEdition extends string,
   TAccountEditionMint extends string,
@@ -277,7 +279,7 @@ export async function getPrintInstructionAsync<
   TAccountSystemProgram extends string,
   TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
 >(
-  input: PrintAsyncInput<
+  input: PrintV1AsyncInput<
     TAccountEditionMetadata,
     TAccountEdition,
     TAccountEditionMint,
@@ -299,7 +301,7 @@ export async function getPrintInstructionAsync<
   >,
   config?: { programAddress?: TProgramAddress }
 ): Promise<
-  PrintInstruction<
+  PrintV1Instruction<
     TProgramAddress,
     TAccountEditionMetadata,
     TAccountEdition,
@@ -388,7 +390,7 @@ export async function getPrintInstructionAsync<
   >;
 
   // Original args.
-  const args = { ...input };
+  const args = { ...input, edition: input.editionArg };
 
   // Resolve default values.
   if (!accounts.editionMetadata.value) {
@@ -473,10 +475,10 @@ export async function getPrintInstructionAsync<
       getAccountMeta(accounts.systemProgram),
     ],
     programAddress,
-    data: getPrintInstructionDataEncoder().encode(
-      args as PrintInstructionDataArgs
+    data: getPrintV1InstructionDataEncoder().encode(
+      args as PrintV1InstructionDataArgs
     ),
-  } as PrintInstruction<
+  } as PrintV1Instruction<
     TProgramAddress,
     TAccountEditionMetadata,
     TAccountEdition,
@@ -507,7 +509,7 @@ export async function getPrintInstructionAsync<
   return instruction;
 }
 
-export type PrintInput<
+export type PrintV1Input<
   TAccountEditionMetadata extends string = string,
   TAccountEdition extends string = string,
   TAccountEditionMint extends string = string,
@@ -567,12 +569,12 @@ export type PrintInput<
   sysvarInstructions?: Address<TAccountSysvarInstructions>;
   /** System program */
   systemProgram?: Address<TAccountSystemProgram>;
-  printArgs: PrintInstructionDataArgs['printArgs'];
-  masterEditionMint: PrintInstructionExtraArgs['masterEditionMint'];
-  tokenStandard: PrintInstructionExtraArgs['tokenStandard'];
+  editionArg: PrintV1InstructionDataArgs['edition'];
+  masterEditionMint: PrintV1InstructionExtraArgs['masterEditionMint'];
+  tokenStandard: PrintV1InstructionExtraArgs['tokenStandard'];
 };
 
-export function getPrintInstruction<
+export function getPrintV1Instruction<
   TAccountEditionMetadata extends string,
   TAccountEdition extends string,
   TAccountEditionMint extends string,
@@ -593,7 +595,7 @@ export function getPrintInstruction<
   TAccountSystemProgram extends string,
   TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
 >(
-  input: PrintInput<
+  input: PrintV1Input<
     TAccountEditionMetadata,
     TAccountEdition,
     TAccountEditionMint,
@@ -614,7 +616,7 @@ export function getPrintInstruction<
     TAccountSystemProgram
   >,
   config?: { programAddress?: TProgramAddress }
-): PrintInstruction<
+): PrintV1Instruction<
   TProgramAddress,
   TAccountEditionMetadata,
   TAccountEdition,
@@ -702,7 +704,7 @@ export function getPrintInstruction<
   >;
 
   // Original args.
-  const args = { ...input };
+  const args = { ...input, edition: input.editionArg };
 
   // Resolve default values.
   if (!accounts.splTokenProgram.value) {
@@ -745,10 +747,10 @@ export function getPrintInstruction<
       getAccountMeta(accounts.systemProgram),
     ],
     programAddress,
-    data: getPrintInstructionDataEncoder().encode(
-      args as PrintInstructionDataArgs
+    data: getPrintV1InstructionDataEncoder().encode(
+      args as PrintV1InstructionDataArgs
     ),
-  } as PrintInstruction<
+  } as PrintV1Instruction<
     TProgramAddress,
     TAccountEditionMetadata,
     TAccountEdition,
@@ -779,7 +781,7 @@ export function getPrintInstruction<
   return instruction;
 }
 
-export type ParsedPrintInstruction<
+export type ParsedPrintV1Instruction<
   TProgram extends string = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
   TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
 > = {
@@ -822,17 +824,17 @@ export type ParsedPrintInstruction<
     /** System program */
     systemProgram: TAccountMetas[17];
   };
-  data: PrintInstructionData;
+  data: PrintV1InstructionData;
 };
 
-export function parsePrintInstruction<
+export function parsePrintV1Instruction<
   TProgram extends string,
   TAccountMetas extends readonly AccountMeta[],
 >(
   instruction: Instruction<TProgram> &
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>
-): ParsedPrintInstruction<TProgram, TAccountMetas> {
+): ParsedPrintV1Instruction<TProgram, TAccountMetas> {
   if (instruction.accounts.length < 18) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
@@ -871,6 +873,6 @@ export function parsePrintInstruction<
       sysvarInstructions: getNextAccount(),
       systemProgram: getNextAccount(),
     },
-    data: getPrintInstructionDataDecoder().decode(instruction.data),
+    data: getPrintV1InstructionDataDecoder().decode(instruction.data),
   };
 }

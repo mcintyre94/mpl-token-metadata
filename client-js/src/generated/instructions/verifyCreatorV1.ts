@@ -30,26 +30,21 @@ import {
 } from '@solana/kit';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
 import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
-import {
-  getVerificationArgsDecoder,
-  getVerificationArgsEncoder,
-  type VerificationArgs,
-  type VerificationArgsArgs,
-} from '../types';
 
-export const UNVERIFY_DISCRIMINATOR = 53;
+export const VERIFY_CREATOR_V1_DISCRIMINATOR = 52;
 
-export function getUnverifyDiscriminatorBytes() {
-  return getU8Encoder().encode(UNVERIFY_DISCRIMINATOR);
+export function getVerifyCreatorV1DiscriminatorBytes() {
+  return getU8Encoder().encode(VERIFY_CREATOR_V1_DISCRIMINATOR);
 }
 
-export type UnverifyInstruction<
+export type VerifyCreatorV1Instruction<
   TProgram extends string = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
   TAccountAuthority extends string | AccountMeta<string> = string,
   TAccountDelegateRecord extends string | AccountMeta<string> = string,
   TAccountMetadata extends string | AccountMeta<string> = string,
   TAccountCollectionMint extends string | AccountMeta<string> = string,
   TAccountCollectionMetadata extends string | AccountMeta<string> = string,
+  TAccountCollectionMasterEdition extends string | AccountMeta<string> = string,
   TAccountSystemProgram extends
     | string
     | AccountMeta<string> = '11111111111111111111111111111111',
@@ -77,6 +72,9 @@ export type UnverifyInstruction<
       TAccountCollectionMetadata extends string
         ? WritableAccount<TAccountCollectionMetadata>
         : TAccountCollectionMetadata,
+      TAccountCollectionMasterEdition extends string
+        ? ReadonlyAccount<TAccountCollectionMasterEdition>
+        : TAccountCollectionMasterEdition,
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
         : TAccountSystemProgram,
@@ -87,52 +85,55 @@ export type UnverifyInstruction<
     ]
   >;
 
-export type UnverifyInstructionData = {
+export type VerifyCreatorV1InstructionData = {
   discriminator: number;
-  verificationArgs: VerificationArgs;
+  verifyCreatorV1Discriminator: number;
 };
 
-export type UnverifyInstructionDataArgs = {
-  verificationArgs: VerificationArgsArgs;
-};
+export type VerifyCreatorV1InstructionDataArgs = {};
 
-export function getUnverifyInstructionDataEncoder(): FixedSizeEncoder<UnverifyInstructionDataArgs> {
+export function getVerifyCreatorV1InstructionDataEncoder(): FixedSizeEncoder<VerifyCreatorV1InstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', getU8Encoder()],
-      ['verificationArgs', getVerificationArgsEncoder()],
+      ['verifyCreatorV1Discriminator', getU8Encoder()],
     ]),
-    (value) => ({ ...value, discriminator: UNVERIFY_DISCRIMINATOR })
+    (value) => ({
+      ...value,
+      discriminator: VERIFY_CREATOR_V1_DISCRIMINATOR,
+      verifyCreatorV1Discriminator: 0,
+    })
   );
 }
 
-export function getUnverifyInstructionDataDecoder(): FixedSizeDecoder<UnverifyInstructionData> {
+export function getVerifyCreatorV1InstructionDataDecoder(): FixedSizeDecoder<VerifyCreatorV1InstructionData> {
   return getStructDecoder([
     ['discriminator', getU8Decoder()],
-    ['verificationArgs', getVerificationArgsDecoder()],
+    ['verifyCreatorV1Discriminator', getU8Decoder()],
   ]);
 }
 
-export function getUnverifyInstructionDataCodec(): FixedSizeCodec<
-  UnverifyInstructionDataArgs,
-  UnverifyInstructionData
+export function getVerifyCreatorV1InstructionDataCodec(): FixedSizeCodec<
+  VerifyCreatorV1InstructionDataArgs,
+  VerifyCreatorV1InstructionData
 > {
   return combineCodec(
-    getUnverifyInstructionDataEncoder(),
-    getUnverifyInstructionDataDecoder()
+    getVerifyCreatorV1InstructionDataEncoder(),
+    getVerifyCreatorV1InstructionDataDecoder()
   );
 }
 
-export type UnverifyInput<
+export type VerifyCreatorV1Input<
   TAccountAuthority extends string = string,
   TAccountDelegateRecord extends string = string,
   TAccountMetadata extends string = string,
   TAccountCollectionMint extends string = string,
   TAccountCollectionMetadata extends string = string,
+  TAccountCollectionMasterEdition extends string = string,
   TAccountSystemProgram extends string = string,
   TAccountSysvarInstructions extends string = string,
 > = {
-  /** Creator to verify, collection (or metadata if parent burned) update authority or delegate */
+  /** Creator to verify, collection update authority or delegate */
   authority: TransactionSigner<TAccountAuthority>;
   /** Delegate record PDA */
   delegateRecord?: Address<TAccountDelegateRecord>;
@@ -142,40 +143,44 @@ export type UnverifyInput<
   collectionMint?: Address<TAccountCollectionMint>;
   /** Metadata Account of the Collection */
   collectionMetadata?: Address<TAccountCollectionMetadata>;
+  /** Master Edition Account of the Collection Token */
+  collectionMasterEdition?: Address<TAccountCollectionMasterEdition>;
   /** System program */
   systemProgram?: Address<TAccountSystemProgram>;
   /** Instructions sysvar account */
   sysvarInstructions?: Address<TAccountSysvarInstructions>;
-  verificationArgs: UnverifyInstructionDataArgs['verificationArgs'];
 };
 
-export function getUnverifyInstruction<
+export function getVerifyCreatorV1Instruction<
   TAccountAuthority extends string,
   TAccountDelegateRecord extends string,
   TAccountMetadata extends string,
   TAccountCollectionMint extends string,
   TAccountCollectionMetadata extends string,
+  TAccountCollectionMasterEdition extends string,
   TAccountSystemProgram extends string,
   TAccountSysvarInstructions extends string,
   TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
 >(
-  input: UnverifyInput<
+  input: VerifyCreatorV1Input<
     TAccountAuthority,
     TAccountDelegateRecord,
     TAccountMetadata,
     TAccountCollectionMint,
     TAccountCollectionMetadata,
+    TAccountCollectionMasterEdition,
     TAccountSystemProgram,
     TAccountSysvarInstructions
   >,
   config?: { programAddress?: TProgramAddress }
-): UnverifyInstruction<
+): VerifyCreatorV1Instruction<
   TProgramAddress,
   TAccountAuthority,
   TAccountDelegateRecord,
   TAccountMetadata,
   TAccountCollectionMint,
   TAccountCollectionMetadata,
+  TAccountCollectionMasterEdition,
   TAccountSystemProgram,
   TAccountSysvarInstructions
 > {
@@ -193,6 +198,10 @@ export function getUnverifyInstruction<
       value: input.collectionMetadata ?? null,
       isWritable: true,
     },
+    collectionMasterEdition: {
+      value: input.collectionMasterEdition ?? null,
+      isWritable: false,
+    },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
     sysvarInstructions: {
       value: input.sysvarInstructions ?? null,
@@ -203,9 +212,6 @@ export function getUnverifyInstruction<
     keyof typeof originalAccounts,
     ResolvedAccount
   >;
-
-  // Original args.
-  const args = { ...input };
 
   // Resolve default values.
   if (!accounts.systemProgram.value) {
@@ -225,20 +231,20 @@ export function getUnverifyInstruction<
       getAccountMeta(accounts.metadata),
       getAccountMeta(accounts.collectionMint),
       getAccountMeta(accounts.collectionMetadata),
+      getAccountMeta(accounts.collectionMasterEdition),
       getAccountMeta(accounts.systemProgram),
       getAccountMeta(accounts.sysvarInstructions),
     ],
     programAddress,
-    data: getUnverifyInstructionDataEncoder().encode(
-      args as UnverifyInstructionDataArgs
-    ),
-  } as UnverifyInstruction<
+    data: getVerifyCreatorV1InstructionDataEncoder().encode({}),
+  } as VerifyCreatorV1Instruction<
     TProgramAddress,
     TAccountAuthority,
     TAccountDelegateRecord,
     TAccountMetadata,
     TAccountCollectionMint,
     TAccountCollectionMetadata,
+    TAccountCollectionMasterEdition,
     TAccountSystemProgram,
     TAccountSysvarInstructions
   >;
@@ -246,13 +252,13 @@ export function getUnverifyInstruction<
   return instruction;
 }
 
-export type ParsedUnverifyInstruction<
+export type ParsedVerifyCreatorV1Instruction<
   TProgram extends string = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
   TAccountMetas extends readonly AccountMeta[] = readonly AccountMeta[],
 > = {
   programAddress: Address<TProgram>;
   accounts: {
-    /** Creator to verify, collection (or metadata if parent burned) update authority or delegate */
+    /** Creator to verify, collection update authority or delegate */
     authority: TAccountMetas[0];
     /** Delegate record PDA */
     delegateRecord?: TAccountMetas[1] | undefined;
@@ -262,23 +268,25 @@ export type ParsedUnverifyInstruction<
     collectionMint?: TAccountMetas[3] | undefined;
     /** Metadata Account of the Collection */
     collectionMetadata?: TAccountMetas[4] | undefined;
+    /** Master Edition Account of the Collection Token */
+    collectionMasterEdition?: TAccountMetas[5] | undefined;
     /** System program */
-    systemProgram: TAccountMetas[5];
+    systemProgram: TAccountMetas[6];
     /** Instructions sysvar account */
-    sysvarInstructions: TAccountMetas[6];
+    sysvarInstructions: TAccountMetas[7];
   };
-  data: UnverifyInstructionData;
+  data: VerifyCreatorV1InstructionData;
 };
 
-export function parseUnverifyInstruction<
+export function parseVerifyCreatorV1Instruction<
   TProgram extends string,
   TAccountMetas extends readonly AccountMeta[],
 >(
   instruction: Instruction<TProgram> &
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>
-): ParsedUnverifyInstruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 7) {
+): ParsedVerifyCreatorV1Instruction<TProgram, TAccountMetas> {
+  if (instruction.accounts.length < 8) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -302,9 +310,10 @@ export function parseUnverifyInstruction<
       metadata: getNextAccount(),
       collectionMint: getNextOptionalAccount(),
       collectionMetadata: getNextOptionalAccount(),
+      collectionMasterEdition: getNextOptionalAccount(),
       systemProgram: getNextAccount(),
       sysvarInstructions: getNextAccount(),
     },
-    data: getUnverifyInstructionDataDecoder().decode(instruction.data),
+    data: getVerifyCreatorV1InstructionDataDecoder().decode(instruction.data),
   };
 }

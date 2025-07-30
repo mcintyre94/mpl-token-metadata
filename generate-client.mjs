@@ -38,6 +38,7 @@ import {
   unwrapDefinedTypesVisitor,
   unwrapTypeDefinedLinksVisitor,
   flattenStructVisitor,
+  createSubInstructionsFromEnumArgsVisitor,
 } from "codama";
 
 import anchorIdl from "./idl.json" with { type: "json" };
@@ -741,6 +742,25 @@ codama.update(
   })
 );
 
+// Create versioned instructions.
+codama.update(
+  createSubInstructionsFromEnumArgsVisitor({
+    burn: "burnArgs",
+    create: "createArgs",
+    delegate: "delegateArgs",
+    lock: "lockArgs",
+    mint: "mintArgs",
+    print: "printArgs",
+    revoke: "revokeArgs",
+    transfer: "transferArgs",
+    unlock: "unlockArgs",
+    update: "updateArgs",
+    use: "useArgs",
+    verify: "verificationArgs",
+    unverify: "verificationArgs",
+  })
+);
+
 /* Temporary */
 // need to pull this forward for the splTokenProgram dependency on argumentValueNode("tokenStandard")
 // can we pull this into the first updateInstructionsVisitor?
@@ -778,16 +798,6 @@ codama.accept(
 );
 
 /*
-// Unwrap types and structs.
-kinobi.update(k.unwrapDefinedTypesVisitor(["AssetData"]));
-kinobi.update(k.unwrapTypeDefinedLinksVisitor(["metadata.data"]));
-kinobi.update(
-  k.flattenStructVisitor({
-    Metadata: ["data"],
-    "CreateArgs.V1": ["assetData"],
-  })
-);
-
 // Create versioned instructions.
 kinobi.update(
   k.createSubInstructionsFromEnumArgsVisitor({

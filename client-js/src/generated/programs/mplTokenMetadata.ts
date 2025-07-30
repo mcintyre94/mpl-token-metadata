@@ -17,50 +17,88 @@ import {
   type ParsedApproveUseAuthorityInstruction,
   type ParsedBubblegumSetCollectionSizeInstruction,
   type ParsedBurnEditionNftInstruction,
-  type ParsedBurnInstruction,
   type ParsedBurnNftInstruction,
+  type ParsedBurnV1Instruction,
   type ParsedCloseAccountsInstruction,
   type ParsedCloseEscrowAccountInstruction,
   type ParsedCollectInstruction,
   type ParsedConvertMasterEditionV1ToV2Instruction,
   type ParsedCreateEscrowAccountInstruction,
-  type ParsedCreateInstruction,
   type ParsedCreateMasterEditionV3Instruction,
   type ParsedCreateMetadataAccountV3Instruction,
-  type ParsedDelegateInstruction,
+  type ParsedCreateV1Instruction,
+  type ParsedDelegateAuthorityItemV1Instruction,
+  type ParsedDelegateCollectionItemV1Instruction,
+  type ParsedDelegateCollectionV1Instruction,
+  type ParsedDelegateDataItemV1Instruction,
+  type ParsedDelegateDataV1Instruction,
+  type ParsedDelegateLockedTransferV1Instruction,
+  type ParsedDelegatePrintDelegateV1Instruction,
+  type ParsedDelegateProgrammableConfigItemV1Instruction,
+  type ParsedDelegateProgrammableConfigV1Instruction,
+  type ParsedDelegateSaleV1Instruction,
+  type ParsedDelegateStakingV1Instruction,
+  type ParsedDelegateStandardV1Instruction,
+  type ParsedDelegateTransferV1Instruction,
+  type ParsedDelegateUtilityV1Instruction,
   type ParsedDeprecatedMintNewEditionFromMasterEditionViaPrintingTokenInstruction,
   type ParsedFreezeDelegatedAccountInstruction,
-  type ParsedLockInstruction,
+  type ParsedLockV1Instruction,
   type ParsedMigrateInstruction,
-  type ParsedMintInstruction,
   type ParsedMintNewEditionFromMasterEditionViaTokenInstruction,
   type ParsedMintNewEditionFromMasterEditionViaVaultProxyInstruction,
-  type ParsedPrintInstruction,
+  type ParsedMintV1Instruction,
+  type ParsedPrintV1Instruction,
+  type ParsedPrintV2Instruction,
   type ParsedPuffMetadataInstruction,
   type ParsedRemoveCreatorVerificationInstruction,
   type ParsedResizeInstruction,
+  type ParsedRevokeAuthorityItemV1Instruction,
   type ParsedRevokeCollectionAuthorityInstruction,
-  type ParsedRevokeInstruction,
+  type ParsedRevokeCollectionItemV1Instruction,
+  type ParsedRevokeCollectionV1Instruction,
+  type ParsedRevokeDataItemV1Instruction,
+  type ParsedRevokeDataV1Instruction,
+  type ParsedRevokeLockedTransferV1Instruction,
+  type ParsedRevokeMigrationV1Instruction,
+  type ParsedRevokePrintDelegateV1Instruction,
+  type ParsedRevokeProgrammableConfigItemV1Instruction,
+  type ParsedRevokeProgrammableConfigV1Instruction,
+  type ParsedRevokeSaleV1Instruction,
+  type ParsedRevokeStakingV1Instruction,
+  type ParsedRevokeStandardV1Instruction,
+  type ParsedRevokeTransferV1Instruction,
   type ParsedRevokeUseAuthorityInstruction,
+  type ParsedRevokeUtilityV1Instruction,
   type ParsedSetAndVerifyCollectionInstruction,
   type ParsedSetAndVerifySizedCollectionItemInstruction,
   type ParsedSetCollectionSizeInstruction,
   type ParsedSetTokenStandardInstruction,
   type ParsedSignMetadataInstruction,
   type ParsedThawDelegatedAccountInstruction,
-  type ParsedTransferInstruction,
   type ParsedTransferOutOfEscrowInstruction,
-  type ParsedUnlockInstruction,
+  type ParsedTransferV1Instruction,
+  type ParsedUnlockV1Instruction,
   type ParsedUnverifyCollectionInstruction,
-  type ParsedUnverifyInstruction,
+  type ParsedUnverifyCollectionV1Instruction,
+  type ParsedUnverifyCreatorV1Instruction,
   type ParsedUnverifySizedCollectionItemInstruction,
-  type ParsedUpdateInstruction,
+  type ParsedUpdateAsAuthorityItemDelegateV2Instruction,
+  type ParsedUpdateAsCollectionDelegateV2Instruction,
+  type ParsedUpdateAsCollectionItemDelegateV2Instruction,
+  type ParsedUpdateAsDataDelegateV2Instruction,
+  type ParsedUpdateAsDataItemDelegateV2Instruction,
+  type ParsedUpdateAsProgrammableConfigDelegateV2Instruction,
+  type ParsedUpdateAsProgrammableConfigItemDelegateV2Instruction,
+  type ParsedUpdateAsUpdateAuthorityV2Instruction,
   type ParsedUpdateMetadataAccountV2Instruction,
   type ParsedUpdatePrimarySaleHappenedViaTokenInstruction,
-  type ParsedUseInstruction,
+  type ParsedUpdateV1Instruction,
+  type ParsedUseV1Instruction,
   type ParsedUtilizeInstruction,
   type ParsedVerifyCollectionInstruction,
-  type ParsedVerifyInstruction,
+  type ParsedVerifyCollectionV1Instruction,
+  type ParsedVerifyCreatorV1Instruction,
   type ParsedVerifySizedCollectionItemInstruction,
 } from '../instructions';
 import { Key, getKeyEncoder } from '../types';
@@ -158,21 +196,59 @@ export enum MplTokenMetadataInstruction {
   CreateEscrowAccount,
   CloseEscrowAccount,
   TransferOutOfEscrow,
-  Burn,
-  Create,
-  Mint,
-  Delegate,
-  Revoke,
-  Lock,
-  Unlock,
+  BurnV1,
+  CreateV1,
+  MintV1,
+  DelegateCollectionV1,
+  DelegateSaleV1,
+  DelegateTransferV1,
+  DelegateDataV1,
+  DelegateUtilityV1,
+  DelegateStakingV1,
+  DelegateStandardV1,
+  DelegateLockedTransferV1,
+  DelegateProgrammableConfigV1,
+  DelegateAuthorityItemV1,
+  DelegateDataItemV1,
+  DelegateCollectionItemV1,
+  DelegateProgrammableConfigItemV1,
+  DelegatePrintDelegateV1,
+  RevokeCollectionV1,
+  RevokeSaleV1,
+  RevokeTransferV1,
+  RevokeDataV1,
+  RevokeUtilityV1,
+  RevokeStakingV1,
+  RevokeStandardV1,
+  RevokeLockedTransferV1,
+  RevokeProgrammableConfigV1,
+  RevokeMigrationV1,
+  RevokeAuthorityItemV1,
+  RevokeDataItemV1,
+  RevokeCollectionItemV1,
+  RevokeProgrammableConfigItemV1,
+  RevokePrintDelegateV1,
+  LockV1,
+  UnlockV1,
   Migrate,
-  Transfer,
-  Update,
-  Use,
-  Verify,
-  Unverify,
+  TransferV1,
+  UpdateV1,
+  UpdateAsUpdateAuthorityV2,
+  UpdateAsAuthorityItemDelegateV2,
+  UpdateAsCollectionDelegateV2,
+  UpdateAsDataDelegateV2,
+  UpdateAsProgrammableConfigDelegateV2,
+  UpdateAsDataItemDelegateV2,
+  UpdateAsCollectionItemDelegateV2,
+  UpdateAsProgrammableConfigItemDelegateV2,
+  UseV1,
+  VerifyCreatorV1,
+  VerifyCollectionV1,
+  UnverifyCreatorV1,
+  UnverifyCollectionV1,
   Collect,
-  Print,
+  PrintV1,
+  PrintV2,
   Resize,
   CloseAccounts,
 }
@@ -278,49 +354,163 @@ export function identifyMplTokenMetadataInstruction(
     return MplTokenMetadataInstruction.TransferOutOfEscrow;
   }
   if (containsBytes(data, getU8Encoder().encode(41), 0)) {
-    return MplTokenMetadataInstruction.Burn;
+    return MplTokenMetadataInstruction.BurnV1;
   }
   if (containsBytes(data, getU8Encoder().encode(42), 0)) {
-    return MplTokenMetadataInstruction.Create;
+    return MplTokenMetadataInstruction.CreateV1;
   }
   if (containsBytes(data, getU8Encoder().encode(43), 0)) {
-    return MplTokenMetadataInstruction.Mint;
+    return MplTokenMetadataInstruction.MintV1;
   }
   if (containsBytes(data, getU8Encoder().encode(44), 0)) {
-    return MplTokenMetadataInstruction.Delegate;
+    return MplTokenMetadataInstruction.DelegateCollectionV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(44), 0)) {
+    return MplTokenMetadataInstruction.DelegateSaleV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(44), 0)) {
+    return MplTokenMetadataInstruction.DelegateTransferV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(44), 0)) {
+    return MplTokenMetadataInstruction.DelegateDataV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(44), 0)) {
+    return MplTokenMetadataInstruction.DelegateUtilityV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(44), 0)) {
+    return MplTokenMetadataInstruction.DelegateStakingV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(44), 0)) {
+    return MplTokenMetadataInstruction.DelegateStandardV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(44), 0)) {
+    return MplTokenMetadataInstruction.DelegateLockedTransferV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(44), 0)) {
+    return MplTokenMetadataInstruction.DelegateProgrammableConfigV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(44), 0)) {
+    return MplTokenMetadataInstruction.DelegateAuthorityItemV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(44), 0)) {
+    return MplTokenMetadataInstruction.DelegateDataItemV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(44), 0)) {
+    return MplTokenMetadataInstruction.DelegateCollectionItemV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(44), 0)) {
+    return MplTokenMetadataInstruction.DelegateProgrammableConfigItemV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(44), 0)) {
+    return MplTokenMetadataInstruction.DelegatePrintDelegateV1;
   }
   if (containsBytes(data, getU8Encoder().encode(45), 0)) {
-    return MplTokenMetadataInstruction.Revoke;
+    return MplTokenMetadataInstruction.RevokeCollectionV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(45), 0)) {
+    return MplTokenMetadataInstruction.RevokeSaleV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(45), 0)) {
+    return MplTokenMetadataInstruction.RevokeTransferV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(45), 0)) {
+    return MplTokenMetadataInstruction.RevokeDataV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(45), 0)) {
+    return MplTokenMetadataInstruction.RevokeUtilityV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(45), 0)) {
+    return MplTokenMetadataInstruction.RevokeStakingV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(45), 0)) {
+    return MplTokenMetadataInstruction.RevokeStandardV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(45), 0)) {
+    return MplTokenMetadataInstruction.RevokeLockedTransferV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(45), 0)) {
+    return MplTokenMetadataInstruction.RevokeProgrammableConfigV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(45), 0)) {
+    return MplTokenMetadataInstruction.RevokeMigrationV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(45), 0)) {
+    return MplTokenMetadataInstruction.RevokeAuthorityItemV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(45), 0)) {
+    return MplTokenMetadataInstruction.RevokeDataItemV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(45), 0)) {
+    return MplTokenMetadataInstruction.RevokeCollectionItemV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(45), 0)) {
+    return MplTokenMetadataInstruction.RevokeProgrammableConfigItemV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(45), 0)) {
+    return MplTokenMetadataInstruction.RevokePrintDelegateV1;
   }
   if (containsBytes(data, getU8Encoder().encode(46), 0)) {
-    return MplTokenMetadataInstruction.Lock;
+    return MplTokenMetadataInstruction.LockV1;
   }
   if (containsBytes(data, getU8Encoder().encode(47), 0)) {
-    return MplTokenMetadataInstruction.Unlock;
+    return MplTokenMetadataInstruction.UnlockV1;
   }
   if (containsBytes(data, getU8Encoder().encode(48), 0)) {
     return MplTokenMetadataInstruction.Migrate;
   }
   if (containsBytes(data, getU8Encoder().encode(49), 0)) {
-    return MplTokenMetadataInstruction.Transfer;
+    return MplTokenMetadataInstruction.TransferV1;
   }
   if (containsBytes(data, getU8Encoder().encode(50), 0)) {
-    return MplTokenMetadataInstruction.Update;
+    return MplTokenMetadataInstruction.UpdateV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(50), 0)) {
+    return MplTokenMetadataInstruction.UpdateAsUpdateAuthorityV2;
+  }
+  if (containsBytes(data, getU8Encoder().encode(50), 0)) {
+    return MplTokenMetadataInstruction.UpdateAsAuthorityItemDelegateV2;
+  }
+  if (containsBytes(data, getU8Encoder().encode(50), 0)) {
+    return MplTokenMetadataInstruction.UpdateAsCollectionDelegateV2;
+  }
+  if (containsBytes(data, getU8Encoder().encode(50), 0)) {
+    return MplTokenMetadataInstruction.UpdateAsDataDelegateV2;
+  }
+  if (containsBytes(data, getU8Encoder().encode(50), 0)) {
+    return MplTokenMetadataInstruction.UpdateAsProgrammableConfigDelegateV2;
+  }
+  if (containsBytes(data, getU8Encoder().encode(50), 0)) {
+    return MplTokenMetadataInstruction.UpdateAsDataItemDelegateV2;
+  }
+  if (containsBytes(data, getU8Encoder().encode(50), 0)) {
+    return MplTokenMetadataInstruction.UpdateAsCollectionItemDelegateV2;
+  }
+  if (containsBytes(data, getU8Encoder().encode(50), 0)) {
+    return MplTokenMetadataInstruction.UpdateAsProgrammableConfigItemDelegateV2;
   }
   if (containsBytes(data, getU8Encoder().encode(51), 0)) {
-    return MplTokenMetadataInstruction.Use;
+    return MplTokenMetadataInstruction.UseV1;
   }
   if (containsBytes(data, getU8Encoder().encode(52), 0)) {
-    return MplTokenMetadataInstruction.Verify;
+    return MplTokenMetadataInstruction.VerifyCreatorV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(52), 0)) {
+    return MplTokenMetadataInstruction.VerifyCollectionV1;
   }
   if (containsBytes(data, getU8Encoder().encode(53), 0)) {
-    return MplTokenMetadataInstruction.Unverify;
+    return MplTokenMetadataInstruction.UnverifyCreatorV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(53), 0)) {
+    return MplTokenMetadataInstruction.UnverifyCollectionV1;
   }
   if (containsBytes(data, getU8Encoder().encode(54), 0)) {
     return MplTokenMetadataInstruction.Collect;
   }
   if (containsBytes(data, getU8Encoder().encode(55), 0)) {
-    return MplTokenMetadataInstruction.Print;
+    return MplTokenMetadataInstruction.PrintV1;
+  }
+  if (containsBytes(data, getU8Encoder().encode(55), 0)) {
+    return MplTokenMetadataInstruction.PrintV2;
   }
   if (containsBytes(data, getU8Encoder().encode(56), 0)) {
     return MplTokenMetadataInstruction.Resize;
@@ -433,50 +623,164 @@ export type ParsedMplTokenMetadataInstruction<
       instructionType: MplTokenMetadataInstruction.TransferOutOfEscrow;
     } & ParsedTransferOutOfEscrowInstruction<TProgram>)
   | ({
-      instructionType: MplTokenMetadataInstruction.Burn;
-    } & ParsedBurnInstruction<TProgram>)
+      instructionType: MplTokenMetadataInstruction.BurnV1;
+    } & ParsedBurnV1Instruction<TProgram>)
   | ({
-      instructionType: MplTokenMetadataInstruction.Create;
-    } & ParsedCreateInstruction<TProgram>)
+      instructionType: MplTokenMetadataInstruction.CreateV1;
+    } & ParsedCreateV1Instruction<TProgram>)
   | ({
-      instructionType: MplTokenMetadataInstruction.Mint;
-    } & ParsedMintInstruction<TProgram>)
+      instructionType: MplTokenMetadataInstruction.MintV1;
+    } & ParsedMintV1Instruction<TProgram>)
   | ({
-      instructionType: MplTokenMetadataInstruction.Delegate;
-    } & ParsedDelegateInstruction<TProgram>)
+      instructionType: MplTokenMetadataInstruction.DelegateCollectionV1;
+    } & ParsedDelegateCollectionV1Instruction<TProgram>)
   | ({
-      instructionType: MplTokenMetadataInstruction.Revoke;
-    } & ParsedRevokeInstruction<TProgram>)
+      instructionType: MplTokenMetadataInstruction.DelegateSaleV1;
+    } & ParsedDelegateSaleV1Instruction<TProgram>)
   | ({
-      instructionType: MplTokenMetadataInstruction.Lock;
-    } & ParsedLockInstruction<TProgram>)
+      instructionType: MplTokenMetadataInstruction.DelegateTransferV1;
+    } & ParsedDelegateTransferV1Instruction<TProgram>)
   | ({
-      instructionType: MplTokenMetadataInstruction.Unlock;
-    } & ParsedUnlockInstruction<TProgram>)
+      instructionType: MplTokenMetadataInstruction.DelegateDataV1;
+    } & ParsedDelegateDataV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.DelegateUtilityV1;
+    } & ParsedDelegateUtilityV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.DelegateStakingV1;
+    } & ParsedDelegateStakingV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.DelegateStandardV1;
+    } & ParsedDelegateStandardV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.DelegateLockedTransferV1;
+    } & ParsedDelegateLockedTransferV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.DelegateProgrammableConfigV1;
+    } & ParsedDelegateProgrammableConfigV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.DelegateAuthorityItemV1;
+    } & ParsedDelegateAuthorityItemV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.DelegateDataItemV1;
+    } & ParsedDelegateDataItemV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.DelegateCollectionItemV1;
+    } & ParsedDelegateCollectionItemV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.DelegateProgrammableConfigItemV1;
+    } & ParsedDelegateProgrammableConfigItemV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.DelegatePrintDelegateV1;
+    } & ParsedDelegatePrintDelegateV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.RevokeCollectionV1;
+    } & ParsedRevokeCollectionV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.RevokeSaleV1;
+    } & ParsedRevokeSaleV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.RevokeTransferV1;
+    } & ParsedRevokeTransferV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.RevokeDataV1;
+    } & ParsedRevokeDataV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.RevokeUtilityV1;
+    } & ParsedRevokeUtilityV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.RevokeStakingV1;
+    } & ParsedRevokeStakingV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.RevokeStandardV1;
+    } & ParsedRevokeStandardV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.RevokeLockedTransferV1;
+    } & ParsedRevokeLockedTransferV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.RevokeProgrammableConfigV1;
+    } & ParsedRevokeProgrammableConfigV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.RevokeMigrationV1;
+    } & ParsedRevokeMigrationV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.RevokeAuthorityItemV1;
+    } & ParsedRevokeAuthorityItemV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.RevokeDataItemV1;
+    } & ParsedRevokeDataItemV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.RevokeCollectionItemV1;
+    } & ParsedRevokeCollectionItemV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.RevokeProgrammableConfigItemV1;
+    } & ParsedRevokeProgrammableConfigItemV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.RevokePrintDelegateV1;
+    } & ParsedRevokePrintDelegateV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.LockV1;
+    } & ParsedLockV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.UnlockV1;
+    } & ParsedUnlockV1Instruction<TProgram>)
   | ({
       instructionType: MplTokenMetadataInstruction.Migrate;
     } & ParsedMigrateInstruction<TProgram>)
   | ({
-      instructionType: MplTokenMetadataInstruction.Transfer;
-    } & ParsedTransferInstruction<TProgram>)
+      instructionType: MplTokenMetadataInstruction.TransferV1;
+    } & ParsedTransferV1Instruction<TProgram>)
   | ({
-      instructionType: MplTokenMetadataInstruction.Update;
-    } & ParsedUpdateInstruction<TProgram>)
+      instructionType: MplTokenMetadataInstruction.UpdateV1;
+    } & ParsedUpdateV1Instruction<TProgram>)
   | ({
-      instructionType: MplTokenMetadataInstruction.Use;
-    } & ParsedUseInstruction<TProgram>)
+      instructionType: MplTokenMetadataInstruction.UpdateAsUpdateAuthorityV2;
+    } & ParsedUpdateAsUpdateAuthorityV2Instruction<TProgram>)
   | ({
-      instructionType: MplTokenMetadataInstruction.Verify;
-    } & ParsedVerifyInstruction<TProgram>)
+      instructionType: MplTokenMetadataInstruction.UpdateAsAuthorityItemDelegateV2;
+    } & ParsedUpdateAsAuthorityItemDelegateV2Instruction<TProgram>)
   | ({
-      instructionType: MplTokenMetadataInstruction.Unverify;
-    } & ParsedUnverifyInstruction<TProgram>)
+      instructionType: MplTokenMetadataInstruction.UpdateAsCollectionDelegateV2;
+    } & ParsedUpdateAsCollectionDelegateV2Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.UpdateAsDataDelegateV2;
+    } & ParsedUpdateAsDataDelegateV2Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.UpdateAsProgrammableConfigDelegateV2;
+    } & ParsedUpdateAsProgrammableConfigDelegateV2Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.UpdateAsDataItemDelegateV2;
+    } & ParsedUpdateAsDataItemDelegateV2Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.UpdateAsCollectionItemDelegateV2;
+    } & ParsedUpdateAsCollectionItemDelegateV2Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.UpdateAsProgrammableConfigItemDelegateV2;
+    } & ParsedUpdateAsProgrammableConfigItemDelegateV2Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.UseV1;
+    } & ParsedUseV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.VerifyCreatorV1;
+    } & ParsedVerifyCreatorV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.VerifyCollectionV1;
+    } & ParsedVerifyCollectionV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.UnverifyCreatorV1;
+    } & ParsedUnverifyCreatorV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.UnverifyCollectionV1;
+    } & ParsedUnverifyCollectionV1Instruction<TProgram>)
   | ({
       instructionType: MplTokenMetadataInstruction.Collect;
     } & ParsedCollectInstruction<TProgram>)
   | ({
-      instructionType: MplTokenMetadataInstruction.Print;
-    } & ParsedPrintInstruction<TProgram>)
+      instructionType: MplTokenMetadataInstruction.PrintV1;
+    } & ParsedPrintV1Instruction<TProgram>)
+  | ({
+      instructionType: MplTokenMetadataInstruction.PrintV2;
+    } & ParsedPrintV2Instruction<TProgram>)
   | ({
       instructionType: MplTokenMetadataInstruction.Resize;
     } & ParsedResizeInstruction<TProgram>)
