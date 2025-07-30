@@ -28,8 +28,13 @@ import {
   type TransactionSigner,
   type WritableAccount,
 } from '@solana/kit';
+import { findMasterEditionPda, findMetadataPda } from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
-import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
+import {
+  expectAddress,
+  getAccountMetaFactory,
+  type ResolvedAccount,
+} from '../shared';
 
 export const VERIFY_COLLECTION_V1_DISCRIMINATOR = 52;
 
@@ -123,6 +128,147 @@ export function getVerifyCollectionV1InstructionDataCodec(): FixedSizeCodec<
   );
 }
 
+export type VerifyCollectionV1AsyncInput<
+  TAccountAuthority extends string = string,
+  TAccountDelegateRecord extends string = string,
+  TAccountMetadata extends string = string,
+  TAccountCollectionMint extends string = string,
+  TAccountCollectionMetadata extends string = string,
+  TAccountCollectionMasterEdition extends string = string,
+  TAccountSystemProgram extends string = string,
+  TAccountSysvarInstructions extends string = string,
+> = {
+  /** Creator to verify, collection update authority or delegate */
+  authority: TransactionSigner<TAccountAuthority>;
+  /** Delegate record PDA */
+  delegateRecord?: Address<TAccountDelegateRecord>;
+  /** Metadata account */
+  metadata: Address<TAccountMetadata>;
+  /** Mint of the Collection */
+  collectionMint: Address<TAccountCollectionMint>;
+  /** Metadata Account of the Collection */
+  collectionMetadata?: Address<TAccountCollectionMetadata>;
+  /** Master Edition Account of the Collection Token */
+  collectionMasterEdition?: Address<TAccountCollectionMasterEdition>;
+  /** System program */
+  systemProgram?: Address<TAccountSystemProgram>;
+  /** Instructions sysvar account */
+  sysvarInstructions?: Address<TAccountSysvarInstructions>;
+};
+
+export async function getVerifyCollectionV1InstructionAsync<
+  TAccountAuthority extends string,
+  TAccountDelegateRecord extends string,
+  TAccountMetadata extends string,
+  TAccountCollectionMint extends string,
+  TAccountCollectionMetadata extends string,
+  TAccountCollectionMasterEdition extends string,
+  TAccountSystemProgram extends string,
+  TAccountSysvarInstructions extends string,
+  TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
+>(
+  input: VerifyCollectionV1AsyncInput<
+    TAccountAuthority,
+    TAccountDelegateRecord,
+    TAccountMetadata,
+    TAccountCollectionMint,
+    TAccountCollectionMetadata,
+    TAccountCollectionMasterEdition,
+    TAccountSystemProgram,
+    TAccountSysvarInstructions
+  >,
+  config?: { programAddress?: TProgramAddress }
+): Promise<
+  VerifyCollectionV1Instruction<
+    TProgramAddress,
+    TAccountAuthority,
+    TAccountDelegateRecord,
+    TAccountMetadata,
+    TAccountCollectionMint,
+    TAccountCollectionMetadata,
+    TAccountCollectionMasterEdition,
+    TAccountSystemProgram,
+    TAccountSysvarInstructions
+  >
+> {
+  // Program address.
+  const programAddress =
+    config?.programAddress ?? MPL_TOKEN_METADATA_PROGRAM_ADDRESS;
+
+  // Original accounts.
+  const originalAccounts = {
+    authority: { value: input.authority ?? null, isWritable: false },
+    delegateRecord: { value: input.delegateRecord ?? null, isWritable: false },
+    metadata: { value: input.metadata ?? null, isWritable: true },
+    collectionMint: { value: input.collectionMint ?? null, isWritable: false },
+    collectionMetadata: {
+      value: input.collectionMetadata ?? null,
+      isWritable: true,
+    },
+    collectionMasterEdition: {
+      value: input.collectionMasterEdition ?? null,
+      isWritable: false,
+    },
+    systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+    sysvarInstructions: {
+      value: input.sysvarInstructions ?? null,
+      isWritable: false,
+    },
+  };
+  const accounts = originalAccounts as Record<
+    keyof typeof originalAccounts,
+    ResolvedAccount
+  >;
+
+  // Resolve default values.
+  if (!accounts.collectionMetadata.value) {
+    accounts.collectionMetadata.value = await findMetadataPda({
+      mint: expectAddress(accounts.collectionMint.value),
+    });
+  }
+  if (!accounts.collectionMasterEdition.value) {
+    accounts.collectionMasterEdition.value = await findMasterEditionPda({
+      mint: expectAddress(accounts.collectionMint.value),
+    });
+  }
+  if (!accounts.systemProgram.value) {
+    accounts.systemProgram.value =
+      '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
+  }
+  if (!accounts.sysvarInstructions.value) {
+    accounts.sysvarInstructions.value =
+      'Sysvar1nstructions1111111111111111111111111' as Address<'Sysvar1nstructions1111111111111111111111111'>;
+  }
+
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
+  const instruction = {
+    accounts: [
+      getAccountMeta(accounts.authority),
+      getAccountMeta(accounts.delegateRecord),
+      getAccountMeta(accounts.metadata),
+      getAccountMeta(accounts.collectionMint),
+      getAccountMeta(accounts.collectionMetadata),
+      getAccountMeta(accounts.collectionMasterEdition),
+      getAccountMeta(accounts.systemProgram),
+      getAccountMeta(accounts.sysvarInstructions),
+    ],
+    programAddress,
+    data: getVerifyCollectionV1InstructionDataEncoder().encode({}),
+  } as VerifyCollectionV1Instruction<
+    TProgramAddress,
+    TAccountAuthority,
+    TAccountDelegateRecord,
+    TAccountMetadata,
+    TAccountCollectionMint,
+    TAccountCollectionMetadata,
+    TAccountCollectionMasterEdition,
+    TAccountSystemProgram,
+    TAccountSysvarInstructions
+  >;
+
+  return instruction;
+}
+
 export type VerifyCollectionV1Input<
   TAccountAuthority extends string = string,
   TAccountDelegateRecord extends string = string,
@@ -140,7 +286,7 @@ export type VerifyCollectionV1Input<
   /** Metadata account */
   metadata: Address<TAccountMetadata>;
   /** Mint of the Collection */
-  collectionMint?: Address<TAccountCollectionMint>;
+  collectionMint: Address<TAccountCollectionMint>;
   /** Metadata Account of the Collection */
   collectionMetadata?: Address<TAccountCollectionMetadata>;
   /** Master Edition Account of the Collection Token */
@@ -265,7 +411,7 @@ export type ParsedVerifyCollectionV1Instruction<
     /** Metadata account */
     metadata: TAccountMetas[2];
     /** Mint of the Collection */
-    collectionMint?: TAccountMetas[3] | undefined;
+    collectionMint: TAccountMetas[3];
     /** Metadata Account of the Collection */
     collectionMetadata?: TAccountMetas[4] | undefined;
     /** Master Edition Account of the Collection Token */
@@ -308,7 +454,7 @@ export function parseVerifyCollectionV1Instruction<
       authority: getNextAccount(),
       delegateRecord: getNextOptionalAccount(),
       metadata: getNextAccount(),
-      collectionMint: getNextOptionalAccount(),
+      collectionMint: getNextAccount(),
       collectionMetadata: getNextOptionalAccount(),
       collectionMasterEdition: getNextOptionalAccount(),
       systemProgram: getNextAccount(),

@@ -28,8 +28,13 @@ import {
   type TransactionSigner,
   type WritableAccount,
 } from '@solana/kit';
+import { findMetadataPda } from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
-import { getAccountMetaFactory, type ResolvedAccount } from '../shared';
+import {
+  expectAddress,
+  getAccountMetaFactory,
+  type ResolvedAccount,
+} from '../shared';
 
 export const UNVERIFY_COLLECTION_V1_DISCRIMINATOR = 53;
 
@@ -119,6 +124,130 @@ export function getUnverifyCollectionV1InstructionDataCodec(): FixedSizeCodec<
   );
 }
 
+export type UnverifyCollectionV1AsyncInput<
+  TAccountAuthority extends string = string,
+  TAccountDelegateRecord extends string = string,
+  TAccountMetadata extends string = string,
+  TAccountCollectionMint extends string = string,
+  TAccountCollectionMetadata extends string = string,
+  TAccountSystemProgram extends string = string,
+  TAccountSysvarInstructions extends string = string,
+> = {
+  /** Creator to verify, collection (or metadata if parent burned) update authority or delegate */
+  authority: TransactionSigner<TAccountAuthority>;
+  /** Delegate record PDA */
+  delegateRecord?: Address<TAccountDelegateRecord>;
+  /** Metadata account */
+  metadata: Address<TAccountMetadata>;
+  /** Mint of the Collection */
+  collectionMint: Address<TAccountCollectionMint>;
+  /** Metadata Account of the Collection */
+  collectionMetadata?: Address<TAccountCollectionMetadata>;
+  /** System program */
+  systemProgram?: Address<TAccountSystemProgram>;
+  /** Instructions sysvar account */
+  sysvarInstructions?: Address<TAccountSysvarInstructions>;
+};
+
+export async function getUnverifyCollectionV1InstructionAsync<
+  TAccountAuthority extends string,
+  TAccountDelegateRecord extends string,
+  TAccountMetadata extends string,
+  TAccountCollectionMint extends string,
+  TAccountCollectionMetadata extends string,
+  TAccountSystemProgram extends string,
+  TAccountSysvarInstructions extends string,
+  TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
+>(
+  input: UnverifyCollectionV1AsyncInput<
+    TAccountAuthority,
+    TAccountDelegateRecord,
+    TAccountMetadata,
+    TAccountCollectionMint,
+    TAccountCollectionMetadata,
+    TAccountSystemProgram,
+    TAccountSysvarInstructions
+  >,
+  config?: { programAddress?: TProgramAddress }
+): Promise<
+  UnverifyCollectionV1Instruction<
+    TProgramAddress,
+    TAccountAuthority,
+    TAccountDelegateRecord,
+    TAccountMetadata,
+    TAccountCollectionMint,
+    TAccountCollectionMetadata,
+    TAccountSystemProgram,
+    TAccountSysvarInstructions
+  >
+> {
+  // Program address.
+  const programAddress =
+    config?.programAddress ?? MPL_TOKEN_METADATA_PROGRAM_ADDRESS;
+
+  // Original accounts.
+  const originalAccounts = {
+    authority: { value: input.authority ?? null, isWritable: false },
+    delegateRecord: { value: input.delegateRecord ?? null, isWritable: false },
+    metadata: { value: input.metadata ?? null, isWritable: true },
+    collectionMint: { value: input.collectionMint ?? null, isWritable: false },
+    collectionMetadata: {
+      value: input.collectionMetadata ?? null,
+      isWritable: true,
+    },
+    systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+    sysvarInstructions: {
+      value: input.sysvarInstructions ?? null,
+      isWritable: false,
+    },
+  };
+  const accounts = originalAccounts as Record<
+    keyof typeof originalAccounts,
+    ResolvedAccount
+  >;
+
+  // Resolve default values.
+  if (!accounts.collectionMetadata.value) {
+    accounts.collectionMetadata.value = await findMetadataPda({
+      mint: expectAddress(accounts.collectionMint.value),
+    });
+  }
+  if (!accounts.systemProgram.value) {
+    accounts.systemProgram.value =
+      '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
+  }
+  if (!accounts.sysvarInstructions.value) {
+    accounts.sysvarInstructions.value =
+      'Sysvar1nstructions1111111111111111111111111' as Address<'Sysvar1nstructions1111111111111111111111111'>;
+  }
+
+  const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
+  const instruction = {
+    accounts: [
+      getAccountMeta(accounts.authority),
+      getAccountMeta(accounts.delegateRecord),
+      getAccountMeta(accounts.metadata),
+      getAccountMeta(accounts.collectionMint),
+      getAccountMeta(accounts.collectionMetadata),
+      getAccountMeta(accounts.systemProgram),
+      getAccountMeta(accounts.sysvarInstructions),
+    ],
+    programAddress,
+    data: getUnverifyCollectionV1InstructionDataEncoder().encode({}),
+  } as UnverifyCollectionV1Instruction<
+    TProgramAddress,
+    TAccountAuthority,
+    TAccountDelegateRecord,
+    TAccountMetadata,
+    TAccountCollectionMint,
+    TAccountCollectionMetadata,
+    TAccountSystemProgram,
+    TAccountSysvarInstructions
+  >;
+
+  return instruction;
+}
+
 export type UnverifyCollectionV1Input<
   TAccountAuthority extends string = string,
   TAccountDelegateRecord extends string = string,
@@ -135,7 +264,7 @@ export type UnverifyCollectionV1Input<
   /** Metadata account */
   metadata: Address<TAccountMetadata>;
   /** Mint of the Collection */
-  collectionMint?: Address<TAccountCollectionMint>;
+  collectionMint: Address<TAccountCollectionMint>;
   /** Metadata Account of the Collection */
   collectionMetadata?: Address<TAccountCollectionMetadata>;
   /** System program */
@@ -249,7 +378,7 @@ export type ParsedUnverifyCollectionV1Instruction<
     /** Metadata account */
     metadata: TAccountMetas[2];
     /** Mint of the Collection */
-    collectionMint?: TAccountMetas[3] | undefined;
+    collectionMint: TAccountMetas[3];
     /** Metadata Account of the Collection */
     collectionMetadata?: TAccountMetas[4] | undefined;
     /** System program */
@@ -290,7 +419,7 @@ export function parseUnverifyCollectionV1Instruction<
       authority: getNextAccount(),
       delegateRecord: getNextOptionalAccount(),
       metadata: getNextAccount(),
-      collectionMint: getNextOptionalAccount(),
+      collectionMint: getNextAccount(),
       collectionMetadata: getNextOptionalAccount(),
       systemProgram: getNextAccount(),
       sysvarInstructions: getNextAccount(),

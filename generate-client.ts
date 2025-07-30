@@ -898,6 +898,22 @@ function metadataDelegateDefaults(role: string): InstructionUpdates {
   };
 }
 
+const verifyCollectionDefaults: InstructionUpdates = {
+  accounts: {
+    collectionMint: { isOptional: false, defaultValue: null },
+    collectionMetadata: {
+      defaultValue: pdaValueNode("metadata", [
+        pdaSeedValueNode("mint", accountValueNode("collectionMint")),
+      ]),
+    },
+    collectionMasterEdition: {
+      defaultValue: pdaValueNode("masterEdition", [
+        pdaSeedValueNode("mint", accountValueNode("collectionMint")),
+      ]),
+    },
+  },
+};
+
 const tokenDelegateDefaults: InstructionUpdates = {
   accounts: {
     token: {
@@ -1119,6 +1135,9 @@ codama.update(
     revokeProgrammableConfigItemV1: metadataDelegateDefaults(
       "ProgrammableConfigItem"
     ),
+    // Verify collection.
+    verifyCollectionV1: verifyCollectionDefaults,
+    unverifyCollectionV1: verifyCollectionDefaults,
   })
 );
 
