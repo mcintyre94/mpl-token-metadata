@@ -30,14 +30,19 @@ import {
   type WritableSignerAccount,
 } from '@solana/kit';
 import { resolveIsNonFungible } from '../../hooked';
-import { findMasterEditionPda, findMetadataPda } from '../pdas';
+import {
+  findMasterEditionPda,
+  findMetadataDelegateRecordPda,
+  findMetadataPda,
+} from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
 import {
   expectAddress,
+  expectSome,
   getAccountMetaFactory,
   type ResolvedAccount,
 } from '../shared';
-import { type TokenStandardArgs } from '../types';
+import { MetadataDelegateRole, type TokenStandardArgs } from '../types';
 
 export const REVOKE_COLLECTION_V1_DISCRIMINATOR = 45;
 
@@ -160,6 +165,7 @@ export function getRevokeCollectionV1InstructionDataCodec(): FixedSizeCodec<
 
 export type RevokeCollectionV1InstructionExtraArgs = {
   tokenStandard: TokenStandardArgs;
+  updateAuthority: Address;
 };
 
 export type RevokeCollectionV1AsyncInput<
@@ -207,6 +213,7 @@ export type RevokeCollectionV1AsyncInput<
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
   tokenStandard: RevokeCollectionV1InstructionExtraArgs['tokenStandard'];
+  updateAuthority?: RevokeCollectionV1InstructionExtraArgs['updateAuthority'];
 };
 
 export async function getRevokeCollectionV1InstructionAsync<
@@ -307,6 +314,17 @@ export async function getRevokeCollectionV1InstructionAsync<
   const resolverScope = { programAddress, accounts, args };
 
   // Resolve default values.
+  if (!args.updateAuthority) {
+    args.updateAuthority = expectAddress(accounts.authority.value);
+  }
+  if (!accounts.delegateRecord.value) {
+    accounts.delegateRecord.value = await findMetadataDelegateRecordPda({
+      delegateRole: MetadataDelegateRole.Collection,
+      updateAuthority: expectSome(args.updateAuthority),
+      mint: expectAddress(accounts.mint.value),
+      delegate: expectAddress(accounts.delegate.value),
+    });
+  }
   if (!accounts.metadata.value) {
     accounts.metadata.value = await findMetadataPda({
       mint: expectAddress(accounts.mint.value),
@@ -420,6 +438,7 @@ export type RevokeCollectionV1Input<
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
   tokenStandard: RevokeCollectionV1InstructionExtraArgs['tokenStandard'];
+  updateAuthority?: RevokeCollectionV1InstructionExtraArgs['updateAuthority'];
 };
 
 export function getRevokeCollectionV1Instruction<
@@ -515,6 +534,9 @@ export function getRevokeCollectionV1Instruction<
   const args = { ...input };
 
   // Resolve default values.
+  if (!args.updateAuthority) {
+    args.updateAuthority = expectAddress(accounts.authority.value);
+  }
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
       '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;

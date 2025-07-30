@@ -30,14 +30,19 @@ import {
   type WritableSignerAccount,
 } from '@solana/kit';
 import { resolveIsNonFungible } from '../../hooked';
-import { findMasterEditionPda, findMetadataPda } from '../pdas';
+import {
+  findMasterEditionPda,
+  findMetadataDelegateRecordPda,
+  findMetadataPda,
+} from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
 import {
   expectAddress,
+  expectSome,
   getAccountMetaFactory,
   type ResolvedAccount,
 } from '../shared';
-import { type TokenStandardArgs } from '../types';
+import { MetadataDelegateRole, type TokenStandardArgs } from '../types';
 
 export const REVOKE_PROGRAMMABLE_CONFIG_ITEM_V1_DISCRIMINATOR = 45;
 
@@ -162,6 +167,7 @@ export function getRevokeProgrammableConfigItemV1InstructionDataCodec(): FixedSi
 
 export type RevokeProgrammableConfigItemV1InstructionExtraArgs = {
   tokenStandard: TokenStandardArgs;
+  updateAuthority: Address;
 };
 
 export type RevokeProgrammableConfigItemV1AsyncInput<
@@ -209,6 +215,7 @@ export type RevokeProgrammableConfigItemV1AsyncInput<
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
   tokenStandard: RevokeProgrammableConfigItemV1InstructionExtraArgs['tokenStandard'];
+  updateAuthority?: RevokeProgrammableConfigItemV1InstructionExtraArgs['updateAuthority'];
 };
 
 export async function getRevokeProgrammableConfigItemV1InstructionAsync<
@@ -309,6 +316,17 @@ export async function getRevokeProgrammableConfigItemV1InstructionAsync<
   const resolverScope = { programAddress, accounts, args };
 
   // Resolve default values.
+  if (!args.updateAuthority) {
+    args.updateAuthority = expectAddress(accounts.authority.value);
+  }
+  if (!accounts.delegateRecord.value) {
+    accounts.delegateRecord.value = await findMetadataDelegateRecordPda({
+      delegateRole: MetadataDelegateRole.ProgrammableConfigItem,
+      updateAuthority: expectSome(args.updateAuthority),
+      mint: expectAddress(accounts.mint.value),
+      delegate: expectAddress(accounts.delegate.value),
+    });
+  }
   if (!accounts.metadata.value) {
     accounts.metadata.value = await findMetadataPda({
       mint: expectAddress(accounts.mint.value),
@@ -422,6 +440,7 @@ export type RevokeProgrammableConfigItemV1Input<
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
   tokenStandard: RevokeProgrammableConfigItemV1InstructionExtraArgs['tokenStandard'];
+  updateAuthority?: RevokeProgrammableConfigItemV1InstructionExtraArgs['updateAuthority'];
 };
 
 export function getRevokeProgrammableConfigItemV1Instruction<
@@ -517,6 +536,9 @@ export function getRevokeProgrammableConfigItemV1Instruction<
   const args = { ...input };
 
   // Resolve default values.
+  if (!args.updateAuthority) {
+    args.updateAuthority = expectAddress(accounts.authority.value);
+  }
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
       '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;

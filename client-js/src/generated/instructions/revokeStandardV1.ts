@@ -6,6 +6,7 @@
  * @see https://github.com/codama-idl/codama
  */
 
+import { findAssociatedTokenPda } from '@solana-program/token';
 import {
   combineCodec,
   getStructDecoder,
@@ -30,10 +31,15 @@ import {
   type WritableSignerAccount,
 } from '@solana/kit';
 import { resolveIsNonFungible } from '../../hooked';
-import { findMasterEditionPda, findMetadataPda } from '../pdas';
+import {
+  findMasterEditionPda,
+  findMetadataPda,
+  findTokenRecordPda,
+} from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
 import {
   expectAddress,
+  expectSome,
   getAccountMetaFactory,
   type ResolvedAccount,
 } from '../shared';
@@ -51,7 +57,9 @@ export type RevokeStandardV1Instruction<
   TAccountDelegate extends string | AccountMeta<string> = string,
   TAccountMetadata extends string | AccountMeta<string> = string,
   TAccountMasterEdition extends string | AccountMeta<string> = string,
-  TAccountTokenRecord extends string | AccountMeta<string> = string,
+  TAccountTokenRecord extends
+    | string
+    | AccountMeta<string> = 'metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s',
   TAccountMint extends string | AccountMeta<string> = string,
   TAccountToken extends string | AccountMeta<string> = string,
   TAccountAuthority extends string | AccountMeta<string> = string,
@@ -62,7 +70,9 @@ export type RevokeStandardV1Instruction<
   TAccountSysvarInstructions extends
     | string
     | AccountMeta<string> = 'Sysvar1nstructions1111111111111111111111111',
-  TAccountSplTokenProgram extends string | AccountMeta<string> = string,
+  TAccountSplTokenProgram extends
+    | string
+    | AccountMeta<string> = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
   TAccountAuthorizationRulesProgram extends
     | string
     | AccountMeta<string> = string,
@@ -160,6 +170,7 @@ export function getRevokeStandardV1InstructionDataCodec(): FixedSizeCodec<
 
 export type RevokeStandardV1InstructionExtraArgs = {
   tokenStandard: TokenStandardArgs;
+  tokenOwner: Address;
 };
 
 export type RevokeStandardV1AsyncInput<
@@ -207,6 +218,7 @@ export type RevokeStandardV1AsyncInput<
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
   tokenStandard: RevokeStandardV1InstructionExtraArgs['tokenStandard'];
+  tokenOwner?: RevokeStandardV1InstructionExtraArgs['tokenOwner'];
 };
 
 export async function getRevokeStandardV1InstructionAsync<
@@ -307,6 +319,23 @@ export async function getRevokeStandardV1InstructionAsync<
   const resolverScope = { programAddress, accounts, args };
 
   // Resolve default values.
+  if (!accounts.splTokenProgram.value) {
+    accounts.splTokenProgram.value =
+      'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
+  }
+  if (!accounts.token.value) {
+    accounts.token.value = await findAssociatedTokenPda({
+      mint: expectAddress(accounts.mint.value),
+      tokenProgram: expectAddress(accounts.splTokenProgram.value),
+      owner: expectSome(args.tokenOwner),
+    });
+  }
+  if (!accounts.delegateRecord.value) {
+    accounts.delegateRecord.value = await findTokenRecordPda({
+      mint: expectAddress(accounts.mint.value),
+      token: expectAddress(accounts.token.value),
+    });
+  }
   if (!accounts.metadata.value) {
     accounts.metadata.value = await findMetadataPda({
       mint: expectAddress(accounts.mint.value),
@@ -404,7 +433,7 @@ export type RevokeStandardV1Input<
   /** Mint of metadata */
   mint: Address<TAccountMint>;
   /** Token account of mint */
-  token?: Address<TAccountToken>;
+  token: Address<TAccountToken>;
   /** Update authority or token owner */
   authority: TransactionSigner<TAccountAuthority>;
   /** Payer */
@@ -420,6 +449,7 @@ export type RevokeStandardV1Input<
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
   tokenStandard: RevokeStandardV1InstructionExtraArgs['tokenStandard'];
+  tokenOwner?: RevokeStandardV1InstructionExtraArgs['tokenOwner'];
 };
 
 export function getRevokeStandardV1Instruction<
@@ -515,6 +545,10 @@ export function getRevokeStandardV1Instruction<
   const args = { ...input };
 
   // Resolve default values.
+  if (!accounts.splTokenProgram.value) {
+    accounts.splTokenProgram.value =
+      'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
+  }
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
       '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
@@ -590,7 +624,7 @@ export type ParsedRevokeStandardV1Instruction<
     /** Mint of metadata */
     mint: TAccountMetas[5];
     /** Token account of mint */
-    token?: TAccountMetas[6] | undefined;
+    token: TAccountMetas[6];
     /** Update authority or token owner */
     authority: TAccountMetas[7];
     /** Payer */
@@ -642,7 +676,7 @@ export function parseRevokeStandardV1Instruction<
       masterEdition: getNextOptionalAccount(),
       tokenRecord: getNextOptionalAccount(),
       mint: getNextAccount(),
-      token: getNextOptionalAccount(),
+      token: getNextAccount(),
       authority: getNextAccount(),
       payer: getNextAccount(),
       systemProgram: getNextAccount(),

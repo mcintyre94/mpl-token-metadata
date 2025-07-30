@@ -1096,6 +1096,29 @@ codama.update(
     delegateProgrammableConfigItemV1: metadataDelegateDefaults(
       "ProgrammableConfigItem"
     ),
+    // Revoke.
+    revokeCollectionV1: metadataDelegateDefaults("Collection"),
+    revokeSaleV1: tokenDelegateDefaults,
+    revokeTransferV1: tokenDelegateDefaults,
+    revokeDataV1: metadataDelegateDefaults("Data"),
+    revokeUtilityV1: tokenDelegateDefaults,
+    revokeStakingV1: tokenDelegateDefaults,
+    revokeStandardV1: {
+      ...tokenDelegateDefaults,
+      accounts: {
+        ...tokenDelegateDefaults.accounts,
+        tokenRecord: { defaultValue: programIdValueNode() },
+      },
+    },
+    revokeLockedTransferV1: tokenDelegateDefaults,
+    revokeProgrammableConfigV1: metadataDelegateDefaults("ProgrammableConfig"),
+    revokeMigrationV1: tokenDelegateDefaults,
+    revokeAuthorityItemV1: metadataDelegateDefaults("AuthorityItem"),
+    revokeDataItemV1: metadataDelegateDefaults("DataItem"),
+    revokeCollectionItemV1: metadataDelegateDefaults("CollectionItem"),
+    revokeProgrammableConfigItemV1: metadataDelegateDefaults(
+      "ProgrammableConfigItem"
+    ),
   })
 );
 
