@@ -33,14 +33,16 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/kit';
-import { findMetadataPda } from '../pdas';
+import { findMetadataDelegateRecordPda, findMetadataPda } from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
 import {
   expectAddress,
+  expectSome,
   getAccountMetaFactory,
   type ResolvedAccount,
 } from '../shared';
 import {
+  MetadataDelegateRole,
   getAuthorizationDataDecoder,
   getAuthorizationDataEncoder,
   getCollectionToggleDecoder,
@@ -169,6 +171,10 @@ export function getUpdateAsCollectionItemDelegateV2InstructionDataCodec(): Codec
   );
 }
 
+export type UpdateAsCollectionItemDelegateV2InstructionExtraArgs = {
+  updateAuthority: Address;
+};
+
 export type UpdateAsCollectionItemDelegateV2AsyncInput<
   TAccountAuthority extends string = string,
   TAccountDelegateRecord extends string = string,
@@ -206,6 +212,7 @@ export type UpdateAsCollectionItemDelegateV2AsyncInput<
   authorizationRules?: Address<TAccountAuthorizationRules>;
   collection: UpdateAsCollectionItemDelegateV2InstructionDataArgs['collection'];
   authorizationData: UpdateAsCollectionItemDelegateV2InstructionDataArgs['authorizationData'];
+  updateAuthority?: UpdateAsCollectionItemDelegateV2InstructionExtraArgs['updateAuthority'];
 };
 
 export async function getUpdateAsCollectionItemDelegateV2InstructionAsync<
@@ -288,6 +295,14 @@ export async function getUpdateAsCollectionItemDelegateV2InstructionAsync<
   const args = { ...input };
 
   // Resolve default values.
+  if (!accounts.delegateRecord.value) {
+    accounts.delegateRecord.value = await findMetadataDelegateRecordPda({
+      delegateRole: MetadataDelegateRole.CollectionItem,
+      updateAuthority: expectSome(args.updateAuthority),
+      delegate: expectAddress(accounts.authority.value),
+      mint: expectAddress(accounts.mint.value),
+    });
+  }
   if (!accounts.metadata.value) {
     accounts.metadata.value = await findMetadataPda({
       mint: expectAddress(accounts.mint.value),
@@ -382,6 +397,7 @@ export type UpdateAsCollectionItemDelegateV2Input<
   authorizationRules?: Address<TAccountAuthorizationRules>;
   collection: UpdateAsCollectionItemDelegateV2InstructionDataArgs['collection'];
   authorizationData: UpdateAsCollectionItemDelegateV2InstructionDataArgs['authorizationData'];
+  updateAuthority?: UpdateAsCollectionItemDelegateV2InstructionExtraArgs['updateAuthority'];
 };
 
 export function getUpdateAsCollectionItemDelegateV2Instruction<

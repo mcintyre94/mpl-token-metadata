@@ -33,14 +33,16 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/kit';
-import { findMetadataPda } from '../pdas';
+import { findMetadataDelegateRecordPda, findMetadataPda } from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
 import {
   expectAddress,
+  expectSome,
   getAccountMetaFactory,
   type ResolvedAccount,
 } from '../shared';
 import {
+  MetadataDelegateRole,
   getAuthorizationDataDecoder,
   getAuthorizationDataEncoder,
   getRuleSetToggleDecoder,
@@ -169,6 +171,11 @@ export function getUpdateAsProgrammableConfigDelegateV2InstructionDataCodec(): C
   );
 }
 
+export type UpdateAsProgrammableConfigDelegateV2InstructionExtraArgs = {
+  delegateMint: Address;
+  delegateUpdateAuthority: Address;
+};
+
 export type UpdateAsProgrammableConfigDelegateV2AsyncInput<
   TAccountAuthority extends string = string,
   TAccountDelegateRecord extends string = string,
@@ -187,7 +194,7 @@ export type UpdateAsProgrammableConfigDelegateV2AsyncInput<
   /** Delegate record PDA */
   delegateRecord?: Address<TAccountDelegateRecord>;
   /** Token account */
-  token?: Address<TAccountToken>;
+  token: Address<TAccountToken>;
   /** Mint account */
   mint: Address<TAccountMint>;
   /** Metadata account */
@@ -206,6 +213,8 @@ export type UpdateAsProgrammableConfigDelegateV2AsyncInput<
   authorizationRules?: Address<TAccountAuthorizationRules>;
   ruleSet: UpdateAsProgrammableConfigDelegateV2InstructionDataArgs['ruleSet'];
   authorizationData: UpdateAsProgrammableConfigDelegateV2InstructionDataArgs['authorizationData'];
+  delegateMint?: UpdateAsProgrammableConfigDelegateV2InstructionExtraArgs['delegateMint'];
+  delegateUpdateAuthority?: UpdateAsProgrammableConfigDelegateV2InstructionExtraArgs['delegateUpdateAuthority'];
 };
 
 export async function getUpdateAsProgrammableConfigDelegateV2InstructionAsync<
@@ -288,6 +297,17 @@ export async function getUpdateAsProgrammableConfigDelegateV2InstructionAsync<
   const args = { ...input };
 
   // Resolve default values.
+  if (!args.delegateMint) {
+    args.delegateMint = expectAddress(accounts.mint.value);
+  }
+  if (!accounts.delegateRecord.value) {
+    accounts.delegateRecord.value = await findMetadataDelegateRecordPda({
+      mint: expectSome(args.delegateMint),
+      delegateRole: MetadataDelegateRole.ProgrammableConfig,
+      updateAuthority: expectSome(args.delegateUpdateAuthority),
+      delegate: expectAddress(accounts.authority.value),
+    });
+  }
   if (!accounts.metadata.value) {
     accounts.metadata.value = await findMetadataPda({
       mint: expectAddress(accounts.mint.value),
@@ -363,7 +383,7 @@ export type UpdateAsProgrammableConfigDelegateV2Input<
   /** Delegate record PDA */
   delegateRecord?: Address<TAccountDelegateRecord>;
   /** Token account */
-  token?: Address<TAccountToken>;
+  token: Address<TAccountToken>;
   /** Mint account */
   mint: Address<TAccountMint>;
   /** Metadata account */
@@ -382,6 +402,8 @@ export type UpdateAsProgrammableConfigDelegateV2Input<
   authorizationRules?: Address<TAccountAuthorizationRules>;
   ruleSet: UpdateAsProgrammableConfigDelegateV2InstructionDataArgs['ruleSet'];
   authorizationData: UpdateAsProgrammableConfigDelegateV2InstructionDataArgs['authorizationData'];
+  delegateMint?: UpdateAsProgrammableConfigDelegateV2InstructionExtraArgs['delegateMint'];
+  delegateUpdateAuthority?: UpdateAsProgrammableConfigDelegateV2InstructionExtraArgs['delegateUpdateAuthority'];
 };
 
 export function getUpdateAsProgrammableConfigDelegateV2Instruction<
@@ -462,6 +484,9 @@ export function getUpdateAsProgrammableConfigDelegateV2Instruction<
   const args = { ...input };
 
   // Resolve default values.
+  if (!args.delegateMint) {
+    args.delegateMint = expectAddress(accounts.mint.value);
+  }
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
       '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
@@ -525,7 +550,7 @@ export type ParsedUpdateAsProgrammableConfigDelegateV2Instruction<
     /** Delegate record PDA */
     delegateRecord?: TAccountMetas[1] | undefined;
     /** Token account */
-    token?: TAccountMetas[2] | undefined;
+    token: TAccountMetas[2];
     /** Mint account */
     mint: TAccountMetas[3];
     /** Metadata account */
@@ -578,7 +603,7 @@ export function parseUpdateAsProgrammableConfigDelegateV2Instruction<
     accounts: {
       authority: getNextAccount(),
       delegateRecord: getNextOptionalAccount(),
-      token: getNextOptionalAccount(),
+      token: getNextAccount(),
       mint: getNextAccount(),
       metadata: getNextAccount(),
       edition: getNextOptionalAccount(),

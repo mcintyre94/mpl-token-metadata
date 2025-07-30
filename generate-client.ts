@@ -42,6 +42,7 @@ import {
   instructionNode,
   instructionAccountNode,
   booleanTypeNode,
+  type InstructionUpdates,
 } from "codama";
 
 import anchorIdl from "./idl.json" with { type: "json" };
@@ -804,6 +805,73 @@ codama.update(
   ])
 );
 
+function updateAsMetadataDelegateDefaults(role: string): InstructionUpdates {
+  return {
+    accounts: {
+      delegateRecord: {
+        defaultValue: pdaValueNode("metadataDelegateRecord", [
+          pdaSeedValueNode(
+            "delegateRole",
+            enumValueNode("MetadataDelegateRole", role)
+          ),
+          pdaSeedValueNode(
+            "updateAuthority",
+            argumentValueNode("updateAuthority")
+          ),
+          pdaSeedValueNode("delegate", accountValueNode("authority")),
+        ]),
+      },
+      token:
+        role === "ProgrammableConfigItem"
+          ? { isOptional: false, defaultValue: null }
+          : {},
+    },
+    arguments: {
+      updateAuthority: {
+        type: publicKeyTypeNode(),
+        defaultValue: identityValueNode(),
+      },
+    },
+  };
+}
+
+function updateAsMetadataCollectionDelegateDefaults(
+  role: string
+): InstructionUpdates {
+  return {
+    accounts: {
+      delegateRecord: {
+        defaultValue: pdaValueNode("metadataDelegateRecord", [
+          pdaSeedValueNode("mint", argumentValueNode("delegateMint")),
+          pdaSeedValueNode(
+            "delegateRole",
+            enumValueNode("MetadataDelegateRole", role)
+          ),
+          pdaSeedValueNode(
+            "updateAuthority",
+            argumentValueNode("delegateUpdateAuthority")
+          ),
+          pdaSeedValueNode("delegate", accountValueNode("authority")),
+        ]),
+      },
+      token:
+        role === "ProgrammableConfig"
+          ? { isOptional: false, defaultValue: null }
+          : {},
+    },
+    arguments: {
+      delegateMint: {
+        type: publicKeyTypeNode(),
+        defaultValue: accountValueNode("mint"),
+      },
+      delegateUpdateAuthority: {
+        type: publicKeyTypeNode(),
+        defaultValue: identityValueNode(),
+      },
+    },
+  };
+}
+
 codama.update(
   updateInstructionsVisitor({
     createV1: {
@@ -929,24 +997,38 @@ codama.update(
       },
       arguments: { edition: { name: "editionNumber" } },
     },
+    // Update.
+    updateAsAuthorityItemDelegateV2:
+      updateAsMetadataDelegateDefaults("AuthorityItem"),
+    updateAsCollectionDelegateV2:
+      updateAsMetadataCollectionDelegateDefaults("Collection"),
+    updateAsDataDelegateV2: updateAsMetadataCollectionDelegateDefaults("Data"),
+    updateAsProgrammableConfigDelegateV2:
+      updateAsMetadataCollectionDelegateDefaults("ProgrammableConfig"),
+    updateAsDataItemDelegateV2: updateAsMetadataDelegateDefaults("DataItem"),
+    updateAsCollectionItemDelegateV2:
+      updateAsMetadataDelegateDefaults("CollectionItem"),
+    updateAsProgrammableConfigItemDelegateV2: updateAsMetadataDelegateDefaults(
+      "ProgrammableConfigItem"
+    ),
   })
 );
 
 /* Temporary */
 // need to pull this forward for the splTokenProgram dependency on argumentValueNode("tokenStandard")
 // can we pull this into the first updateInstructionsVisitor?
-codama.update(
-  updateInstructionsVisitor({
-    create: {
-      arguments: {
-        tokenStandard: {
-          type: definedTypeLinkNode("TokenStandard"),
-          defaultValue: enumValueNode("TokenStandard", "NonFungible"),
-        },
-      },
-    },
-  })
-);
+// codama.update(
+//   updateInstructionsVisitor({
+//     create: {
+//       arguments: {
+//         tokenStandard: {
+//           type: definedTypeLinkNode("TokenStandard"),
+//           defaultValue: enumValueNode("TokenStandard", "NonFungible"),
+//         },
+//       },
+//     },
+//   })
+// );
 /* End Temporary */
 
 codama.accept(

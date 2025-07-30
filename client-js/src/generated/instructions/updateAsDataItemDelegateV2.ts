@@ -33,14 +33,16 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/kit';
-import { findMetadataPda } from '../pdas';
+import { findMetadataDelegateRecordPda, findMetadataPda } from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
 import {
   expectAddress,
+  expectSome,
   getAccountMetaFactory,
   type ResolvedAccount,
 } from '../shared';
 import {
+  MetadataDelegateRole,
   getAuthorizationDataDecoder,
   getAuthorizationDataEncoder,
   getDataDecoder,
@@ -167,6 +169,10 @@ export function getUpdateAsDataItemDelegateV2InstructionDataCodec(): Codec<
   );
 }
 
+export type UpdateAsDataItemDelegateV2InstructionExtraArgs = {
+  updateAuthority: Address;
+};
+
 export type UpdateAsDataItemDelegateV2AsyncInput<
   TAccountAuthority extends string = string,
   TAccountDelegateRecord extends string = string,
@@ -204,6 +210,7 @@ export type UpdateAsDataItemDelegateV2AsyncInput<
   authorizationRules?: Address<TAccountAuthorizationRules>;
   data: UpdateAsDataItemDelegateV2InstructionDataArgs['data'];
   authorizationData: UpdateAsDataItemDelegateV2InstructionDataArgs['authorizationData'];
+  updateAuthority?: UpdateAsDataItemDelegateV2InstructionExtraArgs['updateAuthority'];
 };
 
 export async function getUpdateAsDataItemDelegateV2InstructionAsync<
@@ -286,6 +293,14 @@ export async function getUpdateAsDataItemDelegateV2InstructionAsync<
   const args = { ...input };
 
   // Resolve default values.
+  if (!accounts.delegateRecord.value) {
+    accounts.delegateRecord.value = await findMetadataDelegateRecordPda({
+      delegateRole: MetadataDelegateRole.DataItem,
+      updateAuthority: expectSome(args.updateAuthority),
+      delegate: expectAddress(accounts.authority.value),
+      mint: expectAddress(accounts.mint.value),
+    });
+  }
   if (!accounts.metadata.value) {
     accounts.metadata.value = await findMetadataPda({
       mint: expectAddress(accounts.mint.value),
@@ -380,6 +395,7 @@ export type UpdateAsDataItemDelegateV2Input<
   authorizationRules?: Address<TAccountAuthorizationRules>;
   data: UpdateAsDataItemDelegateV2InstructionDataArgs['data'];
   authorizationData: UpdateAsDataItemDelegateV2InstructionDataArgs['authorizationData'];
+  updateAuthority?: UpdateAsDataItemDelegateV2InstructionExtraArgs['updateAuthority'];
 };
 
 export function getUpdateAsDataItemDelegateV2Instruction<

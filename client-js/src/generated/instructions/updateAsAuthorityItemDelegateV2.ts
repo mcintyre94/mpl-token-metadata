@@ -38,14 +38,16 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/kit';
-import { findMetadataPda } from '../pdas';
+import { findMetadataDelegateRecordPda, findMetadataPda } from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
 import {
   expectAddress,
+  expectSome,
   getAccountMetaFactory,
   type ResolvedAccount,
 } from '../shared';
 import {
+  MetadataDelegateRole,
   getAuthorizationDataDecoder,
   getAuthorizationDataEncoder,
   getTokenStandardDecoder,
@@ -187,6 +189,10 @@ export function getUpdateAsAuthorityItemDelegateV2InstructionDataCodec(): Codec<
   );
 }
 
+export type UpdateAsAuthorityItemDelegateV2InstructionExtraArgs = {
+  updateAuthority: Address;
+};
+
 export type UpdateAsAuthorityItemDelegateV2AsyncInput<
   TAccountAuthority extends string = string,
   TAccountDelegateRecord extends string = string,
@@ -227,6 +233,7 @@ export type UpdateAsAuthorityItemDelegateV2AsyncInput<
   isMutable: UpdateAsAuthorityItemDelegateV2InstructionDataArgs['isMutable'];
   tokenStandard?: UpdateAsAuthorityItemDelegateV2InstructionDataArgs['tokenStandard'];
   authorizationData: UpdateAsAuthorityItemDelegateV2InstructionDataArgs['authorizationData'];
+  updateAuthority?: UpdateAsAuthorityItemDelegateV2InstructionExtraArgs['updateAuthority'];
 };
 
 export async function getUpdateAsAuthorityItemDelegateV2InstructionAsync<
@@ -309,6 +316,14 @@ export async function getUpdateAsAuthorityItemDelegateV2InstructionAsync<
   const args = { ...input };
 
   // Resolve default values.
+  if (!accounts.delegateRecord.value) {
+    accounts.delegateRecord.value = await findMetadataDelegateRecordPda({
+      delegateRole: MetadataDelegateRole.AuthorityItem,
+      updateAuthority: expectSome(args.updateAuthority),
+      delegate: expectAddress(accounts.authority.value),
+      mint: expectAddress(accounts.mint.value),
+    });
+  }
   if (!accounts.metadata.value) {
     accounts.metadata.value = await findMetadataPda({
       mint: expectAddress(accounts.mint.value),
@@ -406,6 +421,7 @@ export type UpdateAsAuthorityItemDelegateV2Input<
   isMutable: UpdateAsAuthorityItemDelegateV2InstructionDataArgs['isMutable'];
   tokenStandard?: UpdateAsAuthorityItemDelegateV2InstructionDataArgs['tokenStandard'];
   authorizationData: UpdateAsAuthorityItemDelegateV2InstructionDataArgs['authorizationData'];
+  updateAuthority?: UpdateAsAuthorityItemDelegateV2InstructionExtraArgs['updateAuthority'];
 };
 
 export function getUpdateAsAuthorityItemDelegateV2Instruction<
