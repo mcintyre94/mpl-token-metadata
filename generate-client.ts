@@ -851,6 +851,40 @@ codama.update(
         },
       },
     },
+    printV1: {
+      accounts: {
+        editionMarkerPda: {
+          defaultValue: conditionalValueNode({
+            condition: argumentValueNode("tokenStandard"),
+            value: enumValueNode("TokenStandard", "ProgrammableNonFungible"),
+            ifTrue: pdaValueNode("editionMarkerV2", [
+              pdaSeedValueNode("mint", argumentValueNode("masterEditionMint")),
+            ]),
+            ifFalse: pdaValueNode(
+              pdaLinkNode("editionMarkerFromEditionNumber", "hooked"),
+              [
+                pdaSeedValueNode(
+                  "mint",
+                  argumentValueNode("masterEditionMint")
+                ),
+                pdaSeedValueNode(
+                  "editionNumber",
+                  argumentValueNode("editionNumber")
+                ),
+              ]
+            ),
+          }),
+        },
+        editionMintAuthority: {
+          defaultValue: accountValueNode("masterTokenAccountOwner"),
+        },
+        masterTokenAccountOwner: {
+          defaultValue: identityValueNode(),
+          isSigner: true,
+        },
+      },
+      arguments: { edition: { name: "editionNumber" } },
+    },
   })
 );
 
@@ -885,6 +919,7 @@ codama.accept(
       },
       pdas: {
         associatedToken: "@solana-program/token",
+        editionMarkerFromEditionNumber: "hooked",
       },
     },
   })
@@ -1024,6 +1059,9 @@ const verifyCollectionDefaults = {
 };
 kinobi.update(
   k.updateInstructionsVisitor({
+
+
+
     createV1: {
       byteDeltas: [
         k.instructionByteDeltaNode(k.resolverValueNode("resolveCreateV1Bytes")),
@@ -1068,6 +1106,9 @@ kinobi.update(
         },
       },
     },
+
+
+
     printV1: {
       accounts: {
         editionMarkerPda: {
