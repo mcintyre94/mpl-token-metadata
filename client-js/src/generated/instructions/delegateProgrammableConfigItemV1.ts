@@ -34,14 +34,20 @@ import {
   type WritableSignerAccount,
 } from '@solana/kit';
 import { resolveIsNonFungible } from '../../hooked';
-import { findMasterEditionPda, findMetadataPda } from '../pdas';
+import {
+  findMasterEditionPda,
+  findMetadataDelegateRecordPda,
+  findMetadataPda,
+} from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
 import {
   expectAddress,
+  expectSome,
   getAccountMetaFactory,
   type ResolvedAccount,
 } from '../shared';
 import {
+  MetadataDelegateRole,
   getAuthorizationDataDecoder,
   getAuthorizationDataEncoder,
   type AuthorizationData,
@@ -177,6 +183,7 @@ export function getDelegateProgrammableConfigItemV1InstructionDataCodec(): Codec
 
 export type DelegateProgrammableConfigItemV1InstructionExtraArgs = {
   tokenStandard: TokenStandardArgs;
+  updateAuthority: Address;
 };
 
 export type DelegateProgrammableConfigItemV1AsyncInput<
@@ -225,6 +232,7 @@ export type DelegateProgrammableConfigItemV1AsyncInput<
   authorizationRules?: Address<TAccountAuthorizationRules>;
   authorizationData: DelegateProgrammableConfigItemV1InstructionDataArgs['authorizationData'];
   tokenStandard: DelegateProgrammableConfigItemV1InstructionExtraArgs['tokenStandard'];
+  updateAuthority?: DelegateProgrammableConfigItemV1InstructionExtraArgs['updateAuthority'];
 };
 
 export async function getDelegateProgrammableConfigItemV1InstructionAsync<
@@ -325,6 +333,17 @@ export async function getDelegateProgrammableConfigItemV1InstructionAsync<
   const resolverScope = { programAddress, accounts, args };
 
   // Resolve default values.
+  if (!args.updateAuthority) {
+    args.updateAuthority = expectAddress(accounts.authority.value);
+  }
+  if (!accounts.delegateRecord.value) {
+    accounts.delegateRecord.value = await findMetadataDelegateRecordPda({
+      delegateRole: MetadataDelegateRole.ProgrammableConfigItem,
+      updateAuthority: expectSome(args.updateAuthority),
+      mint: expectAddress(accounts.mint.value),
+      delegate: expectAddress(accounts.delegate.value),
+    });
+  }
   if (!accounts.metadata.value) {
     accounts.metadata.value = await findMetadataPda({
       mint: expectAddress(accounts.mint.value),
@@ -441,6 +460,7 @@ export type DelegateProgrammableConfigItemV1Input<
   authorizationRules?: Address<TAccountAuthorizationRules>;
   authorizationData: DelegateProgrammableConfigItemV1InstructionDataArgs['authorizationData'];
   tokenStandard: DelegateProgrammableConfigItemV1InstructionExtraArgs['tokenStandard'];
+  updateAuthority?: DelegateProgrammableConfigItemV1InstructionExtraArgs['updateAuthority'];
 };
 
 export function getDelegateProgrammableConfigItemV1Instruction<
@@ -536,6 +556,9 @@ export function getDelegateProgrammableConfigItemV1Instruction<
   const args = { ...input };
 
   // Resolve default values.
+  if (!args.updateAuthority) {
+    args.updateAuthority = expectAddress(accounts.authority.value);
+  }
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
       '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;

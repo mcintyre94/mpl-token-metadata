@@ -6,6 +6,7 @@
  * @see https://github.com/codama-idl/codama
  */
 
+import { findAssociatedTokenPda } from '@solana-program/token';
 import {
   combineCodec,
   getOptionDecoder,
@@ -36,14 +37,20 @@ import {
   type WritableSignerAccount,
 } from '@solana/kit';
 import { resolveIsNonFungible } from '../../hooked';
-import { findMasterEditionPda, findMetadataPda } from '../pdas';
+import {
+  findMasterEditionPda,
+  findMetadataPda,
+  findTokenRecordPda,
+} from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
 import {
   expectAddress,
+  expectSome,
   getAccountMetaFactory,
   type ResolvedAccount,
 } from '../shared';
 import {
+  TokenStandard,
   getAuthorizationDataDecoder,
   getAuthorizationDataEncoder,
   type AuthorizationData,
@@ -74,7 +81,9 @@ export type DelegateSaleV1Instruction<
   TAccountSysvarInstructions extends
     | string
     | AccountMeta<string> = 'Sysvar1nstructions1111111111111111111111111',
-  TAccountSplTokenProgram extends string | AccountMeta<string> = string,
+  TAccountSplTokenProgram extends
+    | string
+    | AccountMeta<string> = 'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA',
   TAccountAuthorizationRulesProgram extends
     | string
     | AccountMeta<string> = string,
@@ -182,6 +191,7 @@ export function getDelegateSaleV1InstructionDataCodec(): Codec<
 
 export type DelegateSaleV1InstructionExtraArgs = {
   tokenStandard: TokenStandardArgs;
+  tokenOwner: Address;
 };
 
 export type DelegateSaleV1AsyncInput<
@@ -231,6 +241,7 @@ export type DelegateSaleV1AsyncInput<
   amount?: DelegateSaleV1InstructionDataArgs['amount'];
   authorizationData: DelegateSaleV1InstructionDataArgs['authorizationData'];
   tokenStandard: DelegateSaleV1InstructionExtraArgs['tokenStandard'];
+  tokenOwner?: DelegateSaleV1InstructionExtraArgs['tokenOwner'];
 };
 
 export async function getDelegateSaleV1InstructionAsync<
@@ -331,6 +342,23 @@ export async function getDelegateSaleV1InstructionAsync<
   const resolverScope = { programAddress, accounts, args };
 
   // Resolve default values.
+  if (!accounts.splTokenProgram.value) {
+    accounts.splTokenProgram.value =
+      'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
+  }
+  if (!accounts.token.value) {
+    accounts.token.value = await findAssociatedTokenPda({
+      mint: expectAddress(accounts.mint.value),
+      tokenProgram: expectAddress(accounts.splTokenProgram.value),
+      owner: expectSome(args.tokenOwner),
+    });
+  }
+  if (!accounts.delegateRecord.value) {
+    accounts.delegateRecord.value = await findTokenRecordPda({
+      mint: expectAddress(accounts.mint.value),
+      token: expectAddress(accounts.token.value),
+    });
+  }
   if (!accounts.metadata.value) {
     accounts.metadata.value = await findMetadataPda({
       mint: expectAddress(accounts.mint.value),
@@ -340,6 +368,14 @@ export async function getDelegateSaleV1InstructionAsync<
     if (resolveIsNonFungible(resolverScope)) {
       accounts.masterEdition.value = await findMasterEditionPda({
         mint: expectAddress(accounts.mint.value),
+      });
+    }
+  }
+  if (!accounts.tokenRecord.value) {
+    if (args.tokenStandard === TokenStandard.ProgrammableNonFungible) {
+      accounts.tokenRecord.value = await findTokenRecordPda({
+        mint: expectAddress(accounts.mint.value),
+        token: expectAddress(accounts.token.value),
       });
     }
   }
@@ -430,7 +466,7 @@ export type DelegateSaleV1Input<
   /** Mint of metadata */
   mint: Address<TAccountMint>;
   /** Token account of mint */
-  token?: Address<TAccountToken>;
+  token: Address<TAccountToken>;
   /** Update authority or token owner */
   authority: TransactionSigner<TAccountAuthority>;
   /** Payer */
@@ -448,6 +484,7 @@ export type DelegateSaleV1Input<
   amount?: DelegateSaleV1InstructionDataArgs['amount'];
   authorizationData: DelegateSaleV1InstructionDataArgs['authorizationData'];
   tokenStandard: DelegateSaleV1InstructionExtraArgs['tokenStandard'];
+  tokenOwner?: DelegateSaleV1InstructionExtraArgs['tokenOwner'];
 };
 
 export function getDelegateSaleV1Instruction<
@@ -543,6 +580,10 @@ export function getDelegateSaleV1Instruction<
   const args = { ...input };
 
   // Resolve default values.
+  if (!accounts.splTokenProgram.value) {
+    accounts.splTokenProgram.value =
+      'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
+  }
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
       '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
@@ -620,7 +661,7 @@ export type ParsedDelegateSaleV1Instruction<
     /** Mint of metadata */
     mint: TAccountMetas[5];
     /** Token account of mint */
-    token?: TAccountMetas[6] | undefined;
+    token: TAccountMetas[6];
     /** Update authority or token owner */
     authority: TAccountMetas[7];
     /** Payer */
@@ -672,7 +713,7 @@ export function parseDelegateSaleV1Instruction<
       masterEdition: getNextOptionalAccount(),
       tokenRecord: getNextOptionalAccount(),
       mint: getNextAccount(),
-      token: getNextOptionalAccount(),
+      token: getNextAccount(),
       authority: getNextAccount(),
       payer: getNextAccount(),
       systemProgram: getNextAccount(),

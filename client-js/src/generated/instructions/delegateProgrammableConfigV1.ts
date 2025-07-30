@@ -34,14 +34,20 @@ import {
   type WritableSignerAccount,
 } from '@solana/kit';
 import { resolveIsNonFungible } from '../../hooked';
-import { findMasterEditionPda, findMetadataPda } from '../pdas';
+import {
+  findMasterEditionPda,
+  findMetadataDelegateRecordPda,
+  findMetadataPda,
+} from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
 import {
   expectAddress,
+  expectSome,
   getAccountMetaFactory,
   type ResolvedAccount,
 } from '../shared';
 import {
+  MetadataDelegateRole,
   getAuthorizationDataDecoder,
   getAuthorizationDataEncoder,
   type AuthorizationData,
@@ -175,6 +181,7 @@ export function getDelegateProgrammableConfigV1InstructionDataCodec(): Codec<
 
 export type DelegateProgrammableConfigV1InstructionExtraArgs = {
   tokenStandard: TokenStandardArgs;
+  updateAuthority: Address;
 };
 
 export type DelegateProgrammableConfigV1AsyncInput<
@@ -223,6 +230,7 @@ export type DelegateProgrammableConfigV1AsyncInput<
   authorizationRules?: Address<TAccountAuthorizationRules>;
   authorizationData: DelegateProgrammableConfigV1InstructionDataArgs['authorizationData'];
   tokenStandard: DelegateProgrammableConfigV1InstructionExtraArgs['tokenStandard'];
+  updateAuthority?: DelegateProgrammableConfigV1InstructionExtraArgs['updateAuthority'];
 };
 
 export async function getDelegateProgrammableConfigV1InstructionAsync<
@@ -323,6 +331,17 @@ export async function getDelegateProgrammableConfigV1InstructionAsync<
   const resolverScope = { programAddress, accounts, args };
 
   // Resolve default values.
+  if (!args.updateAuthority) {
+    args.updateAuthority = expectAddress(accounts.authority.value);
+  }
+  if (!accounts.delegateRecord.value) {
+    accounts.delegateRecord.value = await findMetadataDelegateRecordPda({
+      delegateRole: MetadataDelegateRole.ProgrammableConfig,
+      updateAuthority: expectSome(args.updateAuthority),
+      mint: expectAddress(accounts.mint.value),
+      delegate: expectAddress(accounts.delegate.value),
+    });
+  }
   if (!accounts.metadata.value) {
     accounts.metadata.value = await findMetadataPda({
       mint: expectAddress(accounts.mint.value),
@@ -439,6 +458,7 @@ export type DelegateProgrammableConfigV1Input<
   authorizationRules?: Address<TAccountAuthorizationRules>;
   authorizationData: DelegateProgrammableConfigV1InstructionDataArgs['authorizationData'];
   tokenStandard: DelegateProgrammableConfigV1InstructionExtraArgs['tokenStandard'];
+  updateAuthority?: DelegateProgrammableConfigV1InstructionExtraArgs['updateAuthority'];
 };
 
 export function getDelegateProgrammableConfigV1Instruction<
@@ -534,6 +554,9 @@ export function getDelegateProgrammableConfigV1Instruction<
   const args = { ...input };
 
   // Resolve default values.
+  if (!args.updateAuthority) {
+    args.updateAuthority = expectAddress(accounts.authority.value);
+  }
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
       '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;

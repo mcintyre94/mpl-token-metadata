@@ -42,6 +42,7 @@ import {
   instructionNode,
   instructionAccountNode,
   booleanTypeNode,
+  programIdValueNode,
   type InstructionUpdates,
 } from "codama";
 
@@ -872,6 +873,67 @@ function updateAsMetadataCollectionDelegateDefaults(
   };
 }
 
+function metadataDelegateDefaults(role: string): InstructionUpdates {
+  return {
+    accounts: {
+      delegateRecord: {
+        defaultValue: pdaValueNode("metadataDelegateRecord", [
+          pdaSeedValueNode(
+            "delegateRole",
+            enumValueNode("MetadataDelegateRole", role)
+          ),
+          pdaSeedValueNode(
+            "updateAuthority",
+            argumentValueNode("updateAuthority")
+          ),
+        ]),
+      },
+    },
+    arguments: {
+      updateAuthority: {
+        type: publicKeyTypeNode(),
+        defaultValue: accountValueNode("authority"),
+      },
+    },
+  };
+}
+
+const tokenDelegateDefaults: InstructionUpdates = {
+  accounts: {
+    token: {
+      isOptional: false,
+      defaultValue: pdaValueNode(
+        pdaLinkNode("associatedToken", "@solana-program/token"),
+        [
+          pdaSeedValueNode("mint", accountValueNode("mint")),
+          pdaSeedValueNode("tokenProgram", accountValueNode("splTokenProgram")),
+          pdaSeedValueNode("owner", argumentValueNode("tokenOwner")),
+        ]
+      ),
+    },
+    tokenRecord: {
+      defaultValue: conditionalValueNode({
+        condition: argumentValueNode("tokenStandard"),
+        value: enumValueNode("TokenStandard", "ProgrammableNonFungible"),
+        ifTrue: pdaValueNode("tokenRecord"),
+      }),
+    },
+    delegateRecord: { defaultValue: pdaValueNode("tokenRecord") },
+    splTokenProgram: {
+      defaultValue: publicKeyValueNode(
+        "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+        "splToken"
+      ),
+    },
+  },
+  arguments: {
+    tokenOwner: {
+      type: publicKeyTypeNode(),
+      defaultValue: identityValueNode(),
+    },
+  },
+};
+
 codama.update(
   updateInstructionsVisitor({
     createV1: {
@@ -1011,25 +1073,31 @@ codama.update(
     updateAsProgrammableConfigItemDelegateV2: updateAsMetadataDelegateDefaults(
       "ProgrammableConfigItem"
     ),
+    // Delegate.
+    delegateCollectionV1: metadataDelegateDefaults("Collection"),
+    delegateSaleV1: tokenDelegateDefaults,
+    delegateTransferV1: tokenDelegateDefaults,
+    delegateDataV1: metadataDelegateDefaults("Data"),
+    delegateUtilityV1: tokenDelegateDefaults,
+    delegateStakingV1: tokenDelegateDefaults,
+    delegateStandardV1: {
+      ...tokenDelegateDefaults,
+      accounts: {
+        ...tokenDelegateDefaults.accounts,
+        tokenRecord: { defaultValue: programIdValueNode() },
+      },
+    },
+    delegateLockedTransferV1: tokenDelegateDefaults,
+    delegateProgrammableConfigV1:
+      metadataDelegateDefaults("ProgrammableConfig"),
+    delegateAuthorityItemV1: metadataDelegateDefaults("AuthorityItem"),
+    delegateDataItemV1: metadataDelegateDefaults("DataItem"),
+    delegateCollectionItemV1: metadataDelegateDefaults("CollectionItem"),
+    delegateProgrammableConfigItemV1: metadataDelegateDefaults(
+      "ProgrammableConfigItem"
+    ),
   })
 );
-
-/* Temporary */
-// need to pull this forward for the splTokenProgram dependency on argumentValueNode("tokenStandard")
-// can we pull this into the first updateInstructionsVisitor?
-// codama.update(
-//   updateInstructionsVisitor({
-//     create: {
-//       arguments: {
-//         tokenStandard: {
-//           type: definedTypeLinkNode("TokenStandard"),
-//           defaultValue: enumValueNode("TokenStandard", "NonFungible"),
-//         },
-//       },
-//     },
-//   })
-// );
-/* End Temporary */
 
 codama.accept(
   renderJavaScriptVisitor("./client-js/src/generated/", {

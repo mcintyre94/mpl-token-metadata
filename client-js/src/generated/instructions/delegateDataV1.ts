@@ -34,14 +34,20 @@ import {
   type WritableSignerAccount,
 } from '@solana/kit';
 import { resolveIsNonFungible } from '../../hooked';
-import { findMasterEditionPda, findMetadataPda } from '../pdas';
+import {
+  findMasterEditionPda,
+  findMetadataDelegateRecordPda,
+  findMetadataPda,
+} from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
 import {
   expectAddress,
+  expectSome,
   getAccountMetaFactory,
   type ResolvedAccount,
 } from '../shared';
 import {
+  MetadataDelegateRole,
   getAuthorizationDataDecoder,
   getAuthorizationDataEncoder,
   type AuthorizationData,
@@ -175,6 +181,7 @@ export function getDelegateDataV1InstructionDataCodec(): Codec<
 
 export type DelegateDataV1InstructionExtraArgs = {
   tokenStandard: TokenStandardArgs;
+  updateAuthority: Address;
 };
 
 export type DelegateDataV1AsyncInput<
@@ -223,6 +230,7 @@ export type DelegateDataV1AsyncInput<
   authorizationRules?: Address<TAccountAuthorizationRules>;
   authorizationData: DelegateDataV1InstructionDataArgs['authorizationData'];
   tokenStandard: DelegateDataV1InstructionExtraArgs['tokenStandard'];
+  updateAuthority?: DelegateDataV1InstructionExtraArgs['updateAuthority'];
 };
 
 export async function getDelegateDataV1InstructionAsync<
@@ -323,6 +331,17 @@ export async function getDelegateDataV1InstructionAsync<
   const resolverScope = { programAddress, accounts, args };
 
   // Resolve default values.
+  if (!args.updateAuthority) {
+    args.updateAuthority = expectAddress(accounts.authority.value);
+  }
+  if (!accounts.delegateRecord.value) {
+    accounts.delegateRecord.value = await findMetadataDelegateRecordPda({
+      delegateRole: MetadataDelegateRole.Data,
+      updateAuthority: expectSome(args.updateAuthority),
+      mint: expectAddress(accounts.mint.value),
+      delegate: expectAddress(accounts.delegate.value),
+    });
+  }
   if (!accounts.metadata.value) {
     accounts.metadata.value = await findMetadataPda({
       mint: expectAddress(accounts.mint.value),
@@ -439,6 +458,7 @@ export type DelegateDataV1Input<
   authorizationRules?: Address<TAccountAuthorizationRules>;
   authorizationData: DelegateDataV1InstructionDataArgs['authorizationData'];
   tokenStandard: DelegateDataV1InstructionExtraArgs['tokenStandard'];
+  updateAuthority?: DelegateDataV1InstructionExtraArgs['updateAuthority'];
 };
 
 export function getDelegateDataV1Instruction<
@@ -534,6 +554,9 @@ export function getDelegateDataV1Instruction<
   const args = { ...input };
 
   // Resolve default values.
+  if (!args.updateAuthority) {
+    args.updateAuthority = expectAddress(accounts.authority.value);
+  }
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
       '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
