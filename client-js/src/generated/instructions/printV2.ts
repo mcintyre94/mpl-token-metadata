@@ -32,7 +32,9 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/kit';
+import { findEditionMarkerFromEditionNumberPda } from '../../hooked';
 import {
+  findEditionMarkerV2Pda,
   findMasterEditionPda,
   findMetadataPda,
   findTokenRecordPda,
@@ -159,17 +161,17 @@ export type PrintV2Instruction<
 export type PrintV2InstructionData = {
   discriminator: number;
   printV2Discriminator: number;
-  edition: bigint;
+  editionNumber: bigint;
 };
 
-export type PrintV2InstructionDataArgs = { edition: number | bigint };
+export type PrintV2InstructionDataArgs = { editionNumber: number | bigint };
 
 export function getPrintV2InstructionDataEncoder(): FixedSizeEncoder<PrintV2InstructionDataArgs> {
   return transformEncoder(
     getStructEncoder([
       ['discriminator', getU8Encoder()],
       ['printV2Discriminator', getU8Encoder()],
-      ['edition', getU64Encoder()],
+      ['editionNumber', getU64Encoder()],
     ]),
     (value) => ({
       ...value,
@@ -183,7 +185,7 @@ export function getPrintV2InstructionDataDecoder(): FixedSizeDecoder<PrintV2Inst
   return getStructDecoder([
     ['discriminator', getU8Decoder()],
     ['printV2Discriminator', getU8Decoder()],
-    ['edition', getU64Decoder()],
+    ['editionNumber', getU64Decoder()],
   ]);
 }
 
@@ -237,17 +239,17 @@ export type PrintV2AsyncInput<
   /** Token account of new token */
   editionTokenAccount?: Address<TAccountEditionTokenAccount>;
   /** Mint authority of new mint */
-  editionMintAuthority: TransactionSigner<TAccountEditionMintAuthority>;
+  editionMintAuthority?: TransactionSigner<TAccountEditionMintAuthority>;
   /** Token record account */
   editionTokenRecord?: Address<TAccountEditionTokenRecord>;
   /** Master Record Edition V2 (pda of ['metadata', program id, master metadata mint id, 'edition']) */
   masterEdition?: Address<TAccountMasterEdition>;
   /** Edition pda to mark creation - will be checked for pre-existence. (pda of ['metadata', program id, master metadata mint id, 'edition', edition_number]) where edition_number is NOT the edition number you pass in args but actually edition_number = floor(edition/EDITION_MARKER_BIT_SIZE). */
-  editionMarkerPda: Address<TAccountEditionMarkerPda>;
+  editionMarkerPda?: Address<TAccountEditionMarkerPda>;
   /** payer */
   payer: TransactionSigner<TAccountPayer>;
   /** owner of token account containing master token */
-  masterTokenAccountOwner:
+  masterTokenAccountOwner?:
     | Address<TAccountMasterTokenAccountOwner>
     | TransactionSigner<TAccountMasterTokenAccountOwner>;
   /** token account containing token from master metadata mint */
@@ -268,7 +270,7 @@ export type PrintV2AsyncInput<
   holderDelegateRecord?: Address<TAccountHolderDelegateRecord>;
   /** The authority printing the edition for a delegated print */
   delegate?: TransactionSigner<TAccountDelegate>;
-  editionArg: PrintV2InstructionDataArgs['edition'];
+  editionNumber: PrintV2InstructionDataArgs['editionNumber'];
   masterEditionMint: PrintV2InstructionExtraArgs['masterEditionMint'];
   tokenStandard: PrintV2InstructionExtraArgs['tokenStandard'];
 };
@@ -416,7 +418,7 @@ export async function getPrintV2InstructionAsync<
   >;
 
   // Original args.
-  const args = { ...input, edition: input.editionArg };
+  const args = { ...input };
 
   // Resolve default values.
   if (!accounts.editionMetadata.value) {
@@ -440,6 +442,18 @@ export async function getPrintV2InstructionAsync<
       owner: expectAddress(accounts.editionTokenAccountOwner.value),
     });
   }
+  if (!accounts.editionMintAuthority.value) {
+    if (accounts.holderDelegateRecord.value) {
+      if (accounts.delegate.value) {
+        accounts.editionMintAuthority.value = expectSome(
+          accounts.delegate.value
+        );
+      } else {
+        accounts.editionMintAuthority.value = expectSome(accounts.payer.value);
+      }
+    } else {
+    }
+  }
   if (!accounts.editionTokenRecord.value) {
     if (args.tokenStandard === TokenStandard.ProgrammableNonFungible) {
       accounts.editionTokenRecord.value = await findTokenRecordPda({
@@ -452,6 +466,23 @@ export async function getPrintV2InstructionAsync<
     accounts.masterEdition.value = await findMasterEditionPda({
       mint: expectSome(args.masterEditionMint),
     });
+  }
+  if (!accounts.editionMarkerPda.value) {
+    if (args.tokenStandard === TokenStandard.ProgrammableNonFungible) {
+      accounts.editionMarkerPda.value = await findEditionMarkerV2Pda({
+        mint: expectSome(args.masterEditionMint),
+      });
+    } else {
+      accounts.editionMarkerPda.value =
+        await findEditionMarkerFromEditionNumberPda({
+          mint: expectSome(args.masterEditionMint),
+          editionNumber: expectSome(args.editionNumber),
+        });
+    }
+  }
+  if (!accounts.masterTokenAccountOwner.value) {
+    if (!accounts.holderDelegateRecord.value) {
+    }
   }
   if (!accounts.masterTokenAccount.value) {
     accounts.masterTokenAccount.value = await findAssociatedTokenPda({
@@ -574,7 +605,7 @@ export type PrintV2Input<
   /** Token account of new token */
   editionTokenAccount: Address<TAccountEditionTokenAccount>;
   /** Mint authority of new mint */
-  editionMintAuthority: TransactionSigner<TAccountEditionMintAuthority>;
+  editionMintAuthority?: TransactionSigner<TAccountEditionMintAuthority>;
   /** Token record account */
   editionTokenRecord?: Address<TAccountEditionTokenRecord>;
   /** Master Record Edition V2 (pda of ['metadata', program id, master metadata mint id, 'edition']) */
@@ -584,7 +615,7 @@ export type PrintV2Input<
   /** payer */
   payer: TransactionSigner<TAccountPayer>;
   /** owner of token account containing master token */
-  masterTokenAccountOwner:
+  masterTokenAccountOwner?:
     | Address<TAccountMasterTokenAccountOwner>
     | TransactionSigner<TAccountMasterTokenAccountOwner>;
   /** token account containing token from master metadata mint */
@@ -605,7 +636,7 @@ export type PrintV2Input<
   holderDelegateRecord?: Address<TAccountHolderDelegateRecord>;
   /** The authority printing the edition for a delegated print */
   delegate?: TransactionSigner<TAccountDelegate>;
-  editionArg: PrintV2InstructionDataArgs['edition'];
+  editionNumber: PrintV2InstructionDataArgs['editionNumber'];
   masterEditionMint: PrintV2InstructionExtraArgs['masterEditionMint'];
   tokenStandard: PrintV2InstructionExtraArgs['tokenStandard'];
 };
@@ -751,12 +782,28 @@ export function getPrintV2Instruction<
   >;
 
   // Original args.
-  const args = { ...input, edition: input.editionArg };
+  const args = { ...input };
 
   // Resolve default values.
   if (!accounts.splTokenProgram.value) {
     accounts.splTokenProgram.value =
       'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
+  }
+  if (!accounts.editionMintAuthority.value) {
+    if (accounts.holderDelegateRecord.value) {
+      if (accounts.delegate.value) {
+        accounts.editionMintAuthority.value = expectSome(
+          accounts.delegate.value
+        );
+      } else {
+        accounts.editionMintAuthority.value = expectSome(accounts.payer.value);
+      }
+    } else {
+    }
+  }
+  if (!accounts.masterTokenAccountOwner.value) {
+    if (!accounts.holderDelegateRecord.value) {
+    }
   }
   if (!accounts.splAtaProgram.value) {
     accounts.splAtaProgram.value =

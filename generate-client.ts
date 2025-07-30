@@ -885,6 +885,50 @@ codama.update(
       },
       arguments: { edition: { name: "editionNumber" } },
     },
+    printV2: {
+      accounts: {
+        editionMarkerPda: {
+          defaultValue: conditionalValueNode({
+            condition: argumentValueNode("tokenStandard"),
+            value: enumValueNode("TokenStandard", "ProgrammableNonFungible"),
+            ifTrue: pdaValueNode("editionMarkerV2", [
+              pdaSeedValueNode("mint", argumentValueNode("masterEditionMint")),
+            ]),
+            ifFalse: pdaValueNode(
+              pdaLinkNode("editionMarkerFromEditionNumber", "hooked"),
+              [
+                pdaSeedValueNode(
+                  "mint",
+                  argumentValueNode("masterEditionMint")
+                ),
+                pdaSeedValueNode(
+                  "editionNumber",
+                  argumentValueNode("editionNumber")
+                ),
+              ]
+            ),
+          }),
+        },
+        editionMintAuthority: {
+          defaultValue: conditionalValueNode({
+            condition: accountValueNode("holderDelegateRecord"),
+            ifTrue: conditionalValueNode({
+              condition: accountValueNode("delegate"),
+              ifTrue: accountValueNode("delegate"),
+              ifFalse: accountValueNode("payer"),
+            }),
+            ifFalse: identityValueNode(),
+          }),
+        },
+        masterTokenAccountOwner: {
+          defaultValue: conditionalValueNode({
+            condition: accountValueNode("holderDelegateRecord"),
+            ifFalse: identityValueNode(),
+          }),
+        },
+      },
+      arguments: { edition: { name: "editionNumber" } },
+    },
   })
 );
 
@@ -1146,6 +1190,10 @@ kinobi.update(
       },
       arguments: { edition: { name: "editionNumber" } },
     },
+
+
+
+    
     printV2: {
       accounts: {
         editionMarkerPda: {
