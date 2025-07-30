@@ -82,6 +82,8 @@ export type PrintV2Instruction<
   TAccountSystemProgram extends
     | string
     | AccountMeta<string> = '11111111111111111111111111111111',
+  TAccountHolderDelegateRecord extends string | AccountMeta<string> = string,
+  TAccountDelegate extends string | AccountMeta<string> = string,
   TRemainingAccounts extends readonly AccountMeta<string>[] = [],
 > = Instruction<TProgram> &
   InstructionWithData<ReadonlyUint8Array> &
@@ -143,6 +145,13 @@ export type PrintV2Instruction<
       TAccountSystemProgram extends string
         ? ReadonlyAccount<TAccountSystemProgram>
         : TAccountSystemProgram,
+      TAccountHolderDelegateRecord extends string
+        ? ReadonlyAccount<TAccountHolderDelegateRecord>
+        : TAccountHolderDelegateRecord,
+      TAccountDelegate extends string
+        ? ReadonlySignerAccount<TAccountDelegate> &
+            AccountSignerMeta<TAccountDelegate>
+        : TAccountDelegate,
       ...TRemainingAccounts,
     ]
   >;
@@ -212,6 +221,8 @@ export type PrintV2AsyncInput<
   TAccountSplAtaProgram extends string = string,
   TAccountSysvarInstructions extends string = string,
   TAccountSystemProgram extends string = string,
+  TAccountHolderDelegateRecord extends string = string,
+  TAccountDelegate extends string = string,
 > = {
   /** New Metadata key (pda of ['metadata', program id, mint id]) */
   editionMetadata?: Address<TAccountEditionMetadata>;
@@ -253,6 +264,10 @@ export type PrintV2AsyncInput<
   sysvarInstructions?: Address<TAccountSysvarInstructions>;
   /** System program */
   systemProgram?: Address<TAccountSystemProgram>;
+  /** The Delegate Record authorizing escrowless edition printing */
+  holderDelegateRecord?: Address<TAccountHolderDelegateRecord>;
+  /** The authority printing the edition for a delegated print */
+  delegate?: TransactionSigner<TAccountDelegate>;
   editionArg: PrintV2InstructionDataArgs['edition'];
   masterEditionMint: PrintV2InstructionExtraArgs['masterEditionMint'];
   tokenStandard: PrintV2InstructionExtraArgs['tokenStandard'];
@@ -277,6 +292,8 @@ export async function getPrintV2InstructionAsync<
   TAccountSplAtaProgram extends string,
   TAccountSysvarInstructions extends string,
   TAccountSystemProgram extends string,
+  TAccountHolderDelegateRecord extends string,
+  TAccountDelegate extends string,
   TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
 >(
   input: PrintV2AsyncInput<
@@ -297,7 +314,9 @@ export async function getPrintV2InstructionAsync<
     TAccountSplTokenProgram,
     TAccountSplAtaProgram,
     TAccountSysvarInstructions,
-    TAccountSystemProgram
+    TAccountSystemProgram,
+    TAccountHolderDelegateRecord,
+    TAccountDelegate
   >,
   config?: { programAddress?: TProgramAddress }
 ): Promise<
@@ -326,7 +345,9 @@ export async function getPrintV2InstructionAsync<
     TAccountSplTokenProgram,
     TAccountSplAtaProgram,
     TAccountSysvarInstructions,
-    TAccountSystemProgram
+    TAccountSystemProgram,
+    TAccountHolderDelegateRecord,
+    TAccountDelegate
   >
 > {
   // Program address.
@@ -383,6 +404,11 @@ export async function getPrintV2InstructionAsync<
       isWritable: false,
     },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+    holderDelegateRecord: {
+      value: input.holderDelegateRecord ?? null,
+      isWritable: false,
+    },
+    delegate: { value: input.delegate ?? null, isWritable: false },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
@@ -473,6 +499,8 @@ export async function getPrintV2InstructionAsync<
       getAccountMeta(accounts.splAtaProgram),
       getAccountMeta(accounts.sysvarInstructions),
       getAccountMeta(accounts.systemProgram),
+      getAccountMeta(accounts.holderDelegateRecord),
+      getAccountMeta(accounts.delegate),
     ],
     programAddress,
     data: getPrintV2InstructionDataEncoder().encode(
@@ -503,7 +531,9 @@ export async function getPrintV2InstructionAsync<
     TAccountSplTokenProgram,
     TAccountSplAtaProgram,
     TAccountSysvarInstructions,
-    TAccountSystemProgram
+    TAccountSystemProgram,
+    TAccountHolderDelegateRecord,
+    TAccountDelegate
   >;
 
   return instruction;
@@ -528,6 +558,8 @@ export type PrintV2Input<
   TAccountSplAtaProgram extends string = string,
   TAccountSysvarInstructions extends string = string,
   TAccountSystemProgram extends string = string,
+  TAccountHolderDelegateRecord extends string = string,
+  TAccountDelegate extends string = string,
 > = {
   /** New Metadata key (pda of ['metadata', program id, mint id]) */
   editionMetadata: Address<TAccountEditionMetadata>;
@@ -569,6 +601,10 @@ export type PrintV2Input<
   sysvarInstructions?: Address<TAccountSysvarInstructions>;
   /** System program */
   systemProgram?: Address<TAccountSystemProgram>;
+  /** The Delegate Record authorizing escrowless edition printing */
+  holderDelegateRecord?: Address<TAccountHolderDelegateRecord>;
+  /** The authority printing the edition for a delegated print */
+  delegate?: TransactionSigner<TAccountDelegate>;
   editionArg: PrintV2InstructionDataArgs['edition'];
   masterEditionMint: PrintV2InstructionExtraArgs['masterEditionMint'];
   tokenStandard: PrintV2InstructionExtraArgs['tokenStandard'];
@@ -593,6 +629,8 @@ export function getPrintV2Instruction<
   TAccountSplAtaProgram extends string,
   TAccountSysvarInstructions extends string,
   TAccountSystemProgram extends string,
+  TAccountHolderDelegateRecord extends string,
+  TAccountDelegate extends string,
   TProgramAddress extends Address = typeof MPL_TOKEN_METADATA_PROGRAM_ADDRESS,
 >(
   input: PrintV2Input<
@@ -613,7 +651,9 @@ export function getPrintV2Instruction<
     TAccountSplTokenProgram,
     TAccountSplAtaProgram,
     TAccountSysvarInstructions,
-    TAccountSystemProgram
+    TAccountSystemProgram,
+    TAccountHolderDelegateRecord,
+    TAccountDelegate
   >,
   config?: { programAddress?: TProgramAddress }
 ): PrintV2Instruction<
@@ -641,7 +681,9 @@ export function getPrintV2Instruction<
   TAccountSplTokenProgram,
   TAccountSplAtaProgram,
   TAccountSysvarInstructions,
-  TAccountSystemProgram
+  TAccountSystemProgram,
+  TAccountHolderDelegateRecord,
+  TAccountDelegate
 > {
   // Program address.
   const programAddress =
@@ -697,6 +739,11 @@ export function getPrintV2Instruction<
       isWritable: false,
     },
     systemProgram: { value: input.systemProgram ?? null, isWritable: false },
+    holderDelegateRecord: {
+      value: input.holderDelegateRecord ?? null,
+      isWritable: false,
+    },
+    delegate: { value: input.delegate ?? null, isWritable: false },
   };
   const accounts = originalAccounts as Record<
     keyof typeof originalAccounts,
@@ -745,6 +792,8 @@ export function getPrintV2Instruction<
       getAccountMeta(accounts.splAtaProgram),
       getAccountMeta(accounts.sysvarInstructions),
       getAccountMeta(accounts.systemProgram),
+      getAccountMeta(accounts.holderDelegateRecord),
+      getAccountMeta(accounts.delegate),
     ],
     programAddress,
     data: getPrintV2InstructionDataEncoder().encode(
@@ -775,7 +824,9 @@ export function getPrintV2Instruction<
     TAccountSplTokenProgram,
     TAccountSplAtaProgram,
     TAccountSysvarInstructions,
-    TAccountSystemProgram
+    TAccountSystemProgram,
+    TAccountHolderDelegateRecord,
+    TAccountDelegate
   >;
 
   return instruction;
@@ -823,6 +874,10 @@ export type ParsedPrintV2Instruction<
     sysvarInstructions: TAccountMetas[16];
     /** System program */
     systemProgram: TAccountMetas[17];
+    /** The Delegate Record authorizing escrowless edition printing */
+    holderDelegateRecord?: TAccountMetas[18] | undefined;
+    /** The authority printing the edition for a delegated print */
+    delegate?: TAccountMetas[19] | undefined;
   };
   data: PrintV2InstructionData;
 };
@@ -835,7 +890,7 @@ export function parsePrintV2Instruction<
     InstructionWithAccounts<TAccountMetas> &
     InstructionWithData<ReadonlyUint8Array>
 ): ParsedPrintV2Instruction<TProgram, TAccountMetas> {
-  if (instruction.accounts.length < 18) {
+  if (instruction.accounts.length < 20) {
     // TODO: Coded error.
     throw new Error('Not enough accounts');
   }
@@ -872,6 +927,8 @@ export function parsePrintV2Instruction<
       splAtaProgram: getNextAccount(),
       sysvarInstructions: getNextAccount(),
       systemProgram: getNextAccount(),
+      holderDelegateRecord: getNextOptionalAccount(),
+      delegate: getNextOptionalAccount(),
     },
     data: getPrintV2InstructionDataDecoder().decode(instruction.data),
   };

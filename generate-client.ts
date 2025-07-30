@@ -39,12 +39,14 @@ import {
   unwrapTypeDefinedLinksVisitor,
   flattenStructVisitor,
   createSubInstructionsFromEnumArgsVisitor,
+  instructionNode,
+  instructionAccountNode,
 } from "codama";
 
 import anchorIdl from "./idl.json" with { type: "json" };
-import { writeFileSync } from "fs";
+import type { AnchorIdl } from "@codama/nodes-from-anchor";
 
-const codama = createFromRoot(rootNodeFromAnchor(anchorIdl));
+const codama = createFromRoot(rootNodeFromAnchor(anchorIdl as AnchorIdl));
 
 codama.update(
   updateProgramsVisitor({
@@ -237,6 +239,7 @@ function ataPdaDefault(mint = "mint", owner = "owner") {
 codama.update(
   updateInstructionsVisitor({
     create: {
+      // @ts-expect-error TODO: check this
       byteDeltas: [
         instructionByteDeltaNode(
           numberValueNode(
@@ -288,6 +291,7 @@ codama.update(
               dependsOn: [argumentValueNode("tokenStandard")],
             }),
           }),
+          // @ts-expect-error TODO: check this
           ifTrue: pdaValueNode("masterEdition"),
         },
         tokenOwner: {
@@ -691,6 +695,7 @@ codama.update(
           "isMutable",
         ];
         return (
+          // @ts-expect-error TODO: check this
           isNode(node, ["structFieldTypeNode", "instructionArgumentNode"]) &&
           isNode(node.type, "optionTypeNode") &&
           names.includes(node.name)
@@ -701,7 +706,7 @@ codama.update(
         return {
           ...node,
           defaultValueStrategy: "optional",
-          defaultValue: k.noneValueNode(),
+          defaultValue: noneValueNode(),
         };
       },
     },
@@ -714,6 +719,7 @@ codama.update(
           "ruleSetToggle",
         ];
         return (
+          // @ts-expect-error TODO: check this
           isNode(node, "structFieldTypeNode") &&
           isNode(node.type, "definedTypeLinkNode") &&
           toggles.includes(node.type.name)
@@ -761,6 +767,42 @@ codama.update(
   })
 );
 
+// Update versioned instructions.
+codama.update(
+  bottomUpTransformerVisitor([
+    {
+      select: "[instructionNode]printV2",
+      transform: (node) => {
+        assertIsNode(node, ["instructionNode"]);
+        return instructionNode({
+          ...node,
+          accounts: [
+            ...node.accounts,
+            instructionAccountNode({
+              name: "holderDelegateRecord",
+              isOptional: true,
+              isWritable: false,
+              isSigner: false,
+              docs: [
+                "The Delegate Record authorizing escrowless edition printing",
+              ],
+            }),
+            instructionAccountNode({
+              name: "delegate",
+              isOptional: true,
+              isWritable: false,
+              isSigner: true,
+              docs: [
+                "The authority printing the edition for a delegated print",
+              ],
+            }),
+          ],
+        });
+      },
+    },
+  ])
+);
+
 /* Temporary */
 // need to pull this forward for the splTokenProgram dependency on argumentValueNode("tokenStandard")
 // can we pull this into the first updateInstructionsVisitor?
@@ -798,57 +840,6 @@ codama.accept(
 );
 
 /*
-// Create versioned instructions.
-kinobi.update(
-  k.createSubInstructionsFromEnumArgsVisitor({
-    burn: "burnArgs",
-    create: "createArgs",
-    delegate: "delegateArgs",
-    lock: "lockArgs",
-    mint: "mintArgs",
-    print: "printArgs",
-    revoke: "revokeArgs",
-    transfer: "transferArgs",
-    unlock: "unlockArgs",
-    update: "updateArgs",
-    use: "useArgs",
-    verify: "verificationArgs",
-    unverify: "verificationArgs",
-  })
-);
-
-kinobi.update(
-  k.bottomUpTransformerVisitor([
-    {
-      select: "[instructionNode]printV2",
-      transform: (node) => {
-        k.assertIsNode(node, ["instructionNode"]);
-        return k.instructionNode({
-          ...node,
-          accounts: [
-            ...node.accounts,
-            k.instructionAccountNode({
-              name: "holderDelegateRecord",
-              isOptional: true,
-              docs: [
-                "The Delegate Record authorizing escrowless edition printing",
-              ],
-            }),
-            k.instructionAccountNode({
-              name: "delegate",
-              isOptional: true,
-              isSigner: true,
-              docs: [
-                "The authority printing the edition for a delegated print",
-              ],
-            }),
-          ],
-        });
-      },
-    },
-  ])
-);
-
 // Update versioned instructions.
 const tokenDelegateDefaults = {
   accounts: {

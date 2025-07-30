@@ -5,7 +5,7 @@
   "type": "module",
   "sideEffects": false,
   "scripts": {
-    "generate-client": "node generate-client.mjs",
+    "generate-client": "node --experimental-strip-types generate-client.ts",
     "build-client": "cd client-js && pnpm build && cd -"
   },
   "dependencies": {
