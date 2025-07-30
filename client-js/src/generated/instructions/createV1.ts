@@ -48,8 +48,16 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/kit';
-import { resolveIsNonFungibleOrIsMintSigner } from '../../hooked';
-import { findMetadataPda } from '../pdas';
+import {
+  resolveCollectionDetails,
+  resolveCreateV1Bytes,
+  resolveCreators,
+  resolveDecimals,
+  resolveIsNonFungible,
+  resolveIsNonFungibleOrIsMintSigner,
+  resolvePrintSupply,
+} from '../../hooked';
+import { findMasterEditionPda, findMetadataPda } from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
 import {
   expectAddress,
@@ -59,6 +67,7 @@ import {
   type ResolvedAccount,
 } from '../shared';
 import {
+  TokenStandard,
   getCollectionDecoder,
   getCollectionDetailsDecoder,
   getCollectionDetailsEncoder,
@@ -79,7 +88,6 @@ import {
   type CreatorArgs,
   type PrintSupply,
   type PrintSupplyArgs,
-  type TokenStandard,
   type TokenStandardArgs,
   type Uses,
   type UsesArgs,
@@ -171,10 +179,10 @@ export type CreateV1InstructionDataArgs = {
   creators: OptionOrNullable<Array<CreatorArgs>>;
   primarySaleHappened?: boolean;
   isMutable?: boolean;
-  tokenStandard: TokenStandardArgs;
+  tokenStandard?: TokenStandardArgs;
   collection?: OptionOrNullable<CollectionArgs>;
   uses?: OptionOrNullable<UsesArgs>;
-  collectionDetails?: OptionOrNullable<CollectionDetailsArgs>;
+  collectionDetails: OptionOrNullable<CollectionDetailsArgs>;
   ruleSet?: OptionOrNullable<Address>;
   decimals: OptionOrNullable<number>;
   printSupply: OptionOrNullable<PrintSupplyArgs>;
@@ -207,9 +215,9 @@ export function getCreateV1InstructionDataEncoder(): Encoder<CreateV1Instruction
       symbol: value.symbol ?? '',
       primarySaleHappened: value.primarySaleHappened ?? false,
       isMutable: value.isMutable ?? true,
+      tokenStandard: value.tokenStandard ?? TokenStandard.NonFungible,
       collection: value.collection ?? none(),
       uses: value.uses ?? none(),
-      collectionDetails: value.collectionDetails ?? none(),
       ruleSet: value.ruleSet ?? none(),
     })
   );
@@ -246,6 +254,8 @@ export function getCreateV1InstructionDataCodec(): Codec<
   );
 }
 
+export type CreateV1InstructionExtraArgs = { isCollection?: boolean };
+
 export type CreateV1AsyncInput<
   TAccountMetadata extends string = string,
   TAccountMasterEdition extends string = string,
@@ -281,16 +291,17 @@ export type CreateV1AsyncInput<
   symbol?: CreateV1InstructionDataArgs['symbol'];
   uri: CreateV1InstructionDataArgs['uri'];
   sellerFeeBasisPoints: CreateV1InstructionDataArgs['sellerFeeBasisPoints'];
-  creators: CreateV1InstructionDataArgs['creators'];
+  creators?: CreateV1InstructionDataArgs['creators'];
   primarySaleHappened?: CreateV1InstructionDataArgs['primarySaleHappened'];
   isMutable?: CreateV1InstructionDataArgs['isMutable'];
-  tokenStandard: CreateV1InstructionDataArgs['tokenStandard'];
+  tokenStandard?: CreateV1InstructionDataArgs['tokenStandard'];
   collection?: CreateV1InstructionDataArgs['collection'];
   uses?: CreateV1InstructionDataArgs['uses'];
   collectionDetails?: CreateV1InstructionDataArgs['collectionDetails'];
   ruleSet?: CreateV1InstructionDataArgs['ruleSet'];
-  decimals: CreateV1InstructionDataArgs['decimals'];
-  printSupply: CreateV1InstructionDataArgs['printSupply'];
+  decimals?: CreateV1InstructionDataArgs['decimals'];
+  printSupply?: CreateV1InstructionDataArgs['printSupply'];
+  isCollection?: CreateV1InstructionExtraArgs['isCollection'];
 };
 
 export async function getCreateV1InstructionAsync<
@@ -379,6 +390,16 @@ export async function getCreateV1InstructionAsync<
       mint: expectAddress(accounts.mint.value),
     });
   }
+  if (!args.tokenStandard) {
+    args.tokenStandard = TokenStandard.NonFungible;
+  }
+  if (!accounts.masterEdition.value) {
+    if (resolveIsNonFungible(resolverScope)) {
+      accounts.masterEdition.value = await findMasterEditionPda({
+        mint: expectAddress(accounts.mint.value),
+      });
+    }
+  }
   if (!accounts.updateAuthority.value) {
     accounts.updateAuthority.value = expectSome(accounts.authority.value);
   }
@@ -396,9 +417,27 @@ export async function getCreateV1InstructionAsync<
         'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
     }
   }
+  if (!args.creators) {
+    args.creators = resolveCreators(resolverScope);
+  }
+  if (!args.isCollection) {
+    args.isCollection = false;
+  }
+  if (!args.collectionDetails) {
+    args.collectionDetails = resolveCollectionDetails(resolverScope);
+  }
+  if (!args.decimals) {
+    args.decimals = resolveDecimals(resolverScope);
+  }
+  if (!args.printSupply) {
+    args.printSupply = resolvePrintSupply(resolverScope);
+  }
 
   // Bytes created or reallocated by the instruction.
-  const byteDelta: number = [1427].reduce((a, b) => a + b, 0);
+  const byteDelta: number = [resolveCreateV1Bytes(resolverScope)].reduce(
+    (a, b) => a + b,
+    0
+  );
 
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {
@@ -473,16 +512,17 @@ export type CreateV1Input<
   symbol?: CreateV1InstructionDataArgs['symbol'];
   uri: CreateV1InstructionDataArgs['uri'];
   sellerFeeBasisPoints: CreateV1InstructionDataArgs['sellerFeeBasisPoints'];
-  creators: CreateV1InstructionDataArgs['creators'];
+  creators?: CreateV1InstructionDataArgs['creators'];
   primarySaleHappened?: CreateV1InstructionDataArgs['primarySaleHappened'];
   isMutable?: CreateV1InstructionDataArgs['isMutable'];
-  tokenStandard: CreateV1InstructionDataArgs['tokenStandard'];
+  tokenStandard?: CreateV1InstructionDataArgs['tokenStandard'];
   collection?: CreateV1InstructionDataArgs['collection'];
   uses?: CreateV1InstructionDataArgs['uses'];
   collectionDetails?: CreateV1InstructionDataArgs['collectionDetails'];
   ruleSet?: CreateV1InstructionDataArgs['ruleSet'];
-  decimals: CreateV1InstructionDataArgs['decimals'];
-  printSupply: CreateV1InstructionDataArgs['printSupply'];
+  decimals?: CreateV1InstructionDataArgs['decimals'];
+  printSupply?: CreateV1InstructionDataArgs['printSupply'];
+  isCollection?: CreateV1InstructionExtraArgs['isCollection'];
 };
 
 export function getCreateV1Instruction<
@@ -564,6 +604,9 @@ export function getCreateV1Instruction<
   const resolverScope = { programAddress, accounts, args };
 
   // Resolve default values.
+  if (!args.tokenStandard) {
+    args.tokenStandard = TokenStandard.NonFungible;
+  }
   if (!accounts.updateAuthority.value) {
     accounts.updateAuthority.value = expectSome(accounts.authority.value);
   }
@@ -581,9 +624,27 @@ export function getCreateV1Instruction<
         'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
     }
   }
+  if (!args.creators) {
+    args.creators = resolveCreators(resolverScope);
+  }
+  if (!args.isCollection) {
+    args.isCollection = false;
+  }
+  if (!args.collectionDetails) {
+    args.collectionDetails = resolveCollectionDetails(resolverScope);
+  }
+  if (!args.decimals) {
+    args.decimals = resolveDecimals(resolverScope);
+  }
+  if (!args.printSupply) {
+    args.printSupply = resolvePrintSupply(resolverScope);
+  }
 
   // Bytes created or reallocated by the instruction.
-  const byteDelta: number = [1427].reduce((a, b) => a + b, 0);
+  const byteDelta: number = [resolveCreateV1Bytes(resolverScope)].reduce(
+    (a, b) => a + b,
+    0
+  );
 
   const getAccountMeta = getAccountMetaFactory(programAddress, 'programId');
   const instruction = {

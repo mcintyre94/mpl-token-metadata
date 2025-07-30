@@ -41,6 +41,7 @@ import {
   createSubInstructionsFromEnumArgsVisitor,
   instructionNode,
   instructionAccountNode,
+  booleanTypeNode,
 } from "codama";
 
 import anchorIdl from "./idl.json" with { type: "json" };
@@ -801,6 +802,56 @@ codama.update(
       },
     },
   ])
+);
+
+codama.update(
+  updateInstructionsVisitor({
+    createV1: {
+      // @ts-expect-error TODO: check this
+      byteDeltas: [
+        instructionByteDeltaNode(resolverValueNode("resolveCreateV1Bytes")),
+      ],
+      accounts: {
+        masterEdition: {
+          defaultValue: conditionalValueNode({
+            condition: resolverValueNode("resolveIsNonFungible", {
+              dependsOn: [argumentValueNode("tokenStandard")],
+            }),
+            ifTrue: pdaValueNode("masterEdition"),
+          }),
+        },
+      },
+      arguments: {
+        isCollection: {
+          type: booleanTypeNode(),
+          defaultValue: booleanValueNode(false),
+        },
+        tokenStandard: {
+          defaultValue: enumValueNode("TokenStandard", "NonFungible"),
+        },
+        collectionDetails: {
+          defaultValue: resolverValueNode("resolveCollectionDetails", {
+            dependsOn: [argumentValueNode("isCollection")],
+          }),
+        },
+        decimals: {
+          defaultValue: resolverValueNode("resolveDecimals", {
+            dependsOn: [argumentValueNode("tokenStandard")],
+          }),
+        },
+        printSupply: {
+          defaultValue: resolverValueNode("resolvePrintSupply", {
+            dependsOn: [argumentValueNode("tokenStandard")],
+          }),
+        },
+        creators: {
+          defaultValue: resolverValueNode("resolveCreators", {
+            dependsOn: [accountValueNode("authority")],
+          }),
+        },
+      },
+    },
+  })
 );
 
 /* Temporary */
