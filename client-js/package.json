@@ -1,6 +1,6 @@
 {
   "name": "@mcintyre94/mpl-token-metadata",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "JavaScript client for the MPL Token Metadata program",
   "sideEffects": false,
   "module": "./dist/src/index.mjs",

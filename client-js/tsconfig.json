@@ -11,7 +11,7 @@
     "module": "ESNext",
     "moduleResolution": "node",
     "noFallthroughCasesInSwitch": true,
-    "noUnusedLocals": false, // temporary fix while migrating Codama config
+    "noUnusedLocals": false,
     "noUnusedParameters": true,
     "outDir": "./dist",
     "preserveWatchOutput": true,
