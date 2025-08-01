@@ -20,7 +20,8 @@
   ],
   "scripts": {
     "build": "rimraf dist && tsup && tsc -p ./tsconfig.declarations.json",
-    "prepublishOnly": "pnpm build"
+    "prepublishOnly": "pnpm build",
+    "test": "ava"
   },
   "publishConfig": {
     "access": "public",
@@ -39,12 +40,25 @@
     "@solana/kit": "^2.1.1"
   },
   "devDependencies": {
+    "@ava/typescript": "^6.0.0",
     "@types/node": "^24.1.0",
+    "ava": "^6.4.1",
     "rimraf": "^6.0.1",
     "tsup": "^8.5.0",
     "typescript": "^5.8.2"
   },
   "dependencies": {
     "@solana-program/token": "^0.5.1"
+  },
+  "ava": {
+    "nodeArguments": [
+      "--no-warnings"
+    ],
+    "typescript": {
+      "compile": false,
+      "rewritePaths": {
+        "test/": "dist/test/"
+      }
+    }
   }
 }
