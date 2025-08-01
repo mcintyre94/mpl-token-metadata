@@ -44,6 +44,7 @@ import {
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
 import {
   expectAddress,
+  expectSome,
   getAccountMetaFactory,
   type ResolvedAccount,
 } from '../shared';
@@ -245,7 +246,7 @@ export type TransferV1AsyncInput<
   /** Transfer authority (token owner or delegate) */
   authority: TransactionSigner<TAccountAuthority>;
   /** Payer */
-  payer: TransactionSigner<TAccountPayer>;
+  payer?: TransactionSigner<TAccountPayer>;
   /** System Program */
   systemProgram?: Address<TAccountSystemProgram>;
   /** Instructions sysvar account */
@@ -425,6 +426,9 @@ export async function getTransferV1InstructionAsync<
       });
     }
   }
+  if (!accounts.payer.value) {
+    accounts.payer.value = expectSome(accounts.authority.value);
+  }
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
       '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
@@ -533,7 +537,7 @@ export type TransferV1Input<
   /** Transfer authority (token owner or delegate) */
   authority: TransactionSigner<TAccountAuthority>;
   /** Payer */
-  payer: TransactionSigner<TAccountPayer>;
+  payer?: TransactionSigner<TAccountPayer>;
   /** System Program */
   systemProgram?: Address<TAccountSystemProgram>;
   /** Instructions sysvar account */
@@ -669,6 +673,9 @@ export function getTransferV1Instruction<
     accounts.splTokenProgram.value =
       'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA' as Address<'TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA'>;
   }
+  if (!accounts.payer.value) {
+    accounts.payer.value = expectSome(accounts.authority.value);
+  }
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
       '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
@@ -764,7 +771,7 @@ export type ParsedTransferV1Instruction<
     /** Transfer authority (token owner or delegate) */
     authority: TAccountMetas[9];
     /** Payer */
-    payer: TAccountMetas[10];
+    payer?: TAccountMetas[10] | undefined;
     /** System Program */
     systemProgram: TAccountMetas[11];
     /** Instructions sysvar account */
@@ -818,7 +825,7 @@ export function parseTransferV1Instruction<
       tokenRecord: getNextOptionalAccount(),
       destinationTokenRecord: getNextOptionalAccount(),
       authority: getNextAccount(),
-      payer: getNextAccount(),
+      payer: getNextOptionalAccount(),
       systemProgram: getNextAccount(),
       sysvarInstructions: getNextAccount(),
       splTokenProgram: getNextAccount(),

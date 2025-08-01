@@ -36,11 +36,16 @@ import {
   type WritableAccount,
   type WritableSignerAccount,
 } from '@solana/kit';
-import { resolveOptionalTokenOwner } from '../../hooked';
-import { findMetadataPda, findTokenRecordPda } from '../pdas';
+import { resolveIsNonFungible, resolveOptionalTokenOwner } from '../../hooked';
+import {
+  findMasterEditionPda,
+  findMetadataPda,
+  findTokenRecordPda,
+} from '../pdas';
 import { MPL_TOKEN_METADATA_PROGRAM_ADDRESS } from '../programs';
 import {
   expectAddress,
+  expectSome,
   getAccountMetaFactory,
   type InstructionWithByteDelta,
   type ResolvedAccount,
@@ -227,7 +232,7 @@ export type MintV1AsyncInput<
   /** Metadata delegate record */
   delegateRecord?: Address<TAccountDelegateRecord>;
   /** Payer */
-  payer: TransactionSigner<TAccountPayer>;
+  payer?: TransactionSigner<TAccountPayer>;
   /** System program */
   systemProgram?: Address<TAccountSystemProgram>;
   /** Instructions sysvar account */
@@ -370,6 +375,13 @@ export async function getMintV1InstructionAsync<
       mint: expectAddress(accounts.mint.value),
     });
   }
+  if (!accounts.masterEdition.value) {
+    if (resolveIsNonFungible(resolverScope)) {
+      accounts.masterEdition.value = await findMasterEditionPda({
+        mint: expectAddress(accounts.mint.value),
+      });
+    }
+  }
   if (!accounts.tokenRecord.value) {
     if (args.tokenStandard === TokenStandard.ProgrammableNonFungible) {
       accounts.tokenRecord.value = await findTokenRecordPda({
@@ -377,6 +389,9 @@ export async function getMintV1InstructionAsync<
         token: expectAddress(accounts.token.value),
       });
     }
+  }
+  if (!accounts.payer.value) {
+    accounts.payer.value = expectSome(accounts.authority.value);
   }
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
@@ -463,11 +478,11 @@ export type MintV1Input<
   TAccountAuthorizationRules extends string = string,
 > = {
   /** Token or Associated Token account */
-  token: Address<TAccountToken>;
+  token?: Address<TAccountToken>;
   /** Owner of the token account */
   tokenOwner?: Address<TAccountTokenOwner>;
   /** Metadata account (pda of ['metadata', program id, mint id]) */
-  metadata: Address<TAccountMetadata>;
+  metadata?: Address<TAccountMetadata>;
   /** Master Edition account */
   masterEdition?: Address<TAccountMasterEdition>;
   /** Token record account */
@@ -479,7 +494,7 @@ export type MintV1Input<
   /** Metadata delegate record */
   delegateRecord?: Address<TAccountDelegateRecord>;
   /** Payer */
-  payer: TransactionSigner<TAccountPayer>;
+  payer?: TransactionSigner<TAccountPayer>;
   /** System program */
   systemProgram?: Address<TAccountSystemProgram>;
   /** Instructions sysvar account */
@@ -608,6 +623,9 @@ export function getMintV1Instruction<
       ...resolveOptionalTokenOwner(resolverScope),
     };
   }
+  if (!accounts.payer.value) {
+    accounts.payer.value = expectSome(accounts.authority.value);
+  }
   if (!accounts.systemProgram.value) {
     accounts.systemProgram.value =
       '11111111111111111111111111111111' as Address<'11111111111111111111111111111111'>;
@@ -682,11 +700,11 @@ export type ParsedMintV1Instruction<
   programAddress: Address<TProgram>;
   accounts: {
     /** Token or Associated Token account */
-    token: TAccountMetas[0];
+    token?: TAccountMetas[0] | undefined;
     /** Owner of the token account */
     tokenOwner?: TAccountMetas[1] | undefined;
     /** Metadata account (pda of ['metadata', program id, mint id]) */
-    metadata: TAccountMetas[2];
+    metadata?: TAccountMetas[2] | undefined;
     /** Master Edition account */
     masterEdition?: TAccountMetas[3] | undefined;
     /** Token record account */
@@ -698,7 +716,7 @@ export type ParsedMintV1Instruction<
     /** Metadata delegate record */
     delegateRecord?: TAccountMetas[7] | undefined;
     /** Payer */
-    payer: TAccountMetas[8];
+    payer?: TAccountMetas[8] | undefined;
     /** System program */
     systemProgram: TAccountMetas[9];
     /** Instructions sysvar account */
@@ -742,15 +760,15 @@ export function parseMintV1Instruction<
   return {
     programAddress: instruction.programAddress,
     accounts: {
-      token: getNextAccount(),
+      token: getNextOptionalAccount(),
       tokenOwner: getNextOptionalAccount(),
-      metadata: getNextAccount(),
+      metadata: getNextOptionalAccount(),
       masterEdition: getNextOptionalAccount(),
       tokenRecord: getNextOptionalAccount(),
       mint: getNextAccount(),
       authority: getNextAccount(),
       delegateRecord: getNextOptionalAccount(),
-      payer: getNextAccount(),
+      payer: getNextOptionalAccount(),
       systemProgram: getNextAccount(),
       sysvarInstructions: getNextAccount(),
       splTokenProgram: getNextAccount(),

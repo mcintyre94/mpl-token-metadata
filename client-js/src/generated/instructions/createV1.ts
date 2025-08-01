@@ -276,7 +276,7 @@ export type CreateV1AsyncInput<
   /** Mint authority */
   authority: TransactionSigner<TAccountAuthority>;
   /** Payer */
-  payer: TransactionSigner<TAccountPayer>;
+  payer?: TransactionSigner<TAccountPayer>;
   /** Update authority for the metadata account */
   updateAuthority?:
     | Address<TAccountUpdateAuthority>
@@ -400,6 +400,9 @@ export async function getCreateV1InstructionAsync<
       });
     }
   }
+  if (!accounts.payer.value) {
+    accounts.payer.value = expectSome(accounts.authority.value);
+  }
   if (!accounts.updateAuthority.value) {
     accounts.updateAuthority.value = expectSome(accounts.authority.value);
   }
@@ -489,7 +492,7 @@ export type CreateV1Input<
   TAccountSplTokenProgram extends string = string,
 > = {
   /** Unallocated metadata account with address as pda of ['metadata', program id, mint id] */
-  metadata: Address<TAccountMetadata>;
+  metadata?: Address<TAccountMetadata>;
   /** Unallocated edition account with address as pda of ['metadata', program id, mint, 'edition'] */
   masterEdition?: Address<TAccountMasterEdition>;
   /** Mint of token asset */
@@ -497,7 +500,7 @@ export type CreateV1Input<
   /** Mint authority */
   authority: TransactionSigner<TAccountAuthority>;
   /** Payer */
-  payer: TransactionSigner<TAccountPayer>;
+  payer?: TransactionSigner<TAccountPayer>;
   /** Update authority for the metadata account */
   updateAuthority?:
     | Address<TAccountUpdateAuthority>
@@ -607,6 +610,9 @@ export function getCreateV1Instruction<
   if (!args.tokenStandard) {
     args.tokenStandard = TokenStandard.NonFungible;
   }
+  if (!accounts.payer.value) {
+    accounts.payer.value = expectSome(accounts.authority.value);
+  }
   if (!accounts.updateAuthority.value) {
     accounts.updateAuthority.value = expectSome(accounts.authority.value);
   }
@@ -691,7 +697,7 @@ export type ParsedCreateV1Instruction<
   programAddress: Address<TProgram>;
   accounts: {
     /** Unallocated metadata account with address as pda of ['metadata', program id, mint id] */
-    metadata: TAccountMetas[0];
+    metadata?: TAccountMetas[0] | undefined;
     /** Unallocated edition account with address as pda of ['metadata', program id, mint, 'edition'] */
     masterEdition?: TAccountMetas[1] | undefined;
     /** Mint of token asset */
@@ -699,7 +705,7 @@ export type ParsedCreateV1Instruction<
     /** Mint authority */
     authority: TAccountMetas[3];
     /** Payer */
-    payer: TAccountMetas[4];
+    payer?: TAccountMetas[4] | undefined;
     /** Update authority for the metadata account */
     updateAuthority: TAccountMetas[5];
     /** System program */
@@ -739,11 +745,11 @@ export function parseCreateV1Instruction<
   return {
     programAddress: instruction.programAddress,
     accounts: {
-      metadata: getNextAccount(),
+      metadata: getNextOptionalAccount(),
       masterEdition: getNextOptionalAccount(),
       mint: getNextAccount(),
       authority: getNextAccount(),
-      payer: getNextAccount(),
+      payer: getNextOptionalAccount(),
       updateAuthority: getNextAccount(),
       systemProgram: getNextAccount(),
       sysvarInstructions: getNextAccount(),

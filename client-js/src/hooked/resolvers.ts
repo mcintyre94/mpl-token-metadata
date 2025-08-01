@@ -35,7 +35,10 @@ export function resolveIsNonFungible({
 }: {
   args: { tokenStandard?: TokenStandardArgs };
 }): boolean {
-  return (args.tokenStandard && isNonFungible(args.tokenStandard)) || false;
+  return (
+    (args.tokenStandard !== undefined && isNonFungible(args.tokenStandard)) ||
+    false
+  );
 }
 
 export function resolveOptionalTokenOwner({

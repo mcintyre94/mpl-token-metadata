@@ -7,11 +7,19 @@
   "scripts": {
     "programs:build": "./configs/program-scripts/build.sh",
     "generate-client": "node --experimental-strip-types generate-client.ts",
-    "build-client": "cd client-js && pnpm build && cd -"
+    "build-client": "cd client-js && pnpm build && cd -",
+    "validator": "CI=1 amman start --config ./configs/validator.cjs",
+    "validator:debug": "amman start --config ./configs/validator.cjs",
+    "validator:logs": "CI=1 amman logs",
+    "validator:stop": "amman stop"
   },
   "dependencies": {
     "@codama/nodes-from-anchor": "^1.2.3",
     "@codama/renderers": "^1.0.28",
+    "@types/node": "^24.1.0",
     "codama": "^1.3.1"
+  },
+  "devDependencies": {
+    "@metaplex-foundation/amman": "^0.12.1"
   }
 }

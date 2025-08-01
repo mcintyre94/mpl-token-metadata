@@ -44,6 +44,7 @@ import {
   booleanTypeNode,
   programIdValueNode,
   type InstructionUpdates,
+  fixedSizeTypeNode,
 } from "codama";
 
 import anchorIdl from "./idl.json" with { type: "json" };
@@ -293,9 +294,8 @@ codama.update(
             condition: resolverValueNode("resolveIsNonFungible", {
               dependsOn: [argumentValueNode("tokenStandard")],
             }),
+            ifTrue: pdaValueNode("masterEdition")
           }),
-          // @ts-expect-error TODO: check this
-          ifTrue: pdaValueNode("masterEdition"),
         },
         tokenOwner: {
           defaultValue: resolverValueNode("resolveOptionalTokenOwner"),
@@ -1140,6 +1140,53 @@ codama.update(
     unverifyCollectionV1: verifyCollectionDefaults,
   })
 );
+
+// Additional optional fields
+codama.update(
+  updateInstructionsVisitor({
+    createV1: {
+      accounts: {
+        metadata: {
+          isOptional: true,
+        },
+        payer: {
+          isOptional: true,
+          defaultValue: accountValueNode("authority"),
+        },
+      }
+    },
+    mintV1: {
+      accounts: {
+        token: {
+          isOptional: true,
+        },
+        metadata: {
+          isOptional: true,
+        },
+        payer: {
+          isOptional: true,
+          defaultValue: accountValueNode("authority")
+        },
+      },
+      arguments: {
+        authorizationData: {
+          defaultValue: null, // TODO: why isn't this becoming optional? 
+        },
+      }
+    },
+    transferV1: {
+      accounts: {
+        payer: {
+          isOptional: true,
+          defaultValue: accountValueNode("authority"),
+        }
+      }
+    }
+  })
+)
+
+import { writeFileSync } from "node:fs";
+writeFileSync('codama.json', codama.getJson());
 
 codama.accept(
   renderJavaScriptVisitor("./client-js/src/generated/", {
