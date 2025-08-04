@@ -30,6 +30,8 @@ import {
   type OptionOrNullable,
 } from '@solana/kit';
 import {
+  collectionDetailsToggle,
+  collectionToggle,
   getAuthorizationDataDecoder,
   getAuthorizationDataEncoder,
   getCollectionDetailsToggleDecoder,
@@ -44,6 +46,7 @@ import {
   getTokenStandardEncoder,
   getUsesToggleDecoder,
   getUsesToggleEncoder,
+  ruleSetToggle,
   type AuthorizationData,
   type AuthorizationDataArgs,
   type CollectionDetailsToggle,
@@ -58,6 +61,7 @@ import {
   type TokenStandardArgs,
   type UsesToggle,
   type UsesToggleArgs,
+  usesToggle,
 } from '.';
 
 export type UpdateArgs =
@@ -128,83 +132,101 @@ export type UpdateArgs =
 export type UpdateArgsArgs =
   | {
       __kind: 'V1';
-      newUpdateAuthority: OptionOrNullable<Address>;
-      data: OptionOrNullable<DataArgs>;
-      primarySaleHappened: OptionOrNullable<boolean>;
-      isMutable: OptionOrNullable<boolean>;
-      collection: CollectionToggleArgs;
-      collectionDetails: CollectionDetailsToggleArgs;
-      uses: UsesToggleArgs;
-      ruleSet: RuleSetToggleArgs;
-      authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+      newUpdateAuthority?: OptionOrNullable<Address>;
+      data?: OptionOrNullable<DataArgs>;
+      primarySaleHappened?: OptionOrNullable<boolean>;
+      isMutable?: OptionOrNullable<boolean>;
+      collection?: CollectionToggleArgs;
+      collectionDetails?: CollectionDetailsToggleArgs;
+      uses?: UsesToggleArgs;
+      ruleSet?: RuleSetToggleArgs;
+      authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
     }
   | {
       __kind: 'AsUpdateAuthorityV2';
-      newUpdateAuthority: OptionOrNullable<Address>;
-      data: OptionOrNullable<DataArgs>;
-      primarySaleHappened: OptionOrNullable<boolean>;
-      isMutable: OptionOrNullable<boolean>;
-      collection: CollectionToggleArgs;
-      collectionDetails: CollectionDetailsToggleArgs;
-      uses: UsesToggleArgs;
-      ruleSet: RuleSetToggleArgs;
+      newUpdateAuthority?: OptionOrNullable<Address>;
+      data?: OptionOrNullable<DataArgs>;
+      primarySaleHappened?: OptionOrNullable<boolean>;
+      isMutable?: OptionOrNullable<boolean>;
+      collection?: CollectionToggleArgs;
+      collectionDetails?: CollectionDetailsToggleArgs;
+      uses?: UsesToggleArgs;
+      ruleSet?: RuleSetToggleArgs;
       tokenStandard?: OptionOrNullable<TokenStandardArgs>;
-      authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+      authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
     }
   | {
       __kind: 'AsAuthorityItemDelegateV2';
-      newUpdateAuthority: OptionOrNullable<Address>;
-      primarySaleHappened: OptionOrNullable<boolean>;
-      isMutable: OptionOrNullable<boolean>;
+      newUpdateAuthority?: OptionOrNullable<Address>;
+      primarySaleHappened?: OptionOrNullable<boolean>;
+      isMutable?: OptionOrNullable<boolean>;
       tokenStandard?: OptionOrNullable<TokenStandardArgs>;
-      authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+      authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
     }
   | {
       __kind: 'AsCollectionDelegateV2';
-      collection: CollectionToggleArgs;
-      authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+      collection?: CollectionToggleArgs;
+      authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
     }
   | {
       __kind: 'AsDataDelegateV2';
-      data: OptionOrNullable<DataArgs>;
-      authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+      data?: OptionOrNullable<DataArgs>;
+      authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
     }
   | {
       __kind: 'AsProgrammableConfigDelegateV2';
-      ruleSet: RuleSetToggleArgs;
-      authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+      ruleSet?: RuleSetToggleArgs;
+      authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
     }
   | {
       __kind: 'AsDataItemDelegateV2';
-      data: OptionOrNullable<DataArgs>;
-      authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+      data?: OptionOrNullable<DataArgs>;
+      authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
     }
   | {
       __kind: 'AsCollectionItemDelegateV2';
-      collection: CollectionToggleArgs;
-      authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+      collection?: CollectionToggleArgs;
+      authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
     }
   | {
       __kind: 'AsProgrammableConfigItemDelegateV2';
-      ruleSet: RuleSetToggleArgs;
-      authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+      ruleSet?: RuleSetToggleArgs;
+      authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
     };
 
 export function getUpdateArgsEncoder(): Encoder<UpdateArgsArgs> {
   return getDiscriminatedUnionEncoder([
     [
       'V1',
-      getStructEncoder([
-        ['newUpdateAuthority', getOptionEncoder(getAddressEncoder())],
-        ['data', getOptionEncoder(getDataEncoder())],
-        ['primarySaleHappened', getOptionEncoder(getBooleanEncoder())],
-        ['isMutable', getOptionEncoder(getBooleanEncoder())],
-        ['collection', getCollectionToggleEncoder()],
-        ['collectionDetails', getCollectionDetailsToggleEncoder()],
-        ['uses', getUsesToggleEncoder()],
-        ['ruleSet', getRuleSetToggleEncoder()],
-        ['authorizationData', getOptionEncoder(getAuthorizationDataEncoder())],
-      ]),
+      transformEncoder(
+        getStructEncoder([
+          ['newUpdateAuthority', getOptionEncoder(getAddressEncoder())],
+          ['data', getOptionEncoder(getDataEncoder())],
+          ['primarySaleHappened', getOptionEncoder(getBooleanEncoder())],
+          ['isMutable', getOptionEncoder(getBooleanEncoder())],
+          ['collection', getCollectionToggleEncoder()],
+          ['collectionDetails', getCollectionDetailsToggleEncoder()],
+          ['uses', getUsesToggleEncoder()],
+          ['ruleSet', getRuleSetToggleEncoder()],
+          [
+            'authorizationData',
+            getOptionEncoder(getAuthorizationDataEncoder()),
+          ],
+        ]),
+        (value) => ({
+          ...value,
+          newUpdateAuthority: value.newUpdateAuthority ?? none(),
+          data: value.data ?? none(),
+          primarySaleHappened: value.primarySaleHappened ?? none(),
+          isMutable: value.isMutable ?? none(),
+          collection: value.collection ?? collectionToggle('None'),
+          collectionDetails:
+            value.collectionDetails ?? collectionDetailsToggle('None'),
+          uses: value.uses ?? usesToggle('None'),
+          ruleSet: value.ruleSet ?? ruleSetToggle('None'),
+          authorizationData: value.authorizationData ?? none(),
+        })
+      ),
     ],
     [
       'AsUpdateAuthorityV2',
@@ -224,7 +246,20 @@ export function getUpdateArgsEncoder(): Encoder<UpdateArgsArgs> {
             getOptionEncoder(getAuthorizationDataEncoder()),
           ],
         ]),
-        (value) => ({ ...value, tokenStandard: value.tokenStandard ?? none() })
+        (value) => ({
+          ...value,
+          newUpdateAuthority: value.newUpdateAuthority ?? none(),
+          data: value.data ?? none(),
+          primarySaleHappened: value.primarySaleHappened ?? none(),
+          isMutable: value.isMutable ?? none(),
+          collection: value.collection ?? collectionToggle('None'),
+          collectionDetails:
+            value.collectionDetails ?? collectionDetailsToggle('None'),
+          uses: value.uses ?? usesToggle('None'),
+          ruleSet: value.ruleSet ?? ruleSetToggle('None'),
+          tokenStandard: value.tokenStandard ?? none(),
+          authorizationData: value.authorizationData ?? none(),
+        })
       ),
     ],
     [
@@ -240,50 +275,117 @@ export function getUpdateArgsEncoder(): Encoder<UpdateArgsArgs> {
             getOptionEncoder(getAuthorizationDataEncoder()),
           ],
         ]),
-        (value) => ({ ...value, tokenStandard: value.tokenStandard ?? none() })
+        (value) => ({
+          ...value,
+          newUpdateAuthority: value.newUpdateAuthority ?? none(),
+          primarySaleHappened: value.primarySaleHappened ?? none(),
+          isMutable: value.isMutable ?? none(),
+          tokenStandard: value.tokenStandard ?? none(),
+          authorizationData: value.authorizationData ?? none(),
+        })
       ),
     ],
     [
       'AsCollectionDelegateV2',
-      getStructEncoder([
-        ['collection', getCollectionToggleEncoder()],
-        ['authorizationData', getOptionEncoder(getAuthorizationDataEncoder())],
-      ]),
+      transformEncoder(
+        getStructEncoder([
+          ['collection', getCollectionToggleEncoder()],
+          [
+            'authorizationData',
+            getOptionEncoder(getAuthorizationDataEncoder()),
+          ],
+        ]),
+        (value) => ({
+          ...value,
+          collection: value.collection ?? collectionToggle('None'),
+          authorizationData: value.authorizationData ?? none(),
+        })
+      ),
     ],
     [
       'AsDataDelegateV2',
-      getStructEncoder([
-        ['data', getOptionEncoder(getDataEncoder())],
-        ['authorizationData', getOptionEncoder(getAuthorizationDataEncoder())],
-      ]),
+      transformEncoder(
+        getStructEncoder([
+          ['data', getOptionEncoder(getDataEncoder())],
+          [
+            'authorizationData',
+            getOptionEncoder(getAuthorizationDataEncoder()),
+          ],
+        ]),
+        (value) => ({
+          ...value,
+          data: value.data ?? none(),
+          authorizationData: value.authorizationData ?? none(),
+        })
+      ),
     ],
     [
       'AsProgrammableConfigDelegateV2',
-      getStructEncoder([
-        ['ruleSet', getRuleSetToggleEncoder()],
-        ['authorizationData', getOptionEncoder(getAuthorizationDataEncoder())],
-      ]),
+      transformEncoder(
+        getStructEncoder([
+          ['ruleSet', getRuleSetToggleEncoder()],
+          [
+            'authorizationData',
+            getOptionEncoder(getAuthorizationDataEncoder()),
+          ],
+        ]),
+        (value) => ({
+          ...value,
+          ruleSet: value.ruleSet ?? ruleSetToggle('None'),
+          authorizationData: value.authorizationData ?? none(),
+        })
+      ),
     ],
     [
       'AsDataItemDelegateV2',
-      getStructEncoder([
-        ['data', getOptionEncoder(getDataEncoder())],
-        ['authorizationData', getOptionEncoder(getAuthorizationDataEncoder())],
-      ]),
+      transformEncoder(
+        getStructEncoder([
+          ['data', getOptionEncoder(getDataEncoder())],
+          [
+            'authorizationData',
+            getOptionEncoder(getAuthorizationDataEncoder()),
+          ],
+        ]),
+        (value) => ({
+          ...value,
+          data: value.data ?? none(),
+          authorizationData: value.authorizationData ?? none(),
+        })
+      ),
     ],
     [
       'AsCollectionItemDelegateV2',
-      getStructEncoder([
-        ['collection', getCollectionToggleEncoder()],
-        ['authorizationData', getOptionEncoder(getAuthorizationDataEncoder())],
-      ]),
+      transformEncoder(
+        getStructEncoder([
+          ['collection', getCollectionToggleEncoder()],
+          [
+            'authorizationData',
+            getOptionEncoder(getAuthorizationDataEncoder()),
+          ],
+        ]),
+        (value) => ({
+          ...value,
+          collection: value.collection ?? collectionToggle('None'),
+          authorizationData: value.authorizationData ?? none(),
+        })
+      ),
     ],
     [
       'AsProgrammableConfigItemDelegateV2',
-      getStructEncoder([
-        ['ruleSet', getRuleSetToggleEncoder()],
-        ['authorizationData', getOptionEncoder(getAuthorizationDataEncoder())],
-      ]),
+      transformEncoder(
+        getStructEncoder([
+          ['ruleSet', getRuleSetToggleEncoder()],
+          [
+            'authorizationData',
+            getOptionEncoder(getAuthorizationDataEncoder()),
+          ],
+        ]),
+        (value) => ({
+          ...value,
+          ruleSet: value.ruleSet ?? ruleSetToggle('None'),
+          authorizationData: value.authorizationData ?? none(),
+        })
+      ),
     ],
   ]);
 }

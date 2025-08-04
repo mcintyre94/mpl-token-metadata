@@ -15,6 +15,7 @@ import {
   getStructEncoder,
   getU8Decoder,
   getU8Encoder,
+  none,
   transformEncoder,
   type AccountMeta,
   type AccountSignerMeta,
@@ -139,7 +140,7 @@ export type LockV1InstructionData = {
 };
 
 export type LockV1InstructionDataArgs = {
-  authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+  authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
 };
 
 export function getLockV1InstructionDataEncoder(): Encoder<LockV1InstructionDataArgs> {
@@ -153,6 +154,7 @@ export function getLockV1InstructionDataEncoder(): Encoder<LockV1InstructionData
       ...value,
       discriminator: LOCK_V1_DISCRIMINATOR,
       lockV1Discriminator: 0,
+      authorizationData: value.authorizationData ?? none(),
     })
   );
 }
@@ -218,7 +220,7 @@ export type LockV1AsyncInput<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  authorizationData: LockV1InstructionDataArgs['authorizationData'];
+  authorizationData?: LockV1InstructionDataArgs['authorizationData'];
   tokenStandard: LockV1InstructionExtraArgs['tokenStandard'];
 };
 
@@ -452,7 +454,7 @@ export type LockV1Input<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  authorizationData: LockV1InstructionDataArgs['authorizationData'];
+  authorizationData?: LockV1InstructionDataArgs['authorizationData'];
   tokenStandard: LockV1InstructionExtraArgs['tokenStandard'];
 };
 

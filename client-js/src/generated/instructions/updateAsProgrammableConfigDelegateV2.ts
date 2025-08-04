@@ -14,6 +14,7 @@ import {
   getStructEncoder,
   getU8Decoder,
   getU8Encoder,
+  none,
   transformEncoder,
   type AccountMeta,
   type AccountSignerMeta,
@@ -47,6 +48,7 @@ import {
   getAuthorizationDataEncoder,
   getRuleSetToggleDecoder,
   getRuleSetToggleEncoder,
+  ruleSetToggle,
   type AuthorizationData,
   type AuthorizationDataArgs,
   type RuleSetToggle,
@@ -132,8 +134,8 @@ export type UpdateAsProgrammableConfigDelegateV2InstructionData = {
 };
 
 export type UpdateAsProgrammableConfigDelegateV2InstructionDataArgs = {
-  ruleSet: RuleSetToggleArgs;
-  authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+  ruleSet?: RuleSetToggleArgs;
+  authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
 };
 
 export function getUpdateAsProgrammableConfigDelegateV2InstructionDataEncoder(): Encoder<UpdateAsProgrammableConfigDelegateV2InstructionDataArgs> {
@@ -148,6 +150,8 @@ export function getUpdateAsProgrammableConfigDelegateV2InstructionDataEncoder():
       ...value,
       discriminator: UPDATE_AS_PROGRAMMABLE_CONFIG_DELEGATE_V2_DISCRIMINATOR,
       updateAsProgrammableConfigDelegateV2Discriminator: 5,
+      ruleSet: value.ruleSet ?? ruleSetToggle('None'),
+      authorizationData: value.authorizationData ?? none(),
     })
   );
 }
@@ -211,8 +215,8 @@ export type UpdateAsProgrammableConfigDelegateV2AsyncInput<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  ruleSet: UpdateAsProgrammableConfigDelegateV2InstructionDataArgs['ruleSet'];
-  authorizationData: UpdateAsProgrammableConfigDelegateV2InstructionDataArgs['authorizationData'];
+  ruleSet?: UpdateAsProgrammableConfigDelegateV2InstructionDataArgs['ruleSet'];
+  authorizationData?: UpdateAsProgrammableConfigDelegateV2InstructionDataArgs['authorizationData'];
   delegateMint?: UpdateAsProgrammableConfigDelegateV2InstructionExtraArgs['delegateMint'];
   delegateUpdateAuthority?: UpdateAsProgrammableConfigDelegateV2InstructionExtraArgs['delegateUpdateAuthority'];
 };
@@ -400,8 +404,8 @@ export type UpdateAsProgrammableConfigDelegateV2Input<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  ruleSet: UpdateAsProgrammableConfigDelegateV2InstructionDataArgs['ruleSet'];
-  authorizationData: UpdateAsProgrammableConfigDelegateV2InstructionDataArgs['authorizationData'];
+  ruleSet?: UpdateAsProgrammableConfigDelegateV2InstructionDataArgs['ruleSet'];
+  authorizationData?: UpdateAsProgrammableConfigDelegateV2InstructionDataArgs['authorizationData'];
   delegateMint?: UpdateAsProgrammableConfigDelegateV2InstructionExtraArgs['delegateMint'];
   delegateUpdateAuthority?: UpdateAsProgrammableConfigDelegateV2InstructionExtraArgs['delegateUpdateAuthority'];
 };

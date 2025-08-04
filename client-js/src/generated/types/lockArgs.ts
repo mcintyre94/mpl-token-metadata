@@ -14,6 +14,8 @@ import {
   getOptionEncoder,
   getStructDecoder,
   getStructEncoder,
+  none,
+  transformEncoder,
   type Codec,
   type Decoder,
   type Encoder,
@@ -36,16 +38,25 @@ export type LockArgs = {
 
 export type LockArgsArgs = {
   __kind: 'V1';
-  authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+  authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
 };
 
 export function getLockArgsEncoder(): Encoder<LockArgsArgs> {
   return getDiscriminatedUnionEncoder([
     [
       'V1',
-      getStructEncoder([
-        ['authorizationData', getOptionEncoder(getAuthorizationDataEncoder())],
-      ]),
+      transformEncoder(
+        getStructEncoder([
+          [
+            'authorizationData',
+            getOptionEncoder(getAuthorizationDataEncoder()),
+          ],
+        ]),
+        (value) => ({
+          ...value,
+          authorizationData: value.authorizationData ?? none(),
+        })
+      ),
     ],
   ]);
 }

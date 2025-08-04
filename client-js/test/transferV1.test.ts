@@ -1,30 +1,21 @@
 import {
-  Address,
   airdropFactory,
   appendTransactionMessageInstructions,
-  CompilableTransactionMessage,
   createSolanaRpc,
   createSolanaRpcSubscriptions,
   createTransactionMessage,
   generateKeyPairSigner,
-  GetLatestBlockhashApi,
   Instruction,
-  isProgramError,
-  isSolanaError,
   KeyPairSigner,
   lamports,
   pipe,
   Rpc,
-  RpcSubscriptions,
   sendAndConfirmTransactionFactory,
   setTransactionMessageFeePayerSigner,
   setTransactionMessageLifetimeUsingBlockhash,
   signTransactionMessageWithSigners,
-  SOLANA_ERROR__INSTRUCTION_ERROR__CUSTOM,
   SolanaRpcApi,
-  SolanaRpcSubscriptionsApi,
   TransactionMessage,
-  TransactionMessageBytesBase64,
   TransactionMessageWithBlockhashLifetime,
   TransactionMessageWithFeePayerSigner,
 } from "@solana/kit";
@@ -146,7 +137,6 @@ async function createDigitalAssetWithToken(
       mint: mint.address,
       amount: amount ?? 1,
       tokenStandard,
-      authorizationData: null, // TODO: why is this not optional?
     }),
   ]);
 
@@ -188,7 +178,6 @@ test("it can transfer a NonFungible", async (t) => {
     tokenOwner: ownerA.address,
     destinationOwner: ownerB.address,
     tokenStandard: TokenStandard.NonFungible,
-    authorizationData: null, // TODO: why is this not optional?});
   });
 
   await createAndSendTransaction({ rpc, confirmTransaction }, ownerA, [
@@ -239,7 +228,6 @@ test("it can transfer a ProgrammableNonFungible", async (t) => {
     tokenOwner: ownerA.address,
     destinationOwner: ownerB.address,
     tokenStandard: TokenStandard.ProgrammableNonFungible,
-    authorizationData: null, // TODO: why is this not optional?});
   });
 
   await createAndSendTransaction({ rpc, confirmTransaction }, ownerA, [

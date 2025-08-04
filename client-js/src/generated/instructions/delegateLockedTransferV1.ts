@@ -19,6 +19,7 @@ import {
   getU64Encoder,
   getU8Decoder,
   getU8Encoder,
+  none,
   transformEncoder,
   type AccountMeta,
   type AccountSignerMeta,
@@ -154,7 +155,7 @@ export type DelegateLockedTransferV1InstructionData = {
 export type DelegateLockedTransferV1InstructionDataArgs = {
   amount?: number | bigint;
   lockedAddress: Address;
-  authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+  authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
 };
 
 export function getDelegateLockedTransferV1InstructionDataEncoder(): Encoder<DelegateLockedTransferV1InstructionDataArgs> {
@@ -171,6 +172,7 @@ export function getDelegateLockedTransferV1InstructionDataEncoder(): Encoder<Del
       discriminator: DELEGATE_LOCKED_TRANSFER_V1_DISCRIMINATOR,
       delegateLockedTransferV1Discriminator: 7,
       amount: value.amount ?? 1,
+      authorizationData: value.authorizationData ?? none(),
     })
   );
 }
@@ -246,7 +248,7 @@ export type DelegateLockedTransferV1AsyncInput<
   authorizationRules?: Address<TAccountAuthorizationRules>;
   amount?: DelegateLockedTransferV1InstructionDataArgs['amount'];
   lockedAddress: DelegateLockedTransferV1InstructionDataArgs['lockedAddress'];
-  authorizationData: DelegateLockedTransferV1InstructionDataArgs['authorizationData'];
+  authorizationData?: DelegateLockedTransferV1InstructionDataArgs['authorizationData'];
   tokenStandard: DelegateLockedTransferV1InstructionExtraArgs['tokenStandard'];
   tokenOwner?: DelegateLockedTransferV1InstructionExtraArgs['tokenOwner'];
 };
@@ -490,7 +492,7 @@ export type DelegateLockedTransferV1Input<
   authorizationRules?: Address<TAccountAuthorizationRules>;
   amount?: DelegateLockedTransferV1InstructionDataArgs['amount'];
   lockedAddress: DelegateLockedTransferV1InstructionDataArgs['lockedAddress'];
-  authorizationData: DelegateLockedTransferV1InstructionDataArgs['authorizationData'];
+  authorizationData?: DelegateLockedTransferV1InstructionDataArgs['authorizationData'];
   tokenStandard: DelegateLockedTransferV1InstructionExtraArgs['tokenStandard'];
   tokenOwner?: DelegateLockedTransferV1InstructionExtraArgs['tokenOwner'];
 };

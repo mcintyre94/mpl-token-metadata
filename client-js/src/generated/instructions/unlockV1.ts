@@ -15,6 +15,7 @@ import {
   getStructEncoder,
   getU8Decoder,
   getU8Encoder,
+  none,
   transformEncoder,
   type AccountMeta,
   type AccountSignerMeta,
@@ -139,7 +140,7 @@ export type UnlockV1InstructionData = {
 };
 
 export type UnlockV1InstructionDataArgs = {
-  authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+  authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
 };
 
 export function getUnlockV1InstructionDataEncoder(): Encoder<UnlockV1InstructionDataArgs> {
@@ -153,6 +154,7 @@ export function getUnlockV1InstructionDataEncoder(): Encoder<UnlockV1Instruction
       ...value,
       discriminator: UNLOCK_V1_DISCRIMINATOR,
       unlockV1Discriminator: 0,
+      authorizationData: value.authorizationData ?? none(),
     })
   );
 }
@@ -218,7 +220,7 @@ export type UnlockV1AsyncInput<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  authorizationData: UnlockV1InstructionDataArgs['authorizationData'];
+  authorizationData?: UnlockV1InstructionDataArgs['authorizationData'];
   tokenStandard: UnlockV1InstructionExtraArgs['tokenStandard'];
 };
 
@@ -452,7 +454,7 @@ export type UnlockV1Input<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  authorizationData: UnlockV1InstructionDataArgs['authorizationData'];
+  authorizationData?: UnlockV1InstructionDataArgs['authorizationData'];
   tokenStandard: UnlockV1InstructionExtraArgs['tokenStandard'];
 };
 

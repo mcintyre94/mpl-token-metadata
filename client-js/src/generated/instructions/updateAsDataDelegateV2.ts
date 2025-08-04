@@ -14,6 +14,7 @@ import {
   getStructEncoder,
   getU8Decoder,
   getU8Encoder,
+  none,
   transformEncoder,
   type AccountMeta,
   type AccountSignerMeta,
@@ -130,8 +131,8 @@ export type UpdateAsDataDelegateV2InstructionData = {
 };
 
 export type UpdateAsDataDelegateV2InstructionDataArgs = {
-  data: OptionOrNullable<DataArgs>;
-  authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+  data?: OptionOrNullable<DataArgs>;
+  authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
 };
 
 export function getUpdateAsDataDelegateV2InstructionDataEncoder(): Encoder<UpdateAsDataDelegateV2InstructionDataArgs> {
@@ -146,6 +147,8 @@ export function getUpdateAsDataDelegateV2InstructionDataEncoder(): Encoder<Updat
       ...value,
       discriminator: UPDATE_AS_DATA_DELEGATE_V2_DISCRIMINATOR,
       updateAsDataDelegateV2Discriminator: 4,
+      data: value.data ?? none(),
+      authorizationData: value.authorizationData ?? none(),
     })
   );
 }
@@ -209,8 +212,8 @@ export type UpdateAsDataDelegateV2AsyncInput<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  data: UpdateAsDataDelegateV2InstructionDataArgs['data'];
-  authorizationData: UpdateAsDataDelegateV2InstructionDataArgs['authorizationData'];
+  data?: UpdateAsDataDelegateV2InstructionDataArgs['data'];
+  authorizationData?: UpdateAsDataDelegateV2InstructionDataArgs['authorizationData'];
   delegateMint?: UpdateAsDataDelegateV2InstructionExtraArgs['delegateMint'];
   delegateUpdateAuthority?: UpdateAsDataDelegateV2InstructionExtraArgs['delegateUpdateAuthority'];
 };
@@ -398,8 +401,8 @@ export type UpdateAsDataDelegateV2Input<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  data: UpdateAsDataDelegateV2InstructionDataArgs['data'];
-  authorizationData: UpdateAsDataDelegateV2InstructionDataArgs['authorizationData'];
+  data?: UpdateAsDataDelegateV2InstructionDataArgs['data'];
+  authorizationData?: UpdateAsDataDelegateV2InstructionDataArgs['authorizationData'];
   delegateMint?: UpdateAsDataDelegateV2InstructionExtraArgs['delegateMint'];
   delegateUpdateAuthority?: UpdateAsDataDelegateV2InstructionExtraArgs['delegateUpdateAuthority'];
 };

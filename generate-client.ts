@@ -44,7 +44,6 @@ import {
   booleanTypeNode,
   programIdValueNode,
   type InstructionUpdates,
-  fixedSizeTypeNode,
 } from "codama";
 
 import anchorIdl from "./idl.json" with { type: "json" };
@@ -278,6 +277,7 @@ codama.update(
       },
     },
     mint: {
+      // @ts-expect-error TODO: check this
       byteDeltas: [
         instructionByteDeltaNode(
           numberValueNode(
@@ -687,7 +687,7 @@ codama.update(
       },
     },
     {
-      select: (node) => {
+      select: (nodePath) => {
         const names = [
           "authorizationData",
           "decimals",
@@ -697,8 +697,9 @@ codama.update(
           "primarySaleHappened",
           "isMutable",
         ];
+
+        const node = nodePath[nodePath.length - 1];
         return (
-          // @ts-expect-error TODO: check this
           isNode(node, ["structFieldTypeNode", "instructionArgumentNode"]) &&
           isNode(node.type, "optionTypeNode") &&
           names.includes(node.name)
@@ -714,15 +715,15 @@ codama.update(
       },
     },
     {
-      select: (node) => {
+      select: (nodePath) => {
         const toggles = [
           "collectionToggle",
           "collectionDetailsToggle",
           "usesToggle",
           "ruleSetToggle",
         ];
+        const node = nodePath[nodePath.length - 1];
         return (
-          // @ts-expect-error TODO: check this
           isNode(node, "structFieldTypeNode") &&
           isNode(node.type, "definedTypeLinkNode") &&
           toggles.includes(node.type.name)

@@ -18,6 +18,7 @@ import {
   getStructEncoder,
   getU64Decoder,
   getU64Encoder,
+  none,
   transformEncoder,
   type Address,
   type Codec,
@@ -81,71 +82,80 @@ export type DelegateArgs =
 export type DelegateArgsArgs =
   | {
       __kind: 'CollectionV1';
-      authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+      authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
     }
   | {
       __kind: 'SaleV1';
       amount?: number | bigint;
-      authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+      authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
     }
   | {
       __kind: 'TransferV1';
       amount?: number | bigint;
-      authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+      authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
     }
   | {
       __kind: 'DataV1';
-      authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+      authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
     }
   | {
       __kind: 'UtilityV1';
       amount?: number | bigint;
-      authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+      authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
     }
   | {
       __kind: 'StakingV1';
       amount?: number | bigint;
-      authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+      authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
     }
   | { __kind: 'StandardV1'; amount?: number | bigint }
   | {
       __kind: 'LockedTransferV1';
       amount?: number | bigint;
       lockedAddress: Address;
-      authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+      authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
     }
   | {
       __kind: 'ProgrammableConfigV1';
-      authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+      authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
     }
   | {
       __kind: 'AuthorityItemV1';
-      authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+      authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
     }
   | {
       __kind: 'DataItemV1';
-      authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+      authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
     }
   | {
       __kind: 'CollectionItemV1';
-      authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+      authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
     }
   | {
       __kind: 'ProgrammableConfigItemV1';
-      authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+      authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
     }
   | {
       __kind: 'PrintDelegateV1';
-      authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+      authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
     };
 
 export function getDelegateArgsEncoder(): Encoder<DelegateArgsArgs> {
   return getDiscriminatedUnionEncoder([
     [
       'CollectionV1',
-      getStructEncoder([
-        ['authorizationData', getOptionEncoder(getAuthorizationDataEncoder())],
-      ]),
+      transformEncoder(
+        getStructEncoder([
+          [
+            'authorizationData',
+            getOptionEncoder(getAuthorizationDataEncoder()),
+          ],
+        ]),
+        (value) => ({
+          ...value,
+          authorizationData: value.authorizationData ?? none(),
+        })
+      ),
     ],
     [
       'SaleV1',
@@ -157,7 +167,11 @@ export function getDelegateArgsEncoder(): Encoder<DelegateArgsArgs> {
             getOptionEncoder(getAuthorizationDataEncoder()),
           ],
         ]),
-        (value) => ({ ...value, amount: value.amount ?? 1 })
+        (value) => ({
+          ...value,
+          amount: value.amount ?? 1,
+          authorizationData: value.authorizationData ?? none(),
+        })
       ),
     ],
     [
@@ -170,14 +184,27 @@ export function getDelegateArgsEncoder(): Encoder<DelegateArgsArgs> {
             getOptionEncoder(getAuthorizationDataEncoder()),
           ],
         ]),
-        (value) => ({ ...value, amount: value.amount ?? 1 })
+        (value) => ({
+          ...value,
+          amount: value.amount ?? 1,
+          authorizationData: value.authorizationData ?? none(),
+        })
       ),
     ],
     [
       'DataV1',
-      getStructEncoder([
-        ['authorizationData', getOptionEncoder(getAuthorizationDataEncoder())],
-      ]),
+      transformEncoder(
+        getStructEncoder([
+          [
+            'authorizationData',
+            getOptionEncoder(getAuthorizationDataEncoder()),
+          ],
+        ]),
+        (value) => ({
+          ...value,
+          authorizationData: value.authorizationData ?? none(),
+        })
+      ),
     ],
     [
       'UtilityV1',
@@ -189,7 +216,11 @@ export function getDelegateArgsEncoder(): Encoder<DelegateArgsArgs> {
             getOptionEncoder(getAuthorizationDataEncoder()),
           ],
         ]),
-        (value) => ({ ...value, amount: value.amount ?? 1 })
+        (value) => ({
+          ...value,
+          amount: value.amount ?? 1,
+          authorizationData: value.authorizationData ?? none(),
+        })
       ),
     ],
     [
@@ -202,7 +233,11 @@ export function getDelegateArgsEncoder(): Encoder<DelegateArgsArgs> {
             getOptionEncoder(getAuthorizationDataEncoder()),
           ],
         ]),
-        (value) => ({ ...value, amount: value.amount ?? 1 })
+        (value) => ({
+          ...value,
+          amount: value.amount ?? 1,
+          authorizationData: value.authorizationData ?? none(),
+        })
       ),
     ],
     [
@@ -223,44 +258,102 @@ export function getDelegateArgsEncoder(): Encoder<DelegateArgsArgs> {
             getOptionEncoder(getAuthorizationDataEncoder()),
           ],
         ]),
-        (value) => ({ ...value, amount: value.amount ?? 1 })
+        (value) => ({
+          ...value,
+          amount: value.amount ?? 1,
+          authorizationData: value.authorizationData ?? none(),
+        })
       ),
     ],
     [
       'ProgrammableConfigV1',
-      getStructEncoder([
-        ['authorizationData', getOptionEncoder(getAuthorizationDataEncoder())],
-      ]),
+      transformEncoder(
+        getStructEncoder([
+          [
+            'authorizationData',
+            getOptionEncoder(getAuthorizationDataEncoder()),
+          ],
+        ]),
+        (value) => ({
+          ...value,
+          authorizationData: value.authorizationData ?? none(),
+        })
+      ),
     ],
     [
       'AuthorityItemV1',
-      getStructEncoder([
-        ['authorizationData', getOptionEncoder(getAuthorizationDataEncoder())],
-      ]),
+      transformEncoder(
+        getStructEncoder([
+          [
+            'authorizationData',
+            getOptionEncoder(getAuthorizationDataEncoder()),
+          ],
+        ]),
+        (value) => ({
+          ...value,
+          authorizationData: value.authorizationData ?? none(),
+        })
+      ),
     ],
     [
       'DataItemV1',
-      getStructEncoder([
-        ['authorizationData', getOptionEncoder(getAuthorizationDataEncoder())],
-      ]),
+      transformEncoder(
+        getStructEncoder([
+          [
+            'authorizationData',
+            getOptionEncoder(getAuthorizationDataEncoder()),
+          ],
+        ]),
+        (value) => ({
+          ...value,
+          authorizationData: value.authorizationData ?? none(),
+        })
+      ),
     ],
     [
       'CollectionItemV1',
-      getStructEncoder([
-        ['authorizationData', getOptionEncoder(getAuthorizationDataEncoder())],
-      ]),
+      transformEncoder(
+        getStructEncoder([
+          [
+            'authorizationData',
+            getOptionEncoder(getAuthorizationDataEncoder()),
+          ],
+        ]),
+        (value) => ({
+          ...value,
+          authorizationData: value.authorizationData ?? none(),
+        })
+      ),
     ],
     [
       'ProgrammableConfigItemV1',
-      getStructEncoder([
-        ['authorizationData', getOptionEncoder(getAuthorizationDataEncoder())],
-      ]),
+      transformEncoder(
+        getStructEncoder([
+          [
+            'authorizationData',
+            getOptionEncoder(getAuthorizationDataEncoder()),
+          ],
+        ]),
+        (value) => ({
+          ...value,
+          authorizationData: value.authorizationData ?? none(),
+        })
+      ),
     ],
     [
       'PrintDelegateV1',
-      getStructEncoder([
-        ['authorizationData', getOptionEncoder(getAuthorizationDataEncoder())],
-      ]),
+      transformEncoder(
+        getStructEncoder([
+          [
+            'authorizationData',
+            getOptionEncoder(getAuthorizationDataEncoder()),
+          ],
+        ]),
+        (value) => ({
+          ...value,
+          authorizationData: value.authorizationData ?? none(),
+        })
+      ),
     ],
   ]);
 }

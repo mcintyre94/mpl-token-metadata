@@ -46,6 +46,8 @@ import {
   type ResolvedAccount,
 } from '../shared';
 import {
+  collectionDetailsToggle,
+  collectionToggle,
   getAuthorizationDataDecoder,
   getAuthorizationDataEncoder,
   getCollectionDetailsToggleDecoder,
@@ -60,6 +62,7 @@ import {
   getTokenStandardEncoder,
   getUsesToggleDecoder,
   getUsesToggleEncoder,
+  ruleSetToggle,
   type AuthorizationData,
   type AuthorizationDataArgs,
   type CollectionDetailsToggle,
@@ -74,6 +77,7 @@ import {
   type TokenStandardArgs,
   type UsesToggle,
   type UsesToggleArgs,
+  usesToggle,
 } from '../types';
 
 export const UPDATE_AS_UPDATE_AUTHORITY_V2_DISCRIMINATOR = 50;
@@ -161,16 +165,16 @@ export type UpdateAsUpdateAuthorityV2InstructionData = {
 };
 
 export type UpdateAsUpdateAuthorityV2InstructionDataArgs = {
-  newUpdateAuthority: OptionOrNullable<Address>;
-  data: OptionOrNullable<DataArgs>;
-  primarySaleHappened: OptionOrNullable<boolean>;
-  isMutable: OptionOrNullable<boolean>;
-  collection: CollectionToggleArgs;
-  collectionDetails: CollectionDetailsToggleArgs;
-  uses: UsesToggleArgs;
-  ruleSet: RuleSetToggleArgs;
+  newUpdateAuthority?: OptionOrNullable<Address>;
+  data?: OptionOrNullable<DataArgs>;
+  primarySaleHappened?: OptionOrNullable<boolean>;
+  isMutable?: OptionOrNullable<boolean>;
+  collection?: CollectionToggleArgs;
+  collectionDetails?: CollectionDetailsToggleArgs;
+  uses?: UsesToggleArgs;
+  ruleSet?: RuleSetToggleArgs;
   tokenStandard?: OptionOrNullable<TokenStandardArgs>;
-  authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+  authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
 };
 
 export function getUpdateAsUpdateAuthorityV2InstructionDataEncoder(): Encoder<UpdateAsUpdateAuthorityV2InstructionDataArgs> {
@@ -193,7 +197,17 @@ export function getUpdateAsUpdateAuthorityV2InstructionDataEncoder(): Encoder<Up
       ...value,
       discriminator: UPDATE_AS_UPDATE_AUTHORITY_V2_DISCRIMINATOR,
       updateAsUpdateAuthorityV2Discriminator: 1,
+      newUpdateAuthority: value.newUpdateAuthority ?? none(),
+      data: value.data ?? none(),
+      primarySaleHappened: value.primarySaleHappened ?? none(),
+      isMutable: value.isMutable ?? none(),
+      collection: value.collection ?? collectionToggle('None'),
+      collectionDetails:
+        value.collectionDetails ?? collectionDetailsToggle('None'),
+      uses: value.uses ?? usesToggle('None'),
+      ruleSet: value.ruleSet ?? ruleSetToggle('None'),
       tokenStandard: value.tokenStandard ?? none(),
+      authorizationData: value.authorizationData ?? none(),
     })
   );
 }
@@ -260,16 +274,16 @@ export type UpdateAsUpdateAuthorityV2AsyncInput<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  newUpdateAuthority: UpdateAsUpdateAuthorityV2InstructionDataArgs['newUpdateAuthority'];
-  data: UpdateAsUpdateAuthorityV2InstructionDataArgs['data'];
-  primarySaleHappened: UpdateAsUpdateAuthorityV2InstructionDataArgs['primarySaleHappened'];
-  isMutable: UpdateAsUpdateAuthorityV2InstructionDataArgs['isMutable'];
-  collection: UpdateAsUpdateAuthorityV2InstructionDataArgs['collection'];
-  collectionDetails: UpdateAsUpdateAuthorityV2InstructionDataArgs['collectionDetails'];
-  uses: UpdateAsUpdateAuthorityV2InstructionDataArgs['uses'];
-  ruleSet: UpdateAsUpdateAuthorityV2InstructionDataArgs['ruleSet'];
+  newUpdateAuthority?: UpdateAsUpdateAuthorityV2InstructionDataArgs['newUpdateAuthority'];
+  data?: UpdateAsUpdateAuthorityV2InstructionDataArgs['data'];
+  primarySaleHappened?: UpdateAsUpdateAuthorityV2InstructionDataArgs['primarySaleHappened'];
+  isMutable?: UpdateAsUpdateAuthorityV2InstructionDataArgs['isMutable'];
+  collection?: UpdateAsUpdateAuthorityV2InstructionDataArgs['collection'];
+  collectionDetails?: UpdateAsUpdateAuthorityV2InstructionDataArgs['collectionDetails'];
+  uses?: UpdateAsUpdateAuthorityV2InstructionDataArgs['uses'];
+  ruleSet?: UpdateAsUpdateAuthorityV2InstructionDataArgs['ruleSet'];
   tokenStandard?: UpdateAsUpdateAuthorityV2InstructionDataArgs['tokenStandard'];
-  authorizationData: UpdateAsUpdateAuthorityV2InstructionDataArgs['authorizationData'];
+  authorizationData?: UpdateAsUpdateAuthorityV2InstructionDataArgs['authorizationData'];
 };
 
 export async function getUpdateAsUpdateAuthorityV2InstructionAsync<
@@ -444,16 +458,16 @@ export type UpdateAsUpdateAuthorityV2Input<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  newUpdateAuthority: UpdateAsUpdateAuthorityV2InstructionDataArgs['newUpdateAuthority'];
-  data: UpdateAsUpdateAuthorityV2InstructionDataArgs['data'];
-  primarySaleHappened: UpdateAsUpdateAuthorityV2InstructionDataArgs['primarySaleHappened'];
-  isMutable: UpdateAsUpdateAuthorityV2InstructionDataArgs['isMutable'];
-  collection: UpdateAsUpdateAuthorityV2InstructionDataArgs['collection'];
-  collectionDetails: UpdateAsUpdateAuthorityV2InstructionDataArgs['collectionDetails'];
-  uses: UpdateAsUpdateAuthorityV2InstructionDataArgs['uses'];
-  ruleSet: UpdateAsUpdateAuthorityV2InstructionDataArgs['ruleSet'];
+  newUpdateAuthority?: UpdateAsUpdateAuthorityV2InstructionDataArgs['newUpdateAuthority'];
+  data?: UpdateAsUpdateAuthorityV2InstructionDataArgs['data'];
+  primarySaleHappened?: UpdateAsUpdateAuthorityV2InstructionDataArgs['primarySaleHappened'];
+  isMutable?: UpdateAsUpdateAuthorityV2InstructionDataArgs['isMutable'];
+  collection?: UpdateAsUpdateAuthorityV2InstructionDataArgs['collection'];
+  collectionDetails?: UpdateAsUpdateAuthorityV2InstructionDataArgs['collectionDetails'];
+  uses?: UpdateAsUpdateAuthorityV2InstructionDataArgs['uses'];
+  ruleSet?: UpdateAsUpdateAuthorityV2InstructionDataArgs['ruleSet'];
   tokenStandard?: UpdateAsUpdateAuthorityV2InstructionDataArgs['tokenStandard'];
-  authorizationData: UpdateAsUpdateAuthorityV2InstructionDataArgs['authorizationData'];
+  authorizationData?: UpdateAsUpdateAuthorityV2InstructionDataArgs['authorizationData'];
 };
 
 export function getUpdateAsUpdateAuthorityV2Instruction<

@@ -14,6 +14,7 @@ import {
   getStructEncoder,
   getU8Decoder,
   getU8Encoder,
+  none,
   transformEncoder,
   type AccountMeta,
   type AccountSignerMeta,
@@ -145,7 +146,7 @@ export type DelegateProgrammableConfigItemV1InstructionData = {
 };
 
 export type DelegateProgrammableConfigItemV1InstructionDataArgs = {
-  authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+  authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
 };
 
 export function getDelegateProgrammableConfigItemV1InstructionDataEncoder(): Encoder<DelegateProgrammableConfigItemV1InstructionDataArgs> {
@@ -159,6 +160,7 @@ export function getDelegateProgrammableConfigItemV1InstructionDataEncoder(): Enc
       ...value,
       discriminator: DELEGATE_PROGRAMMABLE_CONFIG_ITEM_V1_DISCRIMINATOR,
       delegateProgrammableConfigItemV1Discriminator: 12,
+      authorizationData: value.authorizationData ?? none(),
     })
   );
 }
@@ -230,7 +232,7 @@ export type DelegateProgrammableConfigItemV1AsyncInput<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  authorizationData: DelegateProgrammableConfigItemV1InstructionDataArgs['authorizationData'];
+  authorizationData?: DelegateProgrammableConfigItemV1InstructionDataArgs['authorizationData'];
   tokenStandard: DelegateProgrammableConfigItemV1InstructionExtraArgs['tokenStandard'];
   updateAuthority?: DelegateProgrammableConfigItemV1InstructionExtraArgs['updateAuthority'];
 };
@@ -458,7 +460,7 @@ export type DelegateProgrammableConfigItemV1Input<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  authorizationData: DelegateProgrammableConfigItemV1InstructionDataArgs['authorizationData'];
+  authorizationData?: DelegateProgrammableConfigItemV1InstructionDataArgs['authorizationData'];
   tokenStandard: DelegateProgrammableConfigItemV1InstructionExtraArgs['tokenStandard'];
   updateAuthority?: DelegateProgrammableConfigItemV1InstructionExtraArgs['updateAuthority'];
 };

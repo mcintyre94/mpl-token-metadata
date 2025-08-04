@@ -17,6 +17,7 @@ import {
   getU64Encoder,
   getU8Decoder,
   getU8Encoder,
+  none,
   transformEncoder,
   type AccountMeta,
   type AccountSignerMeta,
@@ -157,7 +158,7 @@ export type MintV1InstructionData = {
 
 export type MintV1InstructionDataArgs = {
   amount?: number | bigint;
-  authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+  authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
 };
 
 export function getMintV1InstructionDataEncoder(): Encoder<MintV1InstructionDataArgs> {
@@ -173,6 +174,7 @@ export function getMintV1InstructionDataEncoder(): Encoder<MintV1InstructionData
       discriminator: MINT_V1_DISCRIMINATOR,
       mintV1Discriminator: 0,
       amount: value.amount ?? 1,
+      authorizationData: value.authorizationData ?? none(),
     })
   );
 }
@@ -246,7 +248,7 @@ export type MintV1AsyncInput<
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
   amount?: MintV1InstructionDataArgs['amount'];
-  authorizationData: MintV1InstructionDataArgs['authorizationData'];
+  authorizationData?: MintV1InstructionDataArgs['authorizationData'];
   tokenStandard: MintV1InstructionExtraArgs['tokenStandard'];
 };
 
@@ -508,7 +510,7 @@ export type MintV1Input<
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
   amount?: MintV1InstructionDataArgs['amount'];
-  authorizationData: MintV1InstructionDataArgs['authorizationData'];
+  authorizationData?: MintV1InstructionDataArgs['authorizationData'];
   tokenStandard: MintV1InstructionExtraArgs['tokenStandard'];
 };
 

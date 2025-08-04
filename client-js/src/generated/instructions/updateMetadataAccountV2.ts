@@ -18,6 +18,7 @@ import {
   getStructEncoder,
   getU8Decoder,
   getU8Encoder,
+  none,
   transformEncoder,
   type AccountMeta,
   type AccountSignerMeta,
@@ -79,10 +80,10 @@ export type UpdateMetadataAccountV2InstructionData = {
 };
 
 export type UpdateMetadataAccountV2InstructionDataArgs = {
-  data: OptionOrNullable<DataV2Args>;
-  newUpdateAuthority: OptionOrNullable<Address>;
-  primarySaleHappened: OptionOrNullable<boolean>;
-  isMutable: OptionOrNullable<boolean>;
+  data?: OptionOrNullable<DataV2Args>;
+  newUpdateAuthority?: OptionOrNullable<Address>;
+  primarySaleHappened?: OptionOrNullable<boolean>;
+  isMutable?: OptionOrNullable<boolean>;
 };
 
 export function getUpdateMetadataAccountV2InstructionDataEncoder(): Encoder<UpdateMetadataAccountV2InstructionDataArgs> {
@@ -97,6 +98,10 @@ export function getUpdateMetadataAccountV2InstructionDataEncoder(): Encoder<Upda
     (value) => ({
       ...value,
       discriminator: UPDATE_METADATA_ACCOUNT_V2_DISCRIMINATOR,
+      data: value.data ?? none(),
+      newUpdateAuthority: value.newUpdateAuthority ?? none(),
+      primarySaleHappened: value.primarySaleHappened ?? none(),
+      isMutable: value.isMutable ?? none(),
     })
   );
 }
@@ -129,10 +134,10 @@ export type UpdateMetadataAccountV2Input<
   metadata: Address<TAccountMetadata>;
   /** Update authority key */
   updateAuthority: TransactionSigner<TAccountUpdateAuthority>;
-  data: UpdateMetadataAccountV2InstructionDataArgs['data'];
-  newUpdateAuthority: UpdateMetadataAccountV2InstructionDataArgs['newUpdateAuthority'];
-  primarySaleHappened: UpdateMetadataAccountV2InstructionDataArgs['primarySaleHappened'];
-  isMutable: UpdateMetadataAccountV2InstructionDataArgs['isMutable'];
+  data?: UpdateMetadataAccountV2InstructionDataArgs['data'];
+  newUpdateAuthority?: UpdateMetadataAccountV2InstructionDataArgs['newUpdateAuthority'];
+  primarySaleHappened?: UpdateMetadataAccountV2InstructionDataArgs['primarySaleHappened'];
+  isMutable?: UpdateMetadataAccountV2InstructionDataArgs['isMutable'];
 };
 
 export function getUpdateMetadataAccountV2Instruction<

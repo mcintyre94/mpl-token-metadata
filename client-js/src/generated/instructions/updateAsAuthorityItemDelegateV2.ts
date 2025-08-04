@@ -140,11 +140,11 @@ export type UpdateAsAuthorityItemDelegateV2InstructionData = {
 };
 
 export type UpdateAsAuthorityItemDelegateV2InstructionDataArgs = {
-  newUpdateAuthority: OptionOrNullable<Address>;
-  primarySaleHappened: OptionOrNullable<boolean>;
-  isMutable: OptionOrNullable<boolean>;
+  newUpdateAuthority?: OptionOrNullable<Address>;
+  primarySaleHappened?: OptionOrNullable<boolean>;
+  isMutable?: OptionOrNullable<boolean>;
   tokenStandard?: OptionOrNullable<TokenStandardArgs>;
-  authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+  authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
 };
 
 export function getUpdateAsAuthorityItemDelegateV2InstructionDataEncoder(): Encoder<UpdateAsAuthorityItemDelegateV2InstructionDataArgs> {
@@ -162,7 +162,11 @@ export function getUpdateAsAuthorityItemDelegateV2InstructionDataEncoder(): Enco
       ...value,
       discriminator: UPDATE_AS_AUTHORITY_ITEM_DELEGATE_V2_DISCRIMINATOR,
       updateAsAuthorityItemDelegateV2Discriminator: 2,
+      newUpdateAuthority: value.newUpdateAuthority ?? none(),
+      primarySaleHappened: value.primarySaleHappened ?? none(),
+      isMutable: value.isMutable ?? none(),
       tokenStandard: value.tokenStandard ?? none(),
+      authorizationData: value.authorizationData ?? none(),
     })
   );
 }
@@ -228,11 +232,11 @@ export type UpdateAsAuthorityItemDelegateV2AsyncInput<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  newUpdateAuthority: UpdateAsAuthorityItemDelegateV2InstructionDataArgs['newUpdateAuthority'];
-  primarySaleHappened: UpdateAsAuthorityItemDelegateV2InstructionDataArgs['primarySaleHappened'];
-  isMutable: UpdateAsAuthorityItemDelegateV2InstructionDataArgs['isMutable'];
+  newUpdateAuthority?: UpdateAsAuthorityItemDelegateV2InstructionDataArgs['newUpdateAuthority'];
+  primarySaleHappened?: UpdateAsAuthorityItemDelegateV2InstructionDataArgs['primarySaleHappened'];
+  isMutable?: UpdateAsAuthorityItemDelegateV2InstructionDataArgs['isMutable'];
   tokenStandard?: UpdateAsAuthorityItemDelegateV2InstructionDataArgs['tokenStandard'];
-  authorizationData: UpdateAsAuthorityItemDelegateV2InstructionDataArgs['authorizationData'];
+  authorizationData?: UpdateAsAuthorityItemDelegateV2InstructionDataArgs['authorizationData'];
   updateAuthority?: UpdateAsAuthorityItemDelegateV2InstructionExtraArgs['updateAuthority'];
 };
 
@@ -416,11 +420,11 @@ export type UpdateAsAuthorityItemDelegateV2Input<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  newUpdateAuthority: UpdateAsAuthorityItemDelegateV2InstructionDataArgs['newUpdateAuthority'];
-  primarySaleHappened: UpdateAsAuthorityItemDelegateV2InstructionDataArgs['primarySaleHappened'];
-  isMutable: UpdateAsAuthorityItemDelegateV2InstructionDataArgs['isMutable'];
+  newUpdateAuthority?: UpdateAsAuthorityItemDelegateV2InstructionDataArgs['newUpdateAuthority'];
+  primarySaleHappened?: UpdateAsAuthorityItemDelegateV2InstructionDataArgs['primarySaleHappened'];
+  isMutable?: UpdateAsAuthorityItemDelegateV2InstructionDataArgs['isMutable'];
   tokenStandard?: UpdateAsAuthorityItemDelegateV2InstructionDataArgs['tokenStandard'];
-  authorizationData: UpdateAsAuthorityItemDelegateV2InstructionDataArgs['authorizationData'];
+  authorizationData?: UpdateAsAuthorityItemDelegateV2InstructionDataArgs['authorizationData'];
   updateAuthority?: UpdateAsAuthorityItemDelegateV2InstructionExtraArgs['updateAuthority'];
 };
 

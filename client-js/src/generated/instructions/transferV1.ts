@@ -17,6 +17,7 @@ import {
   getU64Encoder,
   getU8Decoder,
   getU8Encoder,
+  none,
   transformEncoder,
   type AccountMeta,
   type AccountSignerMeta,
@@ -163,7 +164,7 @@ export type TransferV1InstructionData = {
 
 export type TransferV1InstructionDataArgs = {
   amount?: number | bigint;
-  authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+  authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
 };
 
 export function getTransferV1InstructionDataEncoder(): Encoder<TransferV1InstructionDataArgs> {
@@ -179,6 +180,7 @@ export function getTransferV1InstructionDataEncoder(): Encoder<TransferV1Instruc
       discriminator: TRANSFER_V1_DISCRIMINATOR,
       transferV1Discriminator: 0,
       amount: value.amount ?? 1,
+      authorizationData: value.authorizationData ?? none(),
     })
   );
 }
@@ -260,7 +262,7 @@ export type TransferV1AsyncInput<
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
   amount?: TransferV1InstructionDataArgs['amount'];
-  authorizationData: TransferV1InstructionDataArgs['authorizationData'];
+  authorizationData?: TransferV1InstructionDataArgs['authorizationData'];
   tokenStandard: TransferV1InstructionExtraArgs['tokenStandard'];
 };
 
@@ -551,7 +553,7 @@ export type TransferV1Input<
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
   amount?: TransferV1InstructionDataArgs['amount'];
-  authorizationData: TransferV1InstructionDataArgs['authorizationData'];
+  authorizationData?: TransferV1InstructionDataArgs['authorizationData'];
   tokenStandard: TransferV1InstructionExtraArgs['tokenStandard'];
 };
 

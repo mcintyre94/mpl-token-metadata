@@ -14,6 +14,7 @@ import {
   getStructEncoder,
   getU8Decoder,
   getU8Encoder,
+  none,
   transformEncoder,
   type AccountMeta,
   type AccountSignerMeta,
@@ -143,7 +144,7 @@ export type DelegateCollectionItemV1InstructionData = {
 };
 
 export type DelegateCollectionItemV1InstructionDataArgs = {
-  authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+  authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
 };
 
 export function getDelegateCollectionItemV1InstructionDataEncoder(): Encoder<DelegateCollectionItemV1InstructionDataArgs> {
@@ -157,6 +158,7 @@ export function getDelegateCollectionItemV1InstructionDataEncoder(): Encoder<Del
       ...value,
       discriminator: DELEGATE_COLLECTION_ITEM_V1_DISCRIMINATOR,
       delegateCollectionItemV1Discriminator: 11,
+      authorizationData: value.authorizationData ?? none(),
     })
   );
 }
@@ -228,7 +230,7 @@ export type DelegateCollectionItemV1AsyncInput<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  authorizationData: DelegateCollectionItemV1InstructionDataArgs['authorizationData'];
+  authorizationData?: DelegateCollectionItemV1InstructionDataArgs['authorizationData'];
   tokenStandard: DelegateCollectionItemV1InstructionExtraArgs['tokenStandard'];
   updateAuthority?: DelegateCollectionItemV1InstructionExtraArgs['updateAuthority'];
 };
@@ -456,7 +458,7 @@ export type DelegateCollectionItemV1Input<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  authorizationData: DelegateCollectionItemV1InstructionDataArgs['authorizationData'];
+  authorizationData?: DelegateCollectionItemV1InstructionDataArgs['authorizationData'];
   tokenStandard: DelegateCollectionItemV1InstructionExtraArgs['tokenStandard'];
   updateAuthority?: DelegateCollectionItemV1InstructionExtraArgs['updateAuthority'];
 };

@@ -1988,6 +1988,7 @@
           {
             "kind": "instructionArgumentNode",
             "name": "data",
+            "defaultValueStrategy": "optional",
             "docs": [],
             "type": {
               "kind": "optionTypeNode",
@@ -2001,11 +2002,15 @@
                 "format": "u8",
                 "endian": "le"
               }
+            },
+            "defaultValue": {
+              "kind": "noneValueNode"
             }
           },
           {
             "kind": "instructionArgumentNode",
             "name": "newUpdateAuthority",
+            "defaultValueStrategy": "optional",
             "docs": [],
             "type": {
               "kind": "optionTypeNode",
@@ -2018,11 +2023,15 @@
                 "format": "u8",
                 "endian": "le"
               }
+            },
+            "defaultValue": {
+              "kind": "noneValueNode"
             }
           },
           {
             "kind": "instructionArgumentNode",
             "name": "primarySaleHappened",
+            "defaultValueStrategy": "optional",
             "docs": [],
             "type": {
               "kind": "optionTypeNode",
@@ -2040,11 +2049,15 @@
                 "format": "u8",
                 "endian": "le"
               }
+            },
+            "defaultValue": {
+              "kind": "noneValueNode"
             }
           },
           {
             "kind": "instructionArgumentNode",
             "name": "isMutable",
+            "defaultValueStrategy": "optional",
             "docs": [],
             "type": {
               "kind": "optionTypeNode",
@@ -2062,6 +2075,9 @@
                 "format": "u8",
                 "endian": "le"
               }
+            },
+            "defaultValue": {
+              "kind": "noneValueNode"
             }
           }
         ],
@@ -6580,6 +6596,7 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "decimals",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -6610,6 +6627,7 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "printSupply",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -7430,6 +7448,7 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "authorizationData",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -7443,6 +7462,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               }
             ],
@@ -8045,6 +8067,7 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "authorizationData",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -8058,6 +8081,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               }
             ],
@@ -8470,6 +8496,7 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "authorizationData",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -8483,6 +8510,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               }
             ],
@@ -8894,6 +8924,7 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "authorizationData",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -8907,6 +8938,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               }
             ],
@@ -9241,6 +9275,7 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "authorizationData",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -9254,6 +9289,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               }
             ],
@@ -9666,6 +9704,7 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "authorizationData",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -9679,6 +9718,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               }
             ],
@@ -10090,6 +10132,7 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "authorizationData",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -10103,6 +10146,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               }
             ],
@@ -10891,6 +10937,7 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "authorizationData",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -10904,6 +10951,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               }
             ],
@@ -11238,6 +11288,7 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "authorizationData",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -11251,6 +11302,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               }
             ],
@@ -11586,6 +11640,7 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "authorizationData",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -11599,6 +11654,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               }
             ],
@@ -11934,6 +11992,7 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "authorizationData",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -11947,6 +12006,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               }
             ],
@@ -12282,6 +12344,7 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "authorizationData",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -12295,6 +12358,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               }
             ],
@@ -12630,6 +12696,7 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "authorizationData",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -12643,6 +12710,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               }
             ],
@@ -12933,6 +13003,7 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "authorizationData",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -12946,6 +13017,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               }
             ],
@@ -19229,6 +19303,7 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "authorizationData",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -19242,6 +19317,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               }
             ],
@@ -19973,6 +20051,7 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "authorizationData",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -19986,6 +20065,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               }
             ],
@@ -21218,6 +21300,7 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "authorizationData",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -21231,6 +21314,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               }
             ],
@@ -21645,6 +21731,7 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "newUpdateAuthority",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -21657,11 +21744,15 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               },
               {
                 "kind": "instructionArgumentNode",
                 "name": "data",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -21675,11 +21766,15 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               },
               {
                 "kind": "instructionArgumentNode",
                 "name": "primarySaleHappened",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -21697,11 +21792,15 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               },
               {
                 "kind": "instructionArgumentNode",
                 "name": "isMutable",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -21719,47 +21818,87 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               },
               {
                 "kind": "instructionArgumentNode",
                 "name": "collection",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "definedTypeLinkNode",
                   "name": "collectionToggle"
+                },
+                "defaultValue": {
+                  "kind": "enumValueNode",
+                  "variant": "none",
+                  "enum": {
+                    "kind": "definedTypeLinkNode",
+                    "name": "collectionToggle"
+                  }
                 }
               },
               {
                 "kind": "instructionArgumentNode",
                 "name": "collectionDetails",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "definedTypeLinkNode",
                   "name": "collectionDetailsToggle"
+                },
+                "defaultValue": {
+                  "kind": "enumValueNode",
+                  "variant": "none",
+                  "enum": {
+                    "kind": "definedTypeLinkNode",
+                    "name": "collectionDetailsToggle"
+                  }
                 }
               },
               {
                 "kind": "instructionArgumentNode",
                 "name": "uses",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "definedTypeLinkNode",
                   "name": "usesToggle"
+                },
+                "defaultValue": {
+                  "kind": "enumValueNode",
+                  "variant": "none",
+                  "enum": {
+                    "kind": "definedTypeLinkNode",
+                    "name": "usesToggle"
+                  }
                 }
               },
               {
                 "kind": "instructionArgumentNode",
                 "name": "ruleSet",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "definedTypeLinkNode",
                   "name": "ruleSetToggle"
+                },
+                "defaultValue": {
+                  "kind": "enumValueNode",
+                  "variant": "none",
+                  "enum": {
+                    "kind": "definedTypeLinkNode",
+                    "name": "ruleSetToggle"
+                  }
                 }
               },
               {
                 "kind": "instructionArgumentNode",
                 "name": "authorizationData",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -21773,6 +21912,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               }
             ],
@@ -21979,6 +22121,7 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "newUpdateAuthority",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -21991,11 +22134,15 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               },
               {
                 "kind": "instructionArgumentNode",
                 "name": "data",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -22009,11 +22156,15 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               },
               {
                 "kind": "instructionArgumentNode",
                 "name": "primarySaleHappened",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -22031,11 +22182,15 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               },
               {
                 "kind": "instructionArgumentNode",
                 "name": "isMutable",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -22053,42 +22208,81 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               },
               {
                 "kind": "instructionArgumentNode",
                 "name": "collection",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "definedTypeLinkNode",
                   "name": "collectionToggle"
+                },
+                "defaultValue": {
+                  "kind": "enumValueNode",
+                  "variant": "none",
+                  "enum": {
+                    "kind": "definedTypeLinkNode",
+                    "name": "collectionToggle"
+                  }
                 }
               },
               {
                 "kind": "instructionArgumentNode",
                 "name": "collectionDetails",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "definedTypeLinkNode",
                   "name": "collectionDetailsToggle"
+                },
+                "defaultValue": {
+                  "kind": "enumValueNode",
+                  "variant": "none",
+                  "enum": {
+                    "kind": "definedTypeLinkNode",
+                    "name": "collectionDetailsToggle"
+                  }
                 }
               },
               {
                 "kind": "instructionArgumentNode",
                 "name": "uses",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "definedTypeLinkNode",
                   "name": "usesToggle"
+                },
+                "defaultValue": {
+                  "kind": "enumValueNode",
+                  "variant": "none",
+                  "enum": {
+                    "kind": "definedTypeLinkNode",
+                    "name": "usesToggle"
+                  }
                 }
               },
               {
                 "kind": "instructionArgumentNode",
                 "name": "ruleSet",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "definedTypeLinkNode",
                   "name": "ruleSetToggle"
+                },
+                "defaultValue": {
+                  "kind": "enumValueNode",
+                  "variant": "none",
+                  "enum": {
+                    "kind": "definedTypeLinkNode",
+                    "name": "ruleSetToggle"
+                  }
                 }
               },
               {
@@ -22115,6 +22309,7 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "authorizationData",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -22128,6 +22323,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               }
             ],
@@ -22379,6 +22577,7 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "newUpdateAuthority",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -22391,11 +22590,15 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               },
               {
                 "kind": "instructionArgumentNode",
                 "name": "primarySaleHappened",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -22413,11 +22616,15 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               },
               {
                 "kind": "instructionArgumentNode",
                 "name": "isMutable",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -22435,6 +22642,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               },
               {
@@ -22461,6 +22671,7 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "authorizationData",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -22474,6 +22685,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               }
             ],
@@ -22738,15 +22952,25 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "collection",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "definedTypeLinkNode",
                   "name": "collectionToggle"
+                },
+                "defaultValue": {
+                  "kind": "enumValueNode",
+                  "variant": "none",
+                  "enum": {
+                    "kind": "definedTypeLinkNode",
+                    "name": "collectionToggle"
+                  }
                 }
               },
               {
                 "kind": "instructionArgumentNode",
                 "name": "authorizationData",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -22760,6 +22984,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               }
             ],
@@ -23036,6 +23263,7 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "data",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -23049,11 +23277,15 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               },
               {
                 "kind": "instructionArgumentNode",
                 "name": "authorizationData",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -23067,6 +23299,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               }
             ],
@@ -23343,15 +23578,25 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "ruleSet",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "definedTypeLinkNode",
                   "name": "ruleSetToggle"
+                },
+                "defaultValue": {
+                  "kind": "enumValueNode",
+                  "variant": "none",
+                  "enum": {
+                    "kind": "definedTypeLinkNode",
+                    "name": "ruleSetToggle"
+                  }
                 }
               },
               {
                 "kind": "instructionArgumentNode",
                 "name": "authorizationData",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -23365,6 +23610,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               }
             ],
@@ -23641,6 +23889,7 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "data",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -23654,11 +23903,15 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               },
               {
                 "kind": "instructionArgumentNode",
                 "name": "authorizationData",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -23672,6 +23925,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               }
             ],
@@ -23936,15 +24192,25 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "collection",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "definedTypeLinkNode",
                   "name": "collectionToggle"
+                },
+                "defaultValue": {
+                  "kind": "enumValueNode",
+                  "variant": "none",
+                  "enum": {
+                    "kind": "definedTypeLinkNode",
+                    "name": "collectionToggle"
+                  }
                 }
               },
               {
                 "kind": "instructionArgumentNode",
                 "name": "authorizationData",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -23958,6 +24224,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               }
             ],
@@ -24222,15 +24491,25 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "ruleSet",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "definedTypeLinkNode",
                   "name": "ruleSetToggle"
+                },
+                "defaultValue": {
+                  "kind": "enumValueNode",
+                  "variant": "none",
+                  "enum": {
+                    "kind": "definedTypeLinkNode",
+                    "name": "ruleSetToggle"
+                  }
                 }
               },
               {
                 "kind": "instructionArgumentNode",
                 "name": "authorizationData",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -24244,6 +24523,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               }
             ],
@@ -24680,6 +24962,7 @@
               {
                 "kind": "instructionArgumentNode",
                 "name": "authorizationData",
+                "defaultValueStrategy": "optional",
                 "docs": [],
                 "type": {
                   "kind": "optionTypeNode",
@@ -24693,6 +24976,9 @@
                     "format": "u8",
                     "endian": "le"
                   }
+                },
+                "defaultValue": {
+                  "kind": "noneValueNode"
                 }
               }
             ],
@@ -28090,6 +28376,7 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "authorizationData",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -28103,6 +28390,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]
@@ -28132,6 +28422,7 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "authorizationData",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -28145,6 +28436,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]
@@ -28174,6 +28468,7 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "authorizationData",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -28187,6 +28482,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]
@@ -28201,6 +28499,7 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "authorizationData",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -28214,6 +28513,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]
@@ -28243,6 +28545,7 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "authorizationData",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -28256,6 +28559,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]
@@ -28285,6 +28591,7 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "authorizationData",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -28298,6 +28605,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]
@@ -28359,6 +28669,7 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "authorizationData",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -28372,6 +28683,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]
@@ -28386,6 +28700,7 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "authorizationData",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -28399,6 +28714,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]
@@ -28413,6 +28731,7 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "authorizationData",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -28426,6 +28745,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]
@@ -28440,6 +28762,7 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "authorizationData",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -28453,6 +28776,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]
@@ -28467,6 +28793,7 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "authorizationData",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -28480,6 +28807,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]
@@ -28494,6 +28824,7 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "authorizationData",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -28507,6 +28838,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]
@@ -28521,6 +28855,7 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "authorizationData",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -28534,6 +28869,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]
@@ -28929,6 +29267,7 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "decimals",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -28943,11 +29282,15 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   },
                   {
                     "kind": "structFieldTypeNode",
                     "name": "printSupply",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -28961,6 +29304,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]
@@ -29005,6 +29351,7 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "authorizationData",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -29018,6 +29365,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]
@@ -29062,6 +29412,7 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "authorizationData",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -29075,6 +29426,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]
@@ -29104,6 +29458,7 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "newUpdateAuthority",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -29116,11 +29471,15 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   },
                   {
                     "kind": "structFieldTypeNode",
                     "name": "data",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -29134,11 +29493,15 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   },
                   {
                     "kind": "structFieldTypeNode",
                     "name": "primarySaleHappened",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -29156,11 +29519,15 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   },
                   {
                     "kind": "structFieldTypeNode",
                     "name": "isMutable",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -29178,47 +29545,87 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   },
                   {
                     "kind": "structFieldTypeNode",
                     "name": "collection",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "definedTypeLinkNode",
                       "name": "collectionToggle"
+                    },
+                    "defaultValue": {
+                      "kind": "enumValueNode",
+                      "variant": "none",
+                      "enum": {
+                        "kind": "definedTypeLinkNode",
+                        "name": "collectionToggle"
+                      }
                     }
                   },
                   {
                     "kind": "structFieldTypeNode",
                     "name": "collectionDetails",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "definedTypeLinkNode",
                       "name": "collectionDetailsToggle"
+                    },
+                    "defaultValue": {
+                      "kind": "enumValueNode",
+                      "variant": "none",
+                      "enum": {
+                        "kind": "definedTypeLinkNode",
+                        "name": "collectionDetailsToggle"
+                      }
                     }
                   },
                   {
                     "kind": "structFieldTypeNode",
                     "name": "uses",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "definedTypeLinkNode",
                       "name": "usesToggle"
+                    },
+                    "defaultValue": {
+                      "kind": "enumValueNode",
+                      "variant": "none",
+                      "enum": {
+                        "kind": "definedTypeLinkNode",
+                        "name": "usesToggle"
+                      }
                     }
                   },
                   {
                     "kind": "structFieldTypeNode",
                     "name": "ruleSet",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "definedTypeLinkNode",
                       "name": "ruleSetToggle"
+                    },
+                    "defaultValue": {
+                      "kind": "enumValueNode",
+                      "variant": "none",
+                      "enum": {
+                        "kind": "definedTypeLinkNode",
+                        "name": "ruleSetToggle"
+                      }
                     }
                   },
                   {
                     "kind": "structFieldTypeNode",
                     "name": "authorizationData",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -29232,6 +29639,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]
@@ -29246,6 +29656,7 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "newUpdateAuthority",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -29258,11 +29669,15 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   },
                   {
                     "kind": "structFieldTypeNode",
                     "name": "data",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -29276,11 +29691,15 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   },
                   {
                     "kind": "structFieldTypeNode",
                     "name": "primarySaleHappened",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -29298,11 +29717,15 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   },
                   {
                     "kind": "structFieldTypeNode",
                     "name": "isMutable",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -29320,42 +29743,81 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   },
                   {
                     "kind": "structFieldTypeNode",
                     "name": "collection",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "definedTypeLinkNode",
                       "name": "collectionToggle"
+                    },
+                    "defaultValue": {
+                      "kind": "enumValueNode",
+                      "variant": "none",
+                      "enum": {
+                        "kind": "definedTypeLinkNode",
+                        "name": "collectionToggle"
+                      }
                     }
                   },
                   {
                     "kind": "structFieldTypeNode",
                     "name": "collectionDetails",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "definedTypeLinkNode",
                       "name": "collectionDetailsToggle"
+                    },
+                    "defaultValue": {
+                      "kind": "enumValueNode",
+                      "variant": "none",
+                      "enum": {
+                        "kind": "definedTypeLinkNode",
+                        "name": "collectionDetailsToggle"
+                      }
                     }
                   },
                   {
                     "kind": "structFieldTypeNode",
                     "name": "uses",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "definedTypeLinkNode",
                       "name": "usesToggle"
+                    },
+                    "defaultValue": {
+                      "kind": "enumValueNode",
+                      "variant": "none",
+                      "enum": {
+                        "kind": "definedTypeLinkNode",
+                        "name": "usesToggle"
+                      }
                     }
                   },
                   {
                     "kind": "structFieldTypeNode",
                     "name": "ruleSet",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "definedTypeLinkNode",
                       "name": "ruleSetToggle"
+                    },
+                    "defaultValue": {
+                      "kind": "enumValueNode",
+                      "variant": "none",
+                      "enum": {
+                        "kind": "definedTypeLinkNode",
+                        "name": "ruleSetToggle"
+                      }
                     }
                   },
                   {
@@ -29382,6 +29844,7 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "authorizationData",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -29395,6 +29858,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]
@@ -29409,6 +29875,7 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "newUpdateAuthority",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -29421,11 +29888,15 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   },
                   {
                     "kind": "structFieldTypeNode",
                     "name": "primarySaleHappened",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -29443,11 +29914,15 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   },
                   {
                     "kind": "structFieldTypeNode",
                     "name": "isMutable",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -29465,6 +29940,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   },
                   {
@@ -29491,6 +29969,7 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "authorizationData",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -29504,6 +29983,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]
@@ -29518,15 +30000,25 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "collection",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "definedTypeLinkNode",
                       "name": "collectionToggle"
+                    },
+                    "defaultValue": {
+                      "kind": "enumValueNode",
+                      "variant": "none",
+                      "enum": {
+                        "kind": "definedTypeLinkNode",
+                        "name": "collectionToggle"
+                      }
                     }
                   },
                   {
                     "kind": "structFieldTypeNode",
                     "name": "authorizationData",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -29540,6 +30032,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]
@@ -29554,6 +30049,7 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "data",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -29567,11 +30063,15 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   },
                   {
                     "kind": "structFieldTypeNode",
                     "name": "authorizationData",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -29585,6 +30085,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]
@@ -29599,15 +30102,25 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "ruleSet",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "definedTypeLinkNode",
                       "name": "ruleSetToggle"
+                    },
+                    "defaultValue": {
+                      "kind": "enumValueNode",
+                      "variant": "none",
+                      "enum": {
+                        "kind": "definedTypeLinkNode",
+                        "name": "ruleSetToggle"
+                      }
                     }
                   },
                   {
                     "kind": "structFieldTypeNode",
                     "name": "authorizationData",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -29621,6 +30134,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]
@@ -29635,6 +30151,7 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "data",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -29648,11 +30165,15 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   },
                   {
                     "kind": "structFieldTypeNode",
                     "name": "authorizationData",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -29666,6 +30187,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]
@@ -29680,15 +30204,25 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "collection",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "definedTypeLinkNode",
                       "name": "collectionToggle"
+                    },
+                    "defaultValue": {
+                      "kind": "enumValueNode",
+                      "variant": "none",
+                      "enum": {
+                        "kind": "definedTypeLinkNode",
+                        "name": "collectionToggle"
+                      }
                     }
                   },
                   {
                     "kind": "structFieldTypeNode",
                     "name": "authorizationData",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -29702,6 +30236,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]
@@ -29716,15 +30253,25 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "ruleSet",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "definedTypeLinkNode",
                       "name": "ruleSetToggle"
+                    },
+                    "defaultValue": {
+                      "kind": "enumValueNode",
+                      "variant": "none",
+                      "enum": {
+                        "kind": "definedTypeLinkNode",
+                        "name": "ruleSetToggle"
+                      }
                     }
                   },
                   {
                     "kind": "structFieldTypeNode",
                     "name": "authorizationData",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -29738,6 +30285,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]
@@ -29963,6 +30513,7 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "authorizationData",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -29976,6 +30527,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]
@@ -30005,6 +30559,7 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "authorizationData",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -30018,6 +30573,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]
@@ -30047,6 +30605,7 @@
                   {
                     "kind": "structFieldTypeNode",
                     "name": "authorizationData",
+                    "defaultValueStrategy": "optional",
                     "docs": [],
                     "type": {
                       "kind": "optionTypeNode",
@@ -30060,6 +30619,9 @@
                         "format": "u8",
                         "endian": "le"
                       }
+                    },
+                    "defaultValue": {
+                      "kind": "noneValueNode"
                     }
                   }
                 ]

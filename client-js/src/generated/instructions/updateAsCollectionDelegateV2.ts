@@ -14,6 +14,7 @@ import {
   getStructEncoder,
   getU8Decoder,
   getU8Encoder,
+  none,
   transformEncoder,
   type AccountMeta,
   type AccountSignerMeta,
@@ -43,6 +44,7 @@ import {
 } from '../shared';
 import {
   MetadataDelegateRole,
+  collectionToggle,
   getAuthorizationDataDecoder,
   getAuthorizationDataEncoder,
   getCollectionToggleDecoder,
@@ -130,8 +132,8 @@ export type UpdateAsCollectionDelegateV2InstructionData = {
 };
 
 export type UpdateAsCollectionDelegateV2InstructionDataArgs = {
-  collection: CollectionToggleArgs;
-  authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+  collection?: CollectionToggleArgs;
+  authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
 };
 
 export function getUpdateAsCollectionDelegateV2InstructionDataEncoder(): Encoder<UpdateAsCollectionDelegateV2InstructionDataArgs> {
@@ -146,6 +148,8 @@ export function getUpdateAsCollectionDelegateV2InstructionDataEncoder(): Encoder
       ...value,
       discriminator: UPDATE_AS_COLLECTION_DELEGATE_V2_DISCRIMINATOR,
       updateAsCollectionDelegateV2Discriminator: 3,
+      collection: value.collection ?? collectionToggle('None'),
+      authorizationData: value.authorizationData ?? none(),
     })
   );
 }
@@ -209,8 +213,8 @@ export type UpdateAsCollectionDelegateV2AsyncInput<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  collection: UpdateAsCollectionDelegateV2InstructionDataArgs['collection'];
-  authorizationData: UpdateAsCollectionDelegateV2InstructionDataArgs['authorizationData'];
+  collection?: UpdateAsCollectionDelegateV2InstructionDataArgs['collection'];
+  authorizationData?: UpdateAsCollectionDelegateV2InstructionDataArgs['authorizationData'];
   delegateMint?: UpdateAsCollectionDelegateV2InstructionExtraArgs['delegateMint'];
   delegateUpdateAuthority?: UpdateAsCollectionDelegateV2InstructionExtraArgs['delegateUpdateAuthority'];
 };
@@ -398,8 +402,8 @@ export type UpdateAsCollectionDelegateV2Input<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  collection: UpdateAsCollectionDelegateV2InstructionDataArgs['collection'];
-  authorizationData: UpdateAsCollectionDelegateV2InstructionDataArgs['authorizationData'];
+  collection?: UpdateAsCollectionDelegateV2InstructionDataArgs['collection'];
+  authorizationData?: UpdateAsCollectionDelegateV2InstructionDataArgs['authorizationData'];
   delegateMint?: UpdateAsCollectionDelegateV2InstructionExtraArgs['delegateMint'];
   delegateUpdateAuthority?: UpdateAsCollectionDelegateV2InstructionExtraArgs['delegateUpdateAuthority'];
 };

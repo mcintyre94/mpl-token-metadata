@@ -14,6 +14,7 @@ import {
   getStructEncoder,
   getU8Decoder,
   getU8Encoder,
+  none,
   transformEncoder,
   type AccountMeta,
   type AccountSignerMeta,
@@ -143,7 +144,7 @@ export type DelegateDataItemV1InstructionData = {
 };
 
 export type DelegateDataItemV1InstructionDataArgs = {
-  authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+  authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
 };
 
 export function getDelegateDataItemV1InstructionDataEncoder(): Encoder<DelegateDataItemV1InstructionDataArgs> {
@@ -157,6 +158,7 @@ export function getDelegateDataItemV1InstructionDataEncoder(): Encoder<DelegateD
       ...value,
       discriminator: DELEGATE_DATA_ITEM_V1_DISCRIMINATOR,
       delegateDataItemV1Discriminator: 10,
+      authorizationData: value.authorizationData ?? none(),
     })
   );
 }
@@ -228,7 +230,7 @@ export type DelegateDataItemV1AsyncInput<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  authorizationData: DelegateDataItemV1InstructionDataArgs['authorizationData'];
+  authorizationData?: DelegateDataItemV1InstructionDataArgs['authorizationData'];
   tokenStandard: DelegateDataItemV1InstructionExtraArgs['tokenStandard'];
   updateAuthority?: DelegateDataItemV1InstructionExtraArgs['updateAuthority'];
 };
@@ -456,7 +458,7 @@ export type DelegateDataItemV1Input<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  authorizationData: DelegateDataItemV1InstructionDataArgs['authorizationData'];
+  authorizationData?: DelegateDataItemV1InstructionDataArgs['authorizationData'];
   tokenStandard: DelegateDataItemV1InstructionExtraArgs['tokenStandard'];
   updateAuthority?: DelegateDataItemV1InstructionExtraArgs['updateAuthority'];
 };

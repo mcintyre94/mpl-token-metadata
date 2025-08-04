@@ -14,6 +14,7 @@ import {
   getStructEncoder,
   getU8Decoder,
   getU8Encoder,
+  none,
   transformEncoder,
   type AccountMeta,
   type AccountSignerMeta,
@@ -47,6 +48,7 @@ import {
   getAuthorizationDataEncoder,
   getRuleSetToggleDecoder,
   getRuleSetToggleEncoder,
+  ruleSetToggle,
   type AuthorizationData,
   type AuthorizationDataArgs,
   type RuleSetToggle,
@@ -132,8 +134,8 @@ export type UpdateAsProgrammableConfigItemDelegateV2InstructionData = {
 };
 
 export type UpdateAsProgrammableConfigItemDelegateV2InstructionDataArgs = {
-  ruleSet: RuleSetToggleArgs;
-  authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+  ruleSet?: RuleSetToggleArgs;
+  authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
 };
 
 export function getUpdateAsProgrammableConfigItemDelegateV2InstructionDataEncoder(): Encoder<UpdateAsProgrammableConfigItemDelegateV2InstructionDataArgs> {
@@ -149,6 +151,8 @@ export function getUpdateAsProgrammableConfigItemDelegateV2InstructionDataEncode
       discriminator:
         UPDATE_AS_PROGRAMMABLE_CONFIG_ITEM_DELEGATE_V2_DISCRIMINATOR,
       updateAsProgrammableConfigItemDelegateV2Discriminator: 8,
+      ruleSet: value.ruleSet ?? ruleSetToggle('None'),
+      authorizationData: value.authorizationData ?? none(),
     })
   );
 }
@@ -211,8 +215,8 @@ export type UpdateAsProgrammableConfigItemDelegateV2AsyncInput<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  ruleSet: UpdateAsProgrammableConfigItemDelegateV2InstructionDataArgs['ruleSet'];
-  authorizationData: UpdateAsProgrammableConfigItemDelegateV2InstructionDataArgs['authorizationData'];
+  ruleSet?: UpdateAsProgrammableConfigItemDelegateV2InstructionDataArgs['ruleSet'];
+  authorizationData?: UpdateAsProgrammableConfigItemDelegateV2InstructionDataArgs['authorizationData'];
   updateAuthority?: UpdateAsProgrammableConfigItemDelegateV2InstructionExtraArgs['updateAuthority'];
 };
 
@@ -396,8 +400,8 @@ export type UpdateAsProgrammableConfigItemDelegateV2Input<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  ruleSet: UpdateAsProgrammableConfigItemDelegateV2InstructionDataArgs['ruleSet'];
-  authorizationData: UpdateAsProgrammableConfigItemDelegateV2InstructionDataArgs['authorizationData'];
+  ruleSet?: UpdateAsProgrammableConfigItemDelegateV2InstructionDataArgs['ruleSet'];
+  authorizationData?: UpdateAsProgrammableConfigItemDelegateV2InstructionDataArgs['authorizationData'];
   updateAuthority?: UpdateAsProgrammableConfigItemDelegateV2InstructionExtraArgs['updateAuthority'];
 };
 

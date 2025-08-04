@@ -14,6 +14,7 @@ import {
   getStructEncoder,
   getU8Decoder,
   getU8Encoder,
+  none,
   transformEncoder,
   type AccountMeta,
   type AccountSignerMeta,
@@ -126,7 +127,7 @@ export type UseV1InstructionData = {
 };
 
 export type UseV1InstructionDataArgs = {
-  authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+  authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
 };
 
 export function getUseV1InstructionDataEncoder(): Encoder<UseV1InstructionDataArgs> {
@@ -140,6 +141,7 @@ export function getUseV1InstructionDataEncoder(): Encoder<UseV1InstructionDataAr
       ...value,
       discriminator: USE_V1_DISCRIMINATOR,
       useV1Discriminator: 0,
+      authorizationData: value.authorizationData ?? none(),
     })
   );
 }
@@ -200,7 +202,7 @@ export type UseV1AsyncInput<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  authorizationData: UseV1InstructionDataArgs['authorizationData'];
+  authorizationData?: UseV1InstructionDataArgs['authorizationData'];
 };
 
 export async function getUseV1InstructionAsync<
@@ -387,7 +389,7 @@ export type UseV1Input<
   authorizationRulesProgram?: Address<TAccountAuthorizationRulesProgram>;
   /** Token Authorization Rules account */
   authorizationRules?: Address<TAccountAuthorizationRules>;
-  authorizationData: UseV1InstructionDataArgs['authorizationData'];
+  authorizationData?: UseV1InstructionDataArgs['authorizationData'];
 };
 
 export function getUseV1Instruction<

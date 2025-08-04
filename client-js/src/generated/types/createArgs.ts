@@ -100,8 +100,8 @@ export type CreateArgsArgs = {
   uses?: OptionOrNullable<UsesArgs>;
   collectionDetails?: OptionOrNullable<CollectionDetailsArgs>;
   ruleSet?: OptionOrNullable<Address>;
-  decimals: OptionOrNullable<number>;
-  printSupply: OptionOrNullable<PrintSupplyArgs>;
+  decimals?: OptionOrNullable<number>;
+  printSupply?: OptionOrNullable<PrintSupplyArgs>;
 };
 
 export function getCreateArgsEncoder(): Encoder<CreateArgsArgs> {
@@ -137,6 +137,8 @@ export function getCreateArgsEncoder(): Encoder<CreateArgsArgs> {
           uses: value.uses ?? none(),
           collectionDetails: value.collectionDetails ?? none(),
           ruleSet: value.ruleSet ?? none(),
+          decimals: value.decimals ?? none(),
+          printSupply: value.printSupply ?? none(),
         })
       ),
     ],

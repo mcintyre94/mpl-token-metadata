@@ -16,6 +16,7 @@ import {
   getStructEncoder,
   getU64Decoder,
   getU64Encoder,
+  none,
   transformEncoder,
   type Codec,
   type Decoder,
@@ -41,7 +42,7 @@ export type TransferArgs = {
 export type TransferArgsArgs = {
   __kind: 'V1';
   amount?: number | bigint;
-  authorizationData: OptionOrNullable<AuthorizationDataArgs>;
+  authorizationData?: OptionOrNullable<AuthorizationDataArgs>;
 };
 
 export function getTransferArgsEncoder(): Encoder<TransferArgsArgs> {
@@ -56,7 +57,11 @@ export function getTransferArgsEncoder(): Encoder<TransferArgsArgs> {
             getOptionEncoder(getAuthorizationDataEncoder()),
           ],
         ]),
-        (value) => ({ ...value, amount: value.amount ?? 1 })
+        (value) => ({
+          ...value,
+          amount: value.amount ?? 1,
+          authorizationData: value.authorizationData ?? none(),
+        })
       ),
     ],
   ]);
