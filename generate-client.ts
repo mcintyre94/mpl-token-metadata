@@ -1168,11 +1168,6 @@ codama.update(
           defaultValue: accountValueNode("authority")
         },
       },
-      arguments: {
-        authorizationData: {
-          defaultValue: null, // TODO: why isn't this becoming optional? 
-        },
-      }
     },
     transferV1: {
       accounts: {
@@ -1186,7 +1181,7 @@ codama.update(
 )
 
 import { writeFileSync } from "node:fs";
-writeFileSync('codama.json', codama.getJson());
+writeFileSync('codama.json', JSON.stringify(JSON.parse(codama.getJson()), null, 2));
 
 codama.accept(
   renderJavaScriptVisitor("./client-js/src/generated/", {
